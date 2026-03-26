@@ -261,12 +261,12 @@ function switchTab(i){document.querySelectorAll('.tab-btn').forEach((b,j)=>b.cla
 function getJ(r){try{return JSON.parse(r)}catch(e){return null}}
 function getStart(r){const p=getJ(r);return p?(p.start||null):(r&&/\d{4}-\d{2}-\d{2}/.test(r)?r.match(/(\d{4}-\d{2}-\d{2})/)[1]:null)}
 function getEnd(r){const p=getJ(r);return p?(p.end||null):(r&&/\d{4}-\d{2}-\d{2}/.test(r)?r.match(/(\d{4}-\d{2}-\d{2})/)[1]:null)}
-function fmtDate(d){if(!d)return'\u2014';const[y,m]=d.split('-');return MONTHS[+m-1]+' '+y}
+function fmtDate(d){if(!d)return'—';const[y,m]=d.split('-');return MONTHS[+m-1]+' '+y}
 function cl(v){return String(v||'').replace(/^"|"$/g,'').trim()}
 function jiraLink(k){return`<a class="jira-link" href="${CONFIG.JIRA_BASE}${k}" target="_blank">${k}</a>`}
-function monBadge(v){if(!v)return'<span style="color:#ccc;font-size:10px">\u2014</span>';const d=v.toLowerCase();if(d.includes('track'))return`<span class="mon-badge mon-ontrack">\u2705 On track</span>`;if(d.includes('risk'))return`<span class="mon-badge mon-atrisk">\u26a0\ufe0f At risk</span>`;if(d.includes('delay'))return`<span class="mon-badge mon-delayed">\U0001f198 Delayed</span>`;return`<span style="font-size:10px;color:#888">${v}</span>`;}
-function monEmoji(v){if(!v)return'';const d=v.toLowerCase();if(d.includes('delay'))return'\U0001f198 ';if(d.includes('risk'))return'\u26a0\ufe0f ';if(d.includes('track'))return'\u2705 ';return'';}
-function sPill(v){const m={'Parking Lot':'parking','Budget Approval':'budget','Discovery':'discovery','Ready for Delivery':'rfd','Delivery':'delivery','Done':'done'};const c=m[v]||'';return c?`<span class="pill p-${c}">${v}</span>`:`<span style="font-size:10px;color:#888">${v||'\u2014'}</span>`;}
+function monBadge(v){if(!v)return'<span style="color:#ccc;font-size:10px">—</span>';const d=v.toLowerCase();if(d.includes('track'))return`<span class="mon-badge mon-ontrack">✅ On track</span>`;if(d.includes('risk'))return`<span class="mon-badge mon-atrisk">⚠️ At risk</span>`;if(d.includes('delay'))return`<span class="mon-badge mon-delayed">🆘 Delayed</span>`;return`<span style="font-size:10px;color:#888">${v}</span>`;}
+function monEmoji(v){if(!v)return'';const d=v.toLowerCase();if(d.includes('delay'))return'🆘 ';if(d.includes('risk'))return'⚠️ ';if(d.includes('track'))return'✅ ';return'';}
+function sPill(v){const m={'Parking Lot':'parking','Budget Approval':'budget','Discovery':'discovery','Ready for Delivery':'rfd','Delivery':'delivery','Done':'done'};const c=m[v]||'';return c?`<span class="pill p-${c}">${v}</span>`:`<span style="font-size:10px;color:#888">${v||'—'}</span>`;}
 function countBy(arr,key){return arr.reduce((a,d)=>{const v=d[key]||'(none)';a[v]=(a[v]||0)+1;return a},{});}
 
 /* Year filter */
@@ -348,7 +348,7 @@ function renderTimeline(data){
     const tLine=(tS||tE)?`<span><span style="color:#378ADD;font-weight:600;min-width:40px;display:inline-block">Target</span>${fmtDate(tS)} \u2192 ${fmtDate(tE)}</span>`:'';
     const aLine=(aS||aE)?`<span><span style="color:${isD?'#E24B4A':'#1D9E75'};font-weight:600;min-width:40px;display:inline-block">Actual</span>${fmtDate(aS)} \u2192 ${aE?fmtDate(aE):'In progress'}</span>`:'';
     const dLine=(tLine||aLine)?`<div class="tl-date-line">${[tLine,aLine].filter(Boolean).join('<br>')}</div>`:'';
-    const emoji=mon?(isD?'\U0001f198 ':isR?'\u26a0\ufe0f ':isT?'\u2705 ':''):'';
+    const emoji=mon?(isD?'🆘 ':isR?'⚠️ ':isT?'✅ ':''):'';
     return`<div class="tl-row ${rowCls}"><div class="tl-label"><div class="tl-key-line">${jiraLink(d.Key)}</div><div class="tl-name" title="${d.Summary}">${emoji}${d.Summary}</div>${dLine}</div><div class="tl-track">${todayColBg}${todayP!==null?`<div class="tl-today-v" style="left:${todayP.toFixed(2)}%"><div class="tl-today-dot-v"></div></div>`:''} ${hasPlan||hasActual?planBar+actBar:`<div class="tl-no-date">No date set</div>`}</div><div class="tl-status-col">${mon?monBadge(mon):sPill(d.Status)}</div></div>`;
   }).join('');
   document.getElementById('tl-inner').innerHTML=`<div class="tl-header"><div class="tl-label-head"></div><div class="tl-grid-head"><div class="tl-qtr-row">${qtrHtml}</div><div class="tl-month-row">${monHtml}</div></div><div class="tl-status-head"></div></div>${rowsHtml}`;
@@ -430,12 +430,12 @@ function renderInitiatives(){
   const ar=filtered.filter(d=>(d['Project Monitoring Status']||'').toLowerCase().includes('risk'));
   const bg=filtered.filter(d=>d.Status==='Budget Approval');
   const rd=filtered.filter(d=>d.Status==='Ready for Delivery');
-  const alerts=[...dl.map(d=>({t:'danger',key:d.Key,txt:`<strong>${d.Summary}</strong> \u2014 Delayed. Provide revised plan &amp; mitigation.`})),...ar.map(d=>({t:'warn',key:d.Key,txt:`<strong>${d.Summary}</strong> \u2014 At risk. Identify blockers.`})),...bg.map(d=>({t:'info',key:d.Key,txt:`<strong>${d.Summary}</strong> \u2014 Pending budget approval.`})),...rd.map(d=>({t:'info',key:d.Key,txt:`<strong>${d.Summary}</strong> \u2014 Ready for Delivery. Confirm sprint kick-off.`}))];
+  const alerts=[...dl.map(d=>({t:'danger',key:d.Key,txt:`<strong>${d.Summary}</strong> — Delayed. Provide revised plan &amp; mitigation.`})),...ar.map(d=>({t:'warn',key:d.Key,txt:`<strong>${d.Summary}</strong> — At risk. Identify blockers.`})),...bg.map(d=>({t:'info',key:d.Key,txt:`<strong>${d.Summary}</strong> — Pending budget approval.`})),...rd.map(d=>({t:'info',key:d.Key,txt:`<strong>${d.Summary}</strong> — Ready for Delivery. Confirm sprint kick-off.`}))];
   document.getElementById('init-alerts').innerHTML=alerts.length?alerts.map(a=>`<div class="alert-item ${a.t}"><span style="font-weight:700;font-size:10px;color:${a.t==='danger'?'#A32D2D':a.t==='warn'?'#633806':'#0C447C'};min-width:48px">${jiraLink(a.key)}</span><span style="font-size:11.5px;color:#333">${a.txt}</span></div>`).join(''):'<div style="color:#bbb;font-size:12px;padding:4px 0">No items requiring attention.</div>';
   /* delivery */
-  document.getElementById('init-delivery').innerHTML=filtered.filter(d=>d.Status==='Delivery').map(d=>`<tr><td>${jiraLink(d.Key)}</td><td style="font-weight:600;color:#1a3a5c">${d.Summary}</td><td>${monBadge(d['Project Monitoring Status'])}</td><td style="color:#555">${d['Implementation Status']||'\u2014'}</td></tr>`).join('')||'<tr><td colspan="4" style="color:#bbb;text-align:center;padding:14px">None</td></tr>';
+  document.getElementById('init-delivery').innerHTML=filtered.filter(d=>d.Status==='Delivery').map(d=>`<tr><td>${jiraLink(d.Key)}</td><td style="font-weight:600;color:#1a3a5c">${d.Summary}</td><td>${monBadge(d['Project Monitoring Status'])}</td><td style="color:#555">${d['Implementation Status']||'—'}</td></tr>`).join('')||'<tr><td colspan="4" style="color:#bbb;text-align:center;padding:14px">None</td></tr>';
   /* pipeline */
-  document.getElementById('init-pipeline').innerHTML=filtered.filter(d=>d.Status==='Discovery'||d.Status==='Ready for Delivery').map(d=>`<tr><td>${jiraLink(d.Key)}</td><td style="font-weight:600;color:#1a3a5c">${d.Summary}</td><td>${sPill(d.Status)}</td><td>${(d['Assignee.displayName']||'').split(' ')[0]||'\u2014'}</td><td>${fmtDate(getStart(d['Target Project Start']||''))}</td></tr>`).join('')||'<tr><td colspan="5" style="color:#bbb;text-align:center;padding:14px">None</td></tr>';
+  document.getElementById('init-pipeline').innerHTML=filtered.filter(d=>d.Status==='Discovery'||d.Status==='Ready for Delivery').map(d=>`<tr><td>${jiraLink(d.Key)}</td><td style="font-weight:600;color:#1a3a5c">${d.Summary}</td><td>${sPill(d.Status)}</td><td>${(d['Assignee.displayName']||'').split(' ')[0]||'—'}</td><td>${fmtDate(getStart(d['Target Project Start']||''))}</td></tr>`).join('')||'<tr><td colspan="5" style="color:#bbb;text-align:center;padding:14px">None</td></tr>';
 }
 
 /* CSV parser — handles normal row-per-record format */
@@ -483,13 +483,13 @@ async function loadData(){
   if(!fetched){
     try{const proxy='https://corsproxy.io/?'+encodeURIComponent(CONFIG.SHEET_URL);const r=await fetch(proxy);if(!r.ok)throw new Error();const parsed=parseSheetRows(await r.text(),getEmbedded());if(parsed.length>0){allData=parsed;fetched=true;document.getElementById('refresh-time').textContent=ts()+' (via proxy)';}}catch(e){console.warn('[GDB] Proxy:',e.message);}
   }
-  if(!fetched){allData=getEmbedded();const _now=new Date();document.getElementById('refresh-time').textContent='\uD83D\uDCE6 Embedded data \u00b7 '+_now.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+_now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+' \u2014 set APPS_SCRIPT_URL for live';}
+  if(!fetched){allData=getEmbedded();const _now=new Date();document.getElementById('refresh-time').textContent='\uD83D\uDCE6 Embedded data · '+_now.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+_now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+' — set APPS_SCRIPT_URL for live';}
   renderAll();
 }
 
 function renderAll(){renderSummary();renderInitiatives();}
 
-function tickClock(){const el=document.getElementById('current-dt');if(!el)return;const n=new Date();el.textContent=n.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' \u00b7 '+n.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
+function tickClock(){const el=document.getElementById('current-dt');if(!el)return;const n=new Date();el.textContent=n.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' · '+n.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
 
 function getEmbedded(){return[
 {'Key':'PPP-36','Summary':'New POS','Issue Type':'Initiative','Project Type':'Strategic','Status':'Parking Lot','Roadmap Status':'New','Project Goal':'Strategic Direction','Roadmap Year Plan':'','Assignee.displayName':'Chawanop Witthayaphirak','Assignee (2nd).displayName':'','Project Monitoring Status':'','Implementation Status':'','Dependency Systems':'','Target Project Start':'','Target Project End':'','Actual Project Start':'','Actual Project End':'','BU Owner':'The Able'},

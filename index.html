@@ -108,6 +108,14 @@ table.dt tr:hover td{background:#f5f8fb}
 .tl-bar-actual-del{background:#E24B4A;height:9px;top:24px}
 .tl-no-date{font-size:9.5px;color:#ddd;font-style:italic;padding-left:8px;display:flex;align-items:center;height:100%}
 .tl-status-col{width:100px;flex-shrink:0;padding:0 0 0 8px;display:flex;align-items:center}
+.tab-dropdown-wrap{position:relative;display:flex;align-items:center}
+.tab-dropdown-wrap:hover .tab-dropdown-menu{display:block}
+.tab-dropdown-menu{display:none;position:absolute;top:100%;left:0;background:#1a3a5c;border-top:2px solid #254f7a;min-width:140px;z-index:100;box-shadow:0 4px 12px rgba(0,0,0,.25)}
+.tab-dropdown-menu button{display:block;width:100%;padding:10px 16px;font-size:11px;font-weight:600;color:#8ab0cc;border:none;background:none;cursor:pointer;text-align:left;white-space:nowrap;border-left:3px solid transparent;transition:all .1s}
+.tab-dropdown-menu button:hover{background:#254f7a;color:#fff}
+.tab-dropdown-menu button.active{color:#5DCAA5;border-left-color:#5DCAA5;background:#1f4570}
+.tab-dropdown-arrow{font-size:9px;margin-left:4px;opacity:.6}
+.list-filter-select{padding:5px 10px;border:1px solid #ddd;border-radius:6px;font-size:11px;background:#fff;cursor:pointer;min-width:140px;color:#555}
 .coming-soon{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:320px;gap:10px}
 .cs-icon{font-size:36px;opacity:.35}
 .cs-title{font-size:17px;font-weight:700;color:#ccc}
@@ -137,9 +145,14 @@ const CONFIG = {
   <div class="topbar-logo">GDB</div>
   <div class="topbar-sub">Product &amp; Project Portfolio Review</div>
   <button class="tab-btn active" onclick="switchTab(0)">Summary</button>
-  <button class="tab-btn" onclick="switchTab(1)">Initiatives</button>
-  <button class="tab-btn" onclick="switchTab(2)">Issues <span class="tab-badge">soon</span></button>
-  <button class="tab-btn" onclick="switchTab(3)">Support Tasks <span class="tab-badge">soon</span></button>
+  <div class="tab-dropdown-wrap">
+    <button class="tab-btn" onclick="switchTab(1)">Initiatives <span class="tab-dropdown-arrow">&#9660;</span></button>
+    <div class="tab-dropdown-menu">
+      <button onclick="switchTab(2)">List</button>
+    </div>
+  </div>
+  <button class="tab-btn" onclick="switchTab(3)">Issues <span class="tab-badge">soon</span></button>
+  <button class="tab-btn" onclick="switchTab(4)">Support Tasks <span class="tab-badge">soon</span></button>
   <div class="topbar-right">
     <span style="color:#5a88a8;font-size:11px;border-right:1px solid #2a5a8c;padding-right:10px;margin-right:2px" id="current-dt"></span>
     <span style="color:#7aa5c4;font-size:11px" id="refresh-time">—</span>
@@ -240,9 +253,41 @@ const CONFIG = {
 </div>
 
 <div class="tab-content" id="tab-2">
+  <!-- Initiatives List Tab -->
+  <div class="filter-bar" style="margin-top:16px">
+    <span class="fb-label">Roadmap year:</span>
+    <div id="yf-list" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    <div class="fb-sep"></div>
+    <span class="fb-label">Assignee:</span>
+    <select class="list-filter-select" id="af-list-select" onchange="onAssigneeChange(this.value)">
+      <option value="all">All assignees</option>
+    </select>
+  </div>
+  <div style="font-size:11px;color:#aaa;margin-bottom:10px" id="list-count"></div>
+  <table class="dt" id="list-table" style="font-size:11.5px">
+    <thead>
+      <tr>
+        <th style="width:72px">Key</th>
+        <th>Summary</th>
+        <th style="width:90px">Status</th>
+        <th style="width:90px">Roadmap</th>
+        <th style="width:110px">Project goal</th>
+        <th style="width:70px">Type</th>
+        <th style="width:110px">Assignee</th>
+        <th style="width:110px">Assignee 2nd</th>
+        <th style="width:100px">Monitor</th>
+        <th style="width:110px">Target start</th>
+        <th style="width:110px">Target end</th>
+      </tr>
+    </thead>
+    <tbody id="list-body"></tbody>
+  </table>
+</div>
+
+<div class="tab-content" id="tab-3">
   <div class="coming-soon"><div class="cs-icon">&#128027;</div><div class="cs-title">Coming soon</div><div class="cs-sub">Issue tracker summary — Jira issue data for team monitoring.</div></div>
 </div>
-<div class="tab-content" id="tab-3">
+<div class="tab-content" id="tab-4">
   <div class="coming-soon"><div class="cs-icon">&#127911;</div><div class="cs-title">Coming soon</div><div class="cs-sub">Support Tasks tracker — Jira support data for stakeholder request monitoring.</div></div>
 </div>
 
@@ -255,9 +300,18 @@ const RC={'New':'#B5D4F4','Next':'#EF9F27','Now':'#85B7EB','Completed':'#9FE1CB'
 const GC={'Increase Revenue':'#97C459','Improve Internal Operation':'#85B7EB','Improve Customer Experience':'#AFA9EC','Improve Customer Engagement':'#F4C0D1','Strategic Direction':'#FAC775'};
 const TC={'Strategic':'#AFA9EC','BAU':'#85B7EB'};
 const AC=['#85B7EB','#5DCAA5','#EF9F27','#AFA9EC','#F09595','#97C459','#F4C0D1','#FAC775','#B4B2A9'];
-let allData=[],charts={},sumYearFilter=['all'],initYearFilter=['all'],showNoYear=false,sumStage='all',hideNoDate=false;
+let allData=[],charts={},sumYearFilter=['ROADMAP_2026'],initYearFilter=['all'],showNoYear=false,sumStage='all',hideNoDate=false;
 
-function switchTab(i){document.querySelectorAll('.tab-btn').forEach((b,j)=>b.classList.toggle('active',j===i));document.querySelectorAll('.tab-content').forEach((t,j)=>t.classList.toggle('active',j===i));}
+function switchTab(i){
+  /* tab-btn order: 0=Summary, 1=Initiatives(wrap), 2=Issues, 3=Support */
+  /* i: 0=Summary, 1=Initiatives, 2=List(sub), 3=Issues, 4=Support */
+  const mainIdx=i===0?0:i===1||i===2?1:i-1;
+  document.querySelectorAll('.tab-btn').forEach((b,j)=>b.classList.toggle('active',j===mainIdx));
+  /* dropdown sub-items */
+  document.querySelectorAll('.tab-dropdown-menu button').forEach((b,j)=>b.classList.toggle('active',i===2&&j===0));
+  document.querySelectorAll('.tab-content').forEach((t,j)=>t.classList.toggle('active',j===i));
+  if(i===2)renderList();
+}
 function getJ(r){try{return JSON.parse(r)}catch(e){return null}}
 function getStart(r){const p=getJ(r);return p?(p.start||null):(r&&/\d{4}-\d{2}-\d{2}/.test(r)?r.match(/(\d{4}-\d{2}-\d{2})/)[1]:null)}
 function getEnd(r){const p=getJ(r);return p?(p.end||null):(r&&/\d{4}-\d{2}-\d{2}/.test(r)?r.match(/(\d{4}-\d{2}-\d{2})/)[1]:null)}
@@ -486,6 +540,100 @@ async function loadData(){
   if(!fetched){allData=getEmbedded();const _now=new Date();document.getElementById('refresh-time').textContent='\uD83D\uDCE6 Embedded data · '+_now.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+_now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+' — set APPS_SCRIPT_URL for live';}
   renderAll();
 }
+
+/* ── Initiatives List ────────────────────────────── */
+let listYearFilter=['ROADMAP_2026'];
+let listAssigneeFilter='all';
+
+function renderList(){
+  /* Year filter */
+  renderYF('yf-list',listYearFilter,function(btn,val){
+    listYearFilter=toggleYF(listYearFilter,val);
+    renderList();
+  });
+
+  /* Assignee dropdown — collect unique names (primary + 2nd) */
+  const allAssignees=new Set();
+  allData.forEach(d=>{
+    const a1=(d['Assignee.displayName']||'').trim().split(' ')[0];
+    const a2=(d['Assignee (2nd).displayName']||'').trim().split(' ')[0];
+    if(a1&&a1.length>1&&a1!=='[no')allAssignees.add(a1);
+    if(a2&&a2.length>1&&a2!=='[no')allAssignees.add(a2);
+  });
+  const sel=document.getElementById('af-list-select');
+  const curVal=sel.value||'all';
+  sel.innerHTML='<option value="all">All assignees</option>'+
+    Array.from(allAssignees).sort().map(a=>`<option value="${a}" ${curVal===a?'selected':''}>${a}</option>`).join('');
+  sel.value=listAssigneeFilter;
+
+  /* Filter data */
+  let filtered=filterYear(allData,listYearFilter);
+  if(listAssigneeFilter!=='all'){
+    filtered=filtered.filter(d=>{
+      const a1=(d['Assignee.displayName']||'').trim().split(' ')[0];
+      const a2=(d['Assignee (2nd).displayName']||'').trim().split(' ')[0];
+      return a1===listAssigneeFilter||a2===listAssigneeFilter;
+    });
+  }
+
+  /* Sort by Key asc: PPP-1, PPP-2, ... */
+  filtered=[...filtered].sort((a,b)=>{
+    const na=parseInt((a.Key||'').replace('PPP-',''))||0;
+    const nb=parseInt((b.Key||'').replace('PPP-',''))||0;
+    return na-nb;
+  });
+
+  document.getElementById('list-count').textContent=
+    `Showing ${filtered.length} of ${allData.length} initiatives`;
+
+  /* Render rows */
+  const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function fd(raw){
+    const p=raw?(()=>{try{return JSON.parse(raw)}catch(e){return null}})():null;
+    const d=p?p.start:(raw&&/\d{4}-\d{2}-\d{2}/.test(raw)?raw.match(/(\d{4}-\d{2}-\d{2})/)[1]:null);
+    if(!d)return '—';
+    const[y,m]=d.split('-');return MONTHS[+m-1]+' '+y;
+  }
+
+  document.getElementById('list-body').innerHTML=filtered.length
+    ?filtered.map(d=>{
+        const mon=d['Project Monitoring Status']||'';
+        const isD=mon.toLowerCase().includes('delay');
+        const isR=mon.toLowerCase().includes('risk');
+        const isT=mon.toLowerCase().includes('track');
+        const monHtml=mon
+          ?(isD?`<span class="pill p-delayed">🆘 Delayed</span>`
+            :isR?`<span class="pill p-atrisk">⚠️ At risk</span>`
+            :isT?`<span class="pill p-ontrack">✅ On track</span>`:mon)
+          :'<span style="color:#ddd">—</span>';
+        const stMap={'Parking Lot':'parking','Budget Approval':'budget','Discovery':'discovery','Ready for Delivery':'rfd','Delivery':'delivery','Done':'done'};
+        const stCls=stMap[d.Status]||'';
+        const tpCls=d['Project Type']==='Strategic'?'strategic':d['Project Type']==='BAU'?'bau':'';
+        const a1=(d['Assignee.displayName']||'').split(' ')[0]||'—';
+        const a2=(d['Assignee (2nd).displayName']||'').split(' ')[0]||'—';
+        return `<tr>
+          <td>${jiraLink(d.Key)}</td>
+          <td style="font-weight:600;color:#1a3a5c;max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${d.Summary}">${d.Summary}</td>
+          <td>${stCls?`<span class="pill p-${stCls}">${d.Status}</span>`:d.Status}</td>
+          <td style="font-size:11px;color:#666">${d['Roadmap Status']||'—'}</td>
+          <td style="font-size:11px;color:#666;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${d['Project Goal']||''}">${d['Project Goal']||'—'}</td>
+          <td>${tpCls?`<span class="pill p-${tpCls}">${d['Project Type']}</span>`:d['Project Type']||'—'}</td>
+          <td style="font-size:11px">${a1}</td>
+          <td style="font-size:11px;color:#888">${a2}</td>
+          <td>${monHtml}</td>
+          <td style="font-size:11px">${fd(d['Target Project Start'])}</td>
+          <td style="font-size:11px">${fd(d['Target Project End'])}</td>
+        </tr>`;
+      }).join('')
+    :'<tr><td colspan="11" style="text-align:center;color:#bbb;padding:24px">No initiatives match this filter.</td></tr>';
+}
+
+function onAssigneeChange(val){
+  listAssigneeFilter=val;
+  renderList();
+}
+
+
 
 function renderAll(){renderSummary();renderInitiatives();}
 

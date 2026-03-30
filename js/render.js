@@ -18,14 +18,16 @@ const AC=['#85B7EB','#5DCAA5','#EF9F27','#AFA9EC','#F09595','#97C459','#F4C0D1',
 let allData=[];
 
 function switchTab(i){
-  /* tab-btn order: 0=Summary, 1=Initiatives(wrap), 2=Issues, 3=Support */
-  /* i: 0=Summary, 1=Initiatives, 2=List(sub), 3=Issues, 4=Support */
-  const mainIdx=i===0?0:i===1||i===2?1:i-1;
+  /* tab-btn: 0=Summary, 1=Initiatives(wrap+dropdown), 2=Issues, 3=Support */
+  /* i: 0=Summary, 1=Initiatives, 2=List(sub), 3=Completed(sub), 4=Issues, 5=Support */
+  const mainIdx=i===0?0:(i===1||i===2||i===3)?1:i-2;
   document.querySelectorAll('.tab-btn').forEach((b,j)=>b.classList.toggle('active',j===mainIdx));
-  /* dropdown sub-items */
-  document.querySelectorAll('.tab-dropdown-menu button').forEach((b,j)=>b.classList.toggle('active',i===2&&j===0));
+  document.querySelectorAll('.tab-dropdown-menu button').forEach((b,j)=>{
+    b.classList.toggle('active',(i===2&&j===0)||(i===3&&j===1));
+  });
   document.querySelectorAll('.tab-content').forEach((t,j)=>t.classList.toggle('active',j===i));
   if(i===2)renderList();
+  if(i===3)renderCompleted();
 }
 function getJ(r){try{return JSON.parse(r)}catch(e){return null}}
 function getStart(r){const p=getJ(r);return p?(p.start||null):(r&&/\d{4}-\d{2}-\d{2}/.test(r)?r.match(/(\d{4}-\d{2}-\d{2})/)[1]:null)}
@@ -165,45 +167,69 @@ function renderSummary(){
   document.getElementById('sum-stage-filter').innerHTML=['all',...STAGES].map(s=>`<button class="fb-btn ${sumStage===s?'active':''}" onclick="sumStage='${s}';renderSummary()">${s==='all'?'All stages':s}</button>`).join('');
   const tlData=sumStage==='all'?filtered:filtered.filter(d=>d.Status===sumStage);
   renderTimeline(tlData);
-  renderDoneList(filtered);
 }
 
 /* ── Done initiatives list ────────────────── */
-function renderDoneList(data){
-  const done=data.filter(d=>d.Status==='Done')
-    .sort((a,b)=>{
-      const na=parseInt((a.Key||'').replace('PPP-',''))||0;
-      const nb=parseInt((b.Key||'').replace('PPP-',''))||0;
-      return na-nb;
-    });
-  const sec=document.getElementById('sum-done-section');
-  if(!sec)return;
-  if(!done.length){sec.style.display='none';return;}
-  sec.style.display='block';
-  document.getElementById('sum-done-list').innerHTML=done.map(function(d){
-    var tE=getEnd(d['Target Project End']||'');
-    var aE=getEnd(d['Actual Project End']||'');
+let doneYearFilter=['all'];
+
+function renderCompleted(){
+  renderYF('yf-done',doneYearFilter,function(btn,val){
+    doneYearFilter=toggleYF(doneYearFilter,val);
+    renderCompleted();
+  });
+
+  var filtered=filterYear(allData,doneYearFilter);
+  var done=filtered.filter(function(d){return d.Status==='Done';});
+
+  /* Sort by Go-live date DESC, fallback to Actual End, then Target End */
+  done.sort(function(a,b){
+    var da=getStart(a['Go-live Date']||'')||getEnd(a['Actual Project End']||'')||getEnd(a['Target Project End']||'')||'';
+    var db=getStart(b['Go-live Date']||'')||getEnd(b['Actual Project End']||'')||getEnd(b['Target Project End']||'')||'';
+    if(!da&&!db)return 0;
+    if(!da)return 1;
+    if(!db)return-1;
+    return db.localeCompare(da);
+  });
+
+  var countEl=document.getElementById('done-count');
+  if(countEl)countEl.textContent='Showing '+done.length+' completed initiative'+(done.length!==1?'s':'');
+
+  var wrap=document.getElementById('done-list-wrap');
+  if(!wrap)return;
+
+  if(!done.length){
+    wrap.innerHTML='<div style="color:#bbb;text-align:center;padding:40px;font-size:13px">No completed initiatives.</div>';
+    return;
+  }
+
+  wrap.innerHTML=done.map(function(d){
     var goLive=getStart(d['Go-live Date']||'');
-    var assignee=(d['Assignee.displayName']||'').split(' ')[0];
+    var aE=getEnd(d['Actual Project End']||'');
+    var tE=getEnd(d['Target Project End']||'');
+    var dateDisp=goLive?fmtDate(goLive):aE?fmtDate(aE):tE?fmtDate(tE):'';
+    var buOwner=(d['BU Owner']||'').replace(/@.+/,'');
     var goal=d['Project Goal']||'';
     var impact=d['Business Impact']||'';
     var kpi=d['KPI vs Target']||'';
 
-    var metaParts=[];
-    if(goal)metaParts.push(goal);
-    if(goLive)metaParts.push('Go-live: '+fmtDate(goLive));
-    else if(aE)metaParts.push('Completed: '+fmtDate(aE));
-    else if(tE)metaParts.push('Target: '+fmtDate(tE));
-    if(assignee)metaParts.push(assignee);
-    var meta=metaParts.join(' · ');
-
-    var html='<div class="done-item">';
+    var html='<div class="done-item" style="margin-bottom:10px">';
     html+='<div class="done-key">'+jiraLink(d.Key)+'</div>';
     html+='<div class="done-body">';
     html+='<div class="done-name">'+d.Summary+'</div>';
-    if(meta)html+='<div class="done-meta">'+meta+'</div>';
-    if(impact)html+='<div class="done-impact">'+impact+'</div>';
-    if(kpi)html+='<div class="done-meta" style="margin-top:2px;color:#378ADD">'+kpi+'</div>';
+
+    /* meta line: goal · go-live · bu owner */
+    var metaParts=[];
+    if(goal)metaParts.push(goal);
+    if(dateDisp)metaParts.push((goLive?'Go-live: ':'Completed: ')+dateDisp);
+    if(buOwner)metaParts.push(buOwner);
+    if(metaParts.length)html+='<div class="done-meta">'+metaParts.join(' &middot; ')+'</div>';
+
+    /* business impact */
+    if(impact)html+='<div class="done-impact" style="margin-top:5px">'+impact+'</div>';
+
+    /* kpi */
+    if(kpi)html+='<div class="done-meta" style="margin-top:3px;color:#378ADD">'+kpi+'</div>';
+
     html+='</div></div>';
     return html;
   }).join('');

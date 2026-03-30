@@ -180,22 +180,32 @@ function renderDoneList(data){
   if(!sec)return;
   if(!done.length){sec.style.display='none';return;}
   sec.style.display='block';
-  document.getElementById('sum-done-list').innerHTML=done.map(d=>{
-    const tE=getEnd(d['Target Project End']||'');
-    const aE=getEnd(d['Actual Project End']||'');
-    const goLive=getStart(d['Go-live Date']||'');
-    const dateStr=goLive?'Go-live: '+fmtDate(goLive):aE?'Completed: '+fmtDate(aE):tE?'Target: '+fmtDate(tE):'';
-    const impact=d['Business Impact']||'';
-    const kpi=d['KPI vs Target']||'';
-    return `<div class="done-item">
-      <div class="done-key">\${jiraLink(d.Key)}</div>
-      <div class="done-body">
-        <div class="done-name">✅ \${d.Summary}</div>
-        <div class="done-meta">\${d['Project Goal']||''}\${dateStr?' · '+dateStr:''}\${d['Assignee.displayName']?' · '+d['Assignee.displayName'].split(' ')[0]:''}</div>
-        \${impact?'<div class="done-impact">'+impact+'</div>':''}
-        \${kpi?'<div class="done-meta" style="margin-top:2px;color:#378ADD">'+kpi+'</div>':''}
-      </div>
-    </div>`;
+  document.getElementById('sum-done-list').innerHTML=done.map(function(d){
+    var tE=getEnd(d['Target Project End']||'');
+    var aE=getEnd(d['Actual Project End']||'');
+    var goLive=getStart(d['Go-live Date']||'');
+    var assignee=(d['Assignee.displayName']||'').split(' ')[0];
+    var goal=d['Project Goal']||'';
+    var impact=d['Business Impact']||'';
+    var kpi=d['KPI vs Target']||'';
+
+    var metaParts=[];
+    if(goal)metaParts.push(goal);
+    if(goLive)metaParts.push('Go-live: '+fmtDate(goLive));
+    else if(aE)metaParts.push('Completed: '+fmtDate(aE));
+    else if(tE)metaParts.push('Target: '+fmtDate(tE));
+    if(assignee)metaParts.push(assignee);
+    var meta=metaParts.join(' · ');
+
+    var html='<div class="done-item">';
+    html+='<div class="done-key">'+jiraLink(d.Key)+'</div>';
+    html+='<div class="done-body">';
+    html+='<div class="done-name">'+d.Summary+'</div>';
+    if(meta)html+='<div class="done-meta">'+meta+'</div>';
+    if(impact)html+='<div class="done-impact">'+impact+'</div>';
+    if(kpi)html+='<div class="done-meta" style="margin-top:2px;color:#378ADD">'+kpi+'</div>';
+    html+='</div></div>';
+    return html;
   }).join('');
 }
 

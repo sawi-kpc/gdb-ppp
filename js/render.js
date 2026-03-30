@@ -187,7 +187,7 @@ function renderDoneList(data){
     const dateStr=goLive?'Go-live: '+fmtDate(goLive):aE?'Completed: '+fmtDate(aE):tE?'Target: '+fmtDate(tE):'';
     const impact=d['Business Impact']||'';
     const kpi=d['KPI vs Target']||'';
-    return \`<div class="done-item">
+    return `<div class="done-item">
       <div class="done-key">\${jiraLink(d.Key)}</div>
       <div class="done-body">
         <div class="done-name">✅ \${d.Summary}</div>
@@ -195,7 +195,7 @@ function renderDoneList(data){
         \${impact?'<div class="done-impact">'+impact+'</div>':''}
         \${kpi?'<div class="done-meta" style="margin-top:2px;color:#378ADD">'+kpi+'</div>':''}
       </div>
-    </div>\`;
+    </div>`;
   }).join('');
 }
 

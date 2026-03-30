@@ -16,10 +16,11 @@
     <button class="tab-btn" onclick="switchTab(1)">Initiatives <span class="tab-dropdown-arrow">&#9660;</span></button>
     <div class="tab-dropdown-menu">
       <button onclick="switchTab(2)">List</button>
+      <button onclick="switchTab(3)">Completed</button>
     </div>
   </div>
-  <button class="tab-btn" onclick="switchTab(3)">Issues <span class="tab-badge">soon</span></button>
-  <button class="tab-btn" onclick="switchTab(4)">Support Tasks <span class="tab-badge">soon</span></button>
+  <button class="tab-btn" onclick="switchTab(4)">Issues <span class="tab-badge">soon</span></button>
+  <button class="tab-btn" onclick="switchTab(5)">Support Tasks <span class="tab-badge">soon</span></button>
   <div class="topbar-right">
     <span style="color:#5a88a8;font-size:11px;border-right:1px solid #2a5a8c;padding-right:10px;margin-right:2px" id="current-dt"></span>
     <span style="color:#7aa5c4;font-size:11px" id="refresh-time">—</span>
@@ -55,10 +56,6 @@
       </div>
     </div>
     <div class="tl-container"><div class="tl-inner" id="tl-inner"></div></div>
-  </div>
-  <div class="section" id="sum-done-section" style="display:none;margin-top:0">
-    <div class="sec-title">Completed initiatives</div>
-    <div class="done-list" id="sum-done-list"></div>
   </div>
 </div>
 
@@ -156,9 +153,18 @@
 </div>
 
 <div class="tab-content" id="tab-3">
+  <div class="filter-bar" style="margin-top:16px">
+    <span class="fb-label">Roadmap year:</span>
+    <div id="yf-done" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+  </div>
+  <div style="font-size:11px;color:#aaa;margin-bottom:10px" id="done-count"></div>
+  <div id="done-list-wrap"></div>
+</div>
+
+<div class="tab-content" id="tab-4">
   <div class="coming-soon"><div class="cs-icon">&#128027;</div><div class="cs-title">Coming soon</div><div class="cs-sub">Issue tracker summary — Jira issue data for team monitoring.</div></div>
 </div>
-<div class="tab-content" id="tab-4">
+<div class="tab-content" id="tab-5">
   <div class="coming-soon"><div class="cs-icon">&#127911;</div><div class="cs-title">Coming soon</div><div class="cs-sub">Support Tasks tracker — Jira support data for stakeholder request monitoring.</div></div>
 </div>
 

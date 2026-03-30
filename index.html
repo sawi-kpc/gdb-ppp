@@ -156,6 +156,11 @@
   <div class="filter-bar" style="margin-top:16px">
     <span class="fb-label">Roadmap year:</span>
     <div id="yf-done" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    <div class="fb-sep"></div>
+    <span class="fb-label">BU Owner:</span>
+    <select class="list-filter-select" id="done-bu-select" onchange="onDoneBUChange(this.value)">
+      <option value="all">All BU owners</option>
+    </select>
   </div>
   <div style="font-size:11px;color:#aaa;margin-bottom:10px" id="done-count"></div>
   <div id="done-list-wrap"></div>

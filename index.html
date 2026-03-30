@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GDB Product &amp; Project Portfolio Review</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">GDB</div>
+  <div class="topbar-sub">Product &amp; Project Portfolio Review</div>
+  <button class="tab-btn active" onclick="switchTab(0)">Summary</button>
+  <div class="tab-dropdown-wrap">
+    <button class="tab-btn" onclick="switchTab(1)">Initiatives <span class="tab-dropdown-arrow">&#9660;</span></button>
+    <div class="tab-dropdown-menu">
+      <button onclick="switchTab(2)">List</button>
+    </div>
+  </div>
+  <button class="tab-btn" onclick="switchTab(3)">Issues <span class="tab-badge">soon</span></button>
+  <button class="tab-btn" onclick="switchTab(4)">Support Tasks <span class="tab-badge">soon</span></button>
+  <div class="topbar-right">
+    <span style="color:#5a88a8;font-size:11px;border-right:1px solid #2a5a8c;padding-right:10px;margin-right:2px" id="current-dt"></span>
+    <span style="color:#7aa5c4;font-size:11px" id="refresh-time">—</span>
+    <button class="refresh-btn" onclick="loadData()">&#8635; Refresh</button>
+  </div>
+</div>
+
+<!-- TAB 0 SUMMARY -->
+<div class="tab-content active" id="tab-0">
+  <div class="filter-bar" style="margin-top:16px">
+    <span class="fb-label">Roadmap year:</span>
+    <div id="yf-sum" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+  </div>
+  <div class="metrics-strip" id="sum-metrics"></div>
+  <div class="section">
+    <div class="sec-title">Initiative timeline</div>
+    <div class="tl-ctrl-row">
+      <span class="tl-ctrl-label">Focus:</span>
+      <select class="tl-ctrl-select" id="tl-start" onchange="renderSummary()"></select>
+      <span style="font-size:11px;color:#aaa">to</span>
+      <select class="tl-ctrl-select" id="tl-end" onchange="renderSummary()"></select>
+      <div class="fb-sep"></div>
+      <span class="tl-ctrl-label">Stage:</span>
+      <div id="sum-stage-filter" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+      <div class="fb-sep"></div>
+      <button class="fb-btn" id="btn-hide-nodate" onclick="toggleHideNoDate(this)">Hide no-date items</button>
+      <div class="fb-sep"></div>
+      <span class="tl-today-badge" id="today-badge">Today</span>
+      <div class="tl-legend-row">
+        <span class="tl-leg"><span class="tl-leg-dot" style="background:#85B7EB"></span>Planned</span>
+        <span class="tl-leg"><span class="tl-leg-dot" style="background:#1D9E75"></span>Actual</span>
+        <span class="tl-leg"><span class="tl-leg-dot" style="background:#E24B4A"></span>Delayed</span>
+      </div>
+    </div>
+    <div class="tl-container"><div class="tl-inner" id="tl-inner"></div></div>
+  </div>
+  <div class="section" id="sum-done-section" style="display:none;margin-top:0">
+    <div class="sec-title">Completed initiatives</div>
+    <div class="done-list" id="sum-done-list"></div>
+  </div>
+</div>
+
+<!-- TAB 1 INITIATIVES -->
+<div class="tab-content" id="tab-1">
+  <div class="filter-bar" style="margin-top:16px">
+    <span class="fb-label">Roadmap year:</span>
+    <div id="yf-init" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    <div class="fb-sep"></div>
+    <button class="fb-btn" id="btn-no-year" onclick="toggleNoYear(this)">No roadmap year</button>
+  </div>
+  <div class="metrics-strip" id="init-metrics"></div>
+  <div class="two-col">
+    <div>
+      <div class="section" style="margin-bottom:12px">
+        <div class="sec-title">Attention required</div>
+        <div id="init-alerts"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">By lifecycle status</div>
+        <div class="chart-sub">Count &amp; % of all items</div>
+        <div style="position:relative;height:200px"><canvas id="c-status"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">By project goal</div>
+        <div class="chart-sub">Count &amp; % of all items</div>
+        <div id="c-goal-wrap" style="position:relative;height:180px"><canvas id="c-goal"></canvas></div>
+      </div>
+      <div class="section" style="margin-bottom:12px">
+        <div class="sec-title">Active delivery snapshot</div>
+        <table class="dt"><thead><tr><th>Key</th><th>Initiative</th><th>Monitor</th><th>Impl. status</th></tr></thead>
+        <tbody id="init-delivery"></tbody></table>
+      </div>
+      <div class="section">
+        <div class="sec-title">Pipeline — Discovery &amp; Ready for Delivery</div>
+        <table class="dt"><thead><tr><th>Key</th><th>Initiative</th><th>Stage</th><th>Assignee</th><th>Target start</th></tr></thead>
+        <tbody id="init-pipeline"></tbody></table>
+      </div>
+    </div>
+    <div class="right-col">
+      <div class="chart-card">
+        <div class="chart-title">By roadmap status</div>
+        <div class="chart-sub">Count &amp; % of all items</div>
+        <div style="position:relative;height:200px"><canvas id="c-roadmap"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">By project type</div>
+        <div class="chart-sub">Count &amp; % of all items</div>
+        <div style="position:relative;height:200px"><canvas id="c-type"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">By primary assignee</div>
+        <div class="chart-sub">Assignee.displayName</div>
+        <div id="c-a1-wrap" style="position:relative;height:180px"><canvas id="c-a1"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">By 2nd assignee</div>
+        <div class="chart-sub">Assignee (2nd).displayName</div>
+        <div id="c-a2-wrap" style="position:relative;height:180px"><canvas id="c-a2"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="tab-content" id="tab-2">
+  <!-- Initiatives List Tab -->
+  <div class="filter-bar" style="margin-top:16px">
+    <span class="fb-label">Roadmap year:</span>
+    <div id="yf-list" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    <div class="fb-sep"></div>
+    <span class="fb-label">Assignee:</span>
+    <select class="list-filter-select" id="af-list-select" onchange="onAssigneeChange(this.value)">
+      <option value="all">All assignees</option>
+    </select>
+  </div>
+  <div style="font-size:11px;color:#aaa;margin-bottom:10px" id="list-count"></div>
+  <table class="dt" id="list-table" style="font-size:11.5px">
+    <thead>
+      <tr>
+        <th style="width:72px">Key</th>
+        <th>Summary</th>
+        <th style="width:90px">Status</th>
+        <th style="width:90px">Roadmap</th>
+        <th style="width:110px">Project goal</th>
+        <th style="width:70px">Type</th>
+        <th style="width:110px">Assignee</th>
+        <th style="width:110px">Assignee 2nd</th>
+        <th style="width:100px">Monitor</th>
+        <th style="width:110px">Target start</th>
+        <th style="width:110px">Target end</th>
+      </tr>
+    </thead>
+    <tbody id="list-body"></tbody>
+  </table>
+</div>
+
+<div class="tab-content" id="tab-3">
+  <div class="coming-soon"><div class="cs-icon">&#128027;</div><div class="cs-title">Coming soon</div><div class="cs-sub">Issue tracker summary — Jira issue data for team monitoring.</div></div>
+</div>
+<div class="tab-content" id="tab-4">
+  <div class="coming-soon"><div class="cs-icon">&#127911;</div><div class="cs-title">Coming soon</div><div class="cs-sub">Support Tasks tracker — Jira support data for stakeholder request monitoring.</div></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="js/config.js"></script>
+<script src="js/render.js"></script>
+<script src="js/data.js"></script>
+</body>
+</html>

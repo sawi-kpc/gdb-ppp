@@ -171,23 +171,45 @@ function renderSummary(){
 
 /* ── Done initiatives list ────────────────── */
 let doneYearFilter=['all'];
+let doneBUFilter='all';
 
 function renderCompleted(){
+  /* Year filter */
   renderYF('yf-done',doneYearFilter,function(btn,val){
     doneYearFilter=toggleYF(doneYearFilter,val);
     renderCompleted();
   });
 
+  /* BU Owner dropdown */
+  var buOwners=new Set();
+  allData.filter(function(d){return d.Status==='Done';}).forEach(function(d){
+    var bu=(d['BU Owner']||'').replace(/@.+/,'').trim();
+    if(bu)buOwners.add(bu);
+  });
+  var buSel=document.getElementById('done-bu-select');
+  if(buSel){
+    var curBU=buSel.value||'all';
+    buSel.innerHTML='<option value="all">All BU owners</option>'+
+      Array.from(buOwners).sort().map(function(bu){
+        return '<option value="'+bu+'"'+(curBU===bu?' selected':'')+'>'+bu+'</option>';
+      }).join('');
+    buSel.value=doneBUFilter;
+  }
+
+  /* Filter */
   var filtered=filterYear(allData,doneYearFilter);
   var done=filtered.filter(function(d){return d.Status==='Done';});
+  if(doneBUFilter!=='all'){
+    done=done.filter(function(d){
+      return (d['BU Owner']||'').replace(/@.+/,'').trim()===doneBUFilter;
+    });
+  }
 
-  /* Sort by Go-live date DESC, fallback to Actual End, then Target End */
+  /* Sort by Go-live date DESC, fallback Actual End, Target End */
   done.sort(function(a,b){
     var da=getStart(a['Go-live Date']||'')||getEnd(a['Actual Project End']||'')||getEnd(a['Target Project End']||'')||'';
     var db=getStart(b['Go-live Date']||'')||getEnd(b['Actual Project End']||'')||getEnd(b['Target Project End']||'')||'';
-    if(!da&&!db)return 0;
-    if(!da)return 1;
-    if(!db)return-1;
+    if(!da&&!db)return 0; if(!da)return 1; if(!db)return -1;
     return db.localeCompare(da);
   });
 
@@ -207,7 +229,7 @@ function renderCompleted(){
     var aE=getEnd(d['Actual Project End']||'');
     var tE=getEnd(d['Target Project End']||'');
     var dateDisp=goLive?fmtDate(goLive):aE?fmtDate(aE):tE?fmtDate(tE):'';
-    var buOwner=(d['BU Owner']||'').replace(/@.+/,'');
+    var buOwner=(d['BU Owner']||'').replace(/@.+/,'').trim();
     var goal=d['Project Goal']||'';
     var impact=d['Business Impact']||'';
     var kpi=d['KPI vs Target']||'';
@@ -217,22 +239,37 @@ function renderCompleted(){
     html+='<div class="done-body">';
     html+='<div class="done-name">'+d.Summary+'</div>';
 
-    /* meta line: goal · go-live · bu owner */
+    /* meta: goal · go-live · bu owner */
     var metaParts=[];
     if(goal)metaParts.push(goal);
     if(dateDisp)metaParts.push((goLive?'Go-live: ':'Completed: ')+dateDisp);
-    if(buOwner)metaParts.push(buOwner);
+    if(buOwner)metaParts.push('BU: '+buOwner);
     if(metaParts.length)html+='<div class="done-meta">'+metaParts.join(' &middot; ')+'</div>';
 
-    /* business impact */
-    if(impact)html+='<div class="done-impact" style="margin-top:5px">'+impact+'</div>';
+    /* Business Impact with label */
+    if(impact){
+      html+='<div style="margin-top:6px">';
+      html+='<span style="font-size:9px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.06em">Business Impact</span>';
+      html+='<div class="done-impact" style="margin-top:2px">'+impact+'</div>';
+      html+='</div>';
+    }
 
-    /* kpi */
-    if(kpi)html+='<div class="done-meta" style="margin-top:3px;color:#378ADD">'+kpi+'</div>';
+    /* KPI vs Target with label */
+    if(kpi){
+      html+='<div style="margin-top:5px">';
+      html+='<span style="font-size:9px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.06em">KPI vs Target</span>';
+      html+='<div class="done-meta" style="margin-top:2px;color:#378ADD">'+kpi+'</div>';
+      html+='</div>';
+    }
 
     html+='</div></div>';
     return html;
   }).join('');
+}
+
+function onDoneBUChange(val){
+  doneBUFilter=val;
+  renderCompleted();
 }
 
 /* Render initiatives */

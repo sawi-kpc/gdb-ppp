@@ -1,6 +1,6 @@
 
 const CONFIG = {
-  APPS_SCRIPT_URL: '',
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwBOqvq8XKNTG5PDq2pDseoboHYlyfH21rfUl_BNQYK6bRkLsUuHWNuqvBKv6fn0oTo/exec',
   SHEET_URL: 'https://docs.google.com/spreadsheets/d/1dEBSAcmkT5tQmzaQDQEieex3WMCyPBi1JjQdOpVH8Nc/gviz/tq?tqx=out:csv&gid=660147076',
   JIRA_BASE: 'https://kingpower.atlassian.net/browse/',
   TIMELINE_RANGE_OPTIONS: [

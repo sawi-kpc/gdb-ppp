@@ -138,4 +138,5 @@ function getEmbedded(){return[
 {'Key':'PPP-1','Summary':'FIRSTER TikTok Order Synchronization','Issue Type':'Initiative','Project Type':'BAU','Status':'Done','Roadmap Status':'Completed','Project Goal':'Increase Revenue','Roadmap Year Plan':'ROADMAP_2025','Assignee.displayName':'Petchpailin Tocharoen','Assignee (2nd).displayName':'','Project Monitoring Status':'On track','Implementation Status':'Done','Dependency Systems':'OMS','Target Project Start':'{"start":"2025-04-01","end":"2025-04-30"}','Target Project End':'{"start":"2025-06-01","end":"2025-06-30"}','Actual Project Start':'{"start":"2025-07-01","end":"2025-07-31"}','Actual Project End':'{"start":"2025-11-01","end":"2025-11-30"}','BU Owner':'anon.kumnuchanart@kingpower.com'}
 ];}
 
-window.addEventListener('DOMContentLoaded',()=>{tickClock();setInterval(tickClock,1000);loadData();});
+/* DOMContentLoaded: clock starts immediately, loadData called by auth.js after login */
+window.addEventListener('DOMContentLoaded',()=>{tickClock();setInterval(tickClock,1000);});

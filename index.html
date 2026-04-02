@@ -5,8 +5,45 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>GDB Product &amp; Project Portfolio Review</title>
 <link rel="stylesheet" href="css/style.css">
+
+<style>
+/* Auth screen */
+#auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f2f2f0}
+.auth-card{background:#fff;border-radius:12px;border:.5px solid #e0e0e0;padding:36px 40px;width:100%;max-width:380px;box-shadow:0 4px 24px rgba(0,0,0,.08)}
+.auth-logo{font-size:22px;font-weight:700;color:#1a3a5c;margin-bottom:4px}
+.auth-sub{font-size:12px;color:#999;margin-bottom:28px}
+.auth-label{font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;display:block}
+.auth-input{width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;margin-bottom:14px;outline:none;transition:border .15s}
+.auth-input:focus{border-color:#1a3a5c}
+.auth-btn{width:100%;padding:10px;background:#1a3a5c;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;margin-top:4px}
+.auth-btn:hover{background:#254f7a}
+.auth-btn:disabled{background:#aaa;cursor:not-allowed}
+.auth-error{font-size:11.5px;color:#A32D2D;background:#FFF5F5;border-radius:5px;padding:8px 10px;margin-top:10px;display:block;min-height:0}
+/* App screen */
+#app-screen{display:none}
+.auth-user-bar{display:flex;align-items:center;gap:8px;font-size:11px;color:#5a88a8}
+#auth-logout-btn{padding:3px 10px;background:#254f7a;color:#cde0f0;border:none;border-radius:4px;font-size:11px;cursor:pointer}
+#auth-logout-btn:hover{background:#2e6496}
+</style>
 </head>
 <body>
+
+<!-- ══ AUTH SCREEN ══════════════════════════════ -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">GDB</div>
+    <div class="auth-sub">Product &amp; Project Portfolio Review</div>
+    <label class="auth-label" for="auth-email">Email</label>
+    <input class="auth-input" type="email" id="auth-email" placeholder="your@email.com" autocomplete="email">
+    <label class="auth-label" for="auth-password">Password</label>
+    <input class="auth-input" type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password">
+    <button class="auth-btn" id="auth-login-btn">Sign in</button>
+    <span class="auth-error" id="auth-error"></span>
+  </div>
+</div>
+
+<!-- ══ APP SCREEN ════════════════════════════ -->
+<div id="app-screen">
 
 <div class="topbar">
   <div class="topbar-logo">GDB</div>
@@ -22,6 +59,11 @@
   <button class="tab-btn" onclick="switchTab(4)">Issues <span class="tab-badge">soon</span></button>
   <button class="tab-btn" onclick="switchTab(5)">Support Tasks <span class="tab-badge">soon</span></button>
   <div class="topbar-right">
+    <div class="auth-user-bar">
+      <span id="auth-user-email"></span>
+      <button id="auth-logout-btn">Sign out</button>
+    </div>
+    <div class="fb-sep" style="border-color:#2a5a8c"></div>
     <span style="color:#5a88a8;font-size:11px;border-right:1px solid #2a5a8c;padding-right:10px;margin-right:2px" id="current-dt"></span>
     <span style="color:#7aa5c4;font-size:11px" id="refresh-time">—</span>
     <button class="refresh-btn" onclick="loadData()">&#8635; Refresh</button>
@@ -173,9 +215,12 @@
   <div class="coming-soon"><div class="cs-icon">&#127911;</div><div class="cs-title">Coming soon</div><div class="cs-sub">Support Tasks tracker — Jira support data for stakeholder request monitoring.</div></div>
 </div>
 
+</div><!-- /#app-screen -->
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="js/config.js"></script>
 <script src="js/render.js"></script>
-<script src="js/data.js"></script>
+<script src="js/data.js" defer></script>
+<script type="module" src="js/auth.js"></script>
 </body>
 </html>

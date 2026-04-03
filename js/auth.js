@@ -1,6 +1,7 @@
 /* ══════════════════════════════════════════════
    AUTH — Firebase Google SSO
-   Depends on: config.js (must load first)
+   Depends on: config.js, render.js, data.js
+   (all must load before this module)
 ══════════════════════════════════════════════ */
 
 import { initializeApp }
@@ -25,19 +26,43 @@ const provider = new GoogleAuthProvider();
 /* Optional: restrict to org domain only
    provider.setCustomParameters({ hd: 'kingpower.com' }); */
 
+/* ── Wait for all scripts to be ready ───────
+   data.js sets window._appReady=true at end.
+   auth.js waits for it before showing dashboard.
+─────────────────────────────────────────────*/
+function waitForApp(cb) {
+  if (window._appReady) { cb(); return; }
+  const t = setInterval(function() {
+    if (window._appReady) { clearInterval(t); cb(); }
+  }, 50);
+  /* Timeout after 5s to avoid infinite wait */
+  setTimeout(function() { clearInterval(t); cb(); }, 5000);
+}
+
 /* ── Auth state ──────────────────────────── */
 onAuthStateChanged(auth, function(user) {
   if (user) {
-    document.getElementById('auth-screen').style.display = 'none';
-    document.getElementById('app-screen').style.display  = 'block';
-    const emailEl = document.getElementById('auth-user-email');
-    if (emailEl) emailEl.textContent = user.displayName || user.email;
-    const avatarEl = document.getElementById('auth-user-avatar');
-    if (avatarEl && user.photoURL) {
-      avatarEl.src = user.photoURL;
-      avatarEl.style.display = 'inline-block';
-    }
-    if (typeof loadData === 'function') loadData();
+    waitForApp(function() {
+      document.getElementById('auth-screen').style.display = 'none';
+      document.getElementById('app-screen').style.display  = 'block';
+
+      /* Show user info */
+      var emailEl = document.getElementById('auth-user-email');
+      if (emailEl) emailEl.textContent = user.displayName || user.email;
+
+      var avatarEl = document.getElementById('auth-user-avatar');
+      if (avatarEl && user.photoURL) {
+        avatarEl.src = user.photoURL;
+        avatarEl.style.display = 'inline-block';
+      }
+
+      /* Load dashboard data */
+      if (typeof loadData === 'function') {
+        loadData();
+      } else {
+        console.error('[Auth] loadData not found — check script load order');
+      }
+    });
   } else {
     document.getElementById('auth-screen').style.display = 'flex';
     document.getElementById('app-screen').style.display  = 'none';
@@ -46,14 +71,14 @@ onAuthStateChanged(auth, function(user) {
 
 /* ── Sign in ─────────────────────────────── */
 async function signInWithGoogle() {
-  const btn = document.getElementById('auth-google-btn');
-  const err = document.getElementById('auth-error');
+  var btn = document.getElementById('auth-google-btn');
+  var err = document.getElementById('auth-error');
   if (err) err.textContent = '';
   if (btn) { btn.disabled = true; btn.textContent = 'Signing in\u2026'; }
   try {
     await signInWithPopup(auth, provider);
   } catch (e) {
-    let msg = 'Sign-in failed. Please try again.';
+    var msg = 'Sign-in failed. Please try again.';
     if (e.code === 'auth/popup-closed-by-user')  msg = 'Sign-in cancelled.';
     if (e.code === 'auth/popup-blocked')          msg = 'Popup blocked \u2014 allow popups for this site.';
     if (e.code === 'auth/unauthorized-domain')    msg = 'Domain not authorized. Contact admin.';
@@ -62,6 +87,9 @@ async function signInWithGoogle() {
   }
 }
 
-/* ── Sign out ────────────────────────────── */
-document.getElementById('auth-google-btn')?.addEventListener('click', signInWithGoogle);
-document.getElementById('auth-logout-btn')?.addEventListener('click', () => signOut(auth));
+/* ── Wire up ─────────────────────────────── */
+document.getElementById('auth-google-btn')
+  ?.addEventListener('click', signInWithGoogle);
+
+document.getElementById('auth-logout-btn')
+  ?.addEventListener('click', function() { signOut(auth); });

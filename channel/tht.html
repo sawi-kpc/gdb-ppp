@@ -148,8 +148,12 @@
   const app  = initializeApp(firebaseConfig);
   const auth = getAuth(app);
 
-  /* Check auth — redirect to login if not signed in */
-  onAuthStateChanged(auth, function(user) {
+  /* onAuthStateChanged fires twice on load:
+     1st: user=null (Firebase still initializing) — IGNORE
+     2nd: user={...} or null (Firebase resolved) — ACT
+     Use unsubscribe after first resolution to prevent double-fire */
+  const unsubscribe = onAuthStateChanged(auth, function(user) {
+    unsubscribe(); /* unsubscribe immediately after first resolution */
     if (!user) {
       window.location.href = '../';
     } else {

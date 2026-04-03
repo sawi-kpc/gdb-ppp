@@ -56,14 +56,45 @@ function applyChannelTheme(cfg) {
 
 /* ── Fetch data from Apps Script ─────────── */
 function loadData(channelKey, onSuccess, onError) {
-  var url = APPS_SCRIPT_URL + '?channel=' + channelKey;
-  fetch(url)
-    .then(function(r) { return r.json(); })
-    .then(function(json) {
+  /* Use JSONP instead of fetch() to bypass CORS restriction
+     Apps Script does not send Access-Control-Allow-Origin headers,
+     so fetch() always fails from GitHub Pages.
+     JSONP uses <script> tag which is not subject to CORS. */
+  var baseUrl = (CHANNEL_CFG && CHANNEL_CFG.appsScriptUrl) ? CHANNEL_CFG.appsScriptUrl : APPS_SCRIPT_URL;
+  var cbName  = '_gdbCb_' + channelKey + '_' + Date.now();
+  var script  = document.createElement('script');
+  var timer   = null;
+
+  /* Timeout after 15 seconds */
+  timer = setTimeout(function() {
+    cleanup();
+    onError('Request timed out. Check Apps Script URL.');
+  }, 15000);
+
+  function cleanup() {
+    clearTimeout(timer);
+    if (script.parentNode) script.parentNode.removeChild(script);
+    try { delete window[cbName]; } catch(e) { window[cbName] = undefined; }
+  }
+
+  window[cbName] = function(json) {
+    cleanup();
+    try {
       if (json.error) throw new Error(json.error);
+      if (!json[channelKey]) throw new Error('No data for channel: ' + channelKey);
       onSuccess(json[channelKey], json._meta);
-    })
-    .catch(function(err) { onError(err.message); });
+    } catch(e) {
+      onError(e.message);
+    }
+  };
+
+  script.onerror = function() {
+    cleanup();
+    onError('Failed to load data. Check Apps Script URL and deployment settings.');
+  };
+
+  script.src = baseUrl + '?channel=' + channelKey + '&callback=' + cbName;
+  document.head.appendChild(script);
 }
 
 /* ── Lifecycle ───────────────────────────── */

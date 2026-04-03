@@ -74,6 +74,10 @@ function showLogin(errorMsg) {
 }
 
 function showApp(user) {
+  /* Reset auth screen states before hiding */
+  document.getElementById('auth-loading').style.display    = 'none';
+  document.getElementById('auth-login-wrap').style.display = 'block';
+  document.getElementById('auth-permission-error').style.display = 'none';
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('app-screen').style.display  = 'block';
   var emailEl  = document.getElementById('auth-user-email');

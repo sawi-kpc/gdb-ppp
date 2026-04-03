@@ -1,8 +1,6 @@
 /* ══════════════════════════════════════════════
-   AUTH — Firebase Google SSO + Permission check
-   v2.2 fixes:
-   - หลัง login → redirect dashboard ทันที
-   - ไม่มี redirect loop กรณีไม่มี permission
+   AUTH v2.3 — Simple & Reliable
+   Firebase Google SSO for GitHub Pages
 ══════════════════════════════════════════════ */
 
 import { initializeApp }
@@ -12,6 +10,7 @@ import { getAuth, GoogleAuthProvider,
          signOut, onAuthStateChanged }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
+/* ── Firebase init ───────────────────────── */
 const firebaseConfig = {
   apiKey:            "AIzaSyCaS5kLNbm5lSLRHd1rdr0sXRCS5lB_Rgc",
   authDomain:        "gdb-dashboard-prod.firebaseapp.com",
@@ -20,20 +19,19 @@ const firebaseConfig = {
   messagingSenderId: "170622130981",
   appId:             "1:170622130981:web:23302ed9a5ce4e82ac58cc"
 };
-
 const app      = initializeApp(firebaseConfig);
 const auth     = getAuth(app);
 const provider = new GoogleAuthProvider();
 
-/* ══════════════════════════════════════════════
-   PERMISSION CONFIG — แก้ที่นี่ที่เดียว
-   วิธีที่ 1: จำกัด domain
+/* ══ PERMISSION CONFIG ════════════════════
+   วิธีที่ 1 (แนะนำ): จำกัด domain
      ALLOWED_DOMAIN = 'kingpower.com'
-   วิธีที่ 2: whitelist email ทีละคน
-     ALLOWED_DOMAIN = null + เพิ่มใน ALLOWED_EMAILS
-══════════════════════════════════════════════ */
-var ALLOWED_DOMAIN = null;
-var ALLOWED_EMAILS = [
+   วิธีที่ 2: whitelist email
+     ALLOWED_DOMAIN = null
+     เพิ่ม email ใน ALLOWED_EMAILS
+════════════════════════════════════════════ */
+const ALLOWED_DOMAIN = null;
+const ALLOWED_EMAILS = [
   'sawitree.jakkrawannit@kingpower.com',
   'chawanop.witthayaphirak@kingpower.com',
   'petchpailin.tocharoen@kingpower.com',
@@ -42,132 +40,119 @@ var ALLOWED_EMAILS = [
   /* เพิ่ม email ที่นี่ */
 ];
 
-/* ── Permission check ────────────────────── */
 function isAllowed(email) {
   if (!email) return false;
   if (ALLOWED_DOMAIN)
     return email.toLowerCase().endsWith('@' + ALLOWED_DOMAIN.toLowerCase());
   return ALLOWED_EMAILS
-    .map(function(e){ return e.toLowerCase().trim(); })
-    .indexOf(email.toLowerCase().trim()) >= 0;
+    .map(e => e.toLowerCase().trim())
+    .includes(email.toLowerCase().trim());
 }
+
+/* ── DOM helpers ─────────────────────────── */
+const $ = id => document.getElementById(id);
+
+function show(id)  { const el = $(id); if(el) el.style.display = 'block'; }
+function hide(id)  { const el = $(id); if(el) el.style.display = 'none';  }
+function flex(id)  { const el = $(id); if(el) el.style.display = 'flex';  }
 
 /* ── Screen states ───────────────────────── */
-function showLoading() {
-  document.getElementById('auth-loading').style.display    = 'flex';
-  document.getElementById('auth-login-wrap').style.display = 'none';
-  document.getElementById('auth-permission-error').style.display = 'none';
-  document.getElementById('auth-screen').style.display     = 'flex';
-  document.getElementById('app-screen').style.display      = 'none';
-}
+function setState(state, data) {
+  /* Always start by hiding everything */
+  hide('app-screen');
+  flex('auth-screen');
+  hide('auth-loading');
+  hide('auth-login-wrap');
+  hide('auth-permission-error');
 
-function showLogin(errorMsg) {
-  document.getElementById('auth-loading').style.display    = 'none';
-  document.getElementById('auth-login-wrap').style.display = 'block';
-  document.getElementById('auth-permission-error').style.display = 'none';
-  document.getElementById('auth-screen').style.display     = 'flex';
-  document.getElementById('app-screen').style.display      = 'none';
-  var btn = document.getElementById('auth-google-btn');
-  if (btn) { btn.disabled = false; btn.textContent = 'Sign in with Google'; }
-  var err = document.getElementById('auth-error');
-  if (err) err.textContent = errorMsg || '';
-}
+  const errEl = $('auth-error');
+  if (errEl) errEl.textContent = '';
 
-function showApp(user) {
-  /* Reset auth screen states before hiding */
-  document.getElementById('auth-loading').style.display    = 'none';
-  document.getElementById('auth-login-wrap').style.display = 'block';
-  document.getElementById('auth-permission-error').style.display = 'none';
-  document.getElementById('auth-screen').style.display = 'none';
-  document.getElementById('app-screen').style.display  = 'block';
-  var emailEl  = document.getElementById('auth-user-email');
-  if (emailEl) emailEl.textContent = user.displayName || user.email;
-  var avatarEl = document.getElementById('auth-user-avatar');
-  if (avatarEl && user.photoURL) {
-    avatarEl.src = user.photoURL;
-    avatarEl.style.display = 'inline-block';
+  if (state === 'loading') {
+    flex('auth-loading');
+
+  } else if (state === 'login') {
+    show('auth-login-wrap');
+    const btn = $('auth-google-btn');
+    if (btn) { btn.disabled = false; btn.textContent = 'Sign in with Google'; }
+    if (data && errEl) errEl.textContent = data;
+
+  } else if (state === 'app') {
+    hide('auth-screen');
+    show('app-screen');
+    const emailEl  = $('auth-user-email');
+    const avatarEl = $('auth-user-avatar');
+    if (emailEl)  emailEl.textContent = data.displayName || data.email;
+    if (avatarEl && data.photoURL) {
+      avatarEl.src = data.photoURL;
+      avatarEl.style.display = 'inline-block';
+    }
+    if (typeof loadData === 'function') {
+      try { loadData(); } catch(e) { console.error('[Auth]', e); }
+    } else {
+      setTimeout(() => { if (typeof loadData === 'function') loadData(); }, 300);
+    }
+
+  } else if (state === 'denied') {
+    show('auth-permission-error');
+    const deniedEl = $('auth-denied-email');
+    if (deniedEl) deniedEl.textContent = data || '';
   }
-  if (typeof loadData === 'function') {
-    try { loadData(); } catch(e) { console.error('[Auth] loadData error:', e); }
-  } else {
-    setTimeout(function(){ if (typeof loadData === 'function') loadData(); }, 300);
-  }
 }
 
-function showPermissionError(email) {
-  /* ── Mark session as denied ──────────────
-     ใช้ sessionStorage แทน signOut
-     ป้องกัน redirect loop:
-     signOut → onAuthStateChanged(null) → showLogin
-     → user click sign in → same account → loop
-  ─────────────────────────────────────────*/
-  sessionStorage.setItem('gdb_denied_email', email);
-  document.getElementById('auth-loading').style.display    = 'none';
-  document.getElementById('auth-login-wrap').style.display = 'none';
-  document.getElementById('auth-permission-error').style.display = 'block';
-  document.getElementById('auth-screen').style.display     = 'flex';
-  document.getElementById('app-screen').style.display      = 'none';
-  var emailEl = document.getElementById('auth-denied-email');
-  if (emailEl) emailEl.textContent = email || '';
-}
+/* ── Init: show loading immediately ─────── */
+setState('loading');
 
-/* ── Init: loading state immediately ─────── */
-showLoading();
-
-/* ── Handle redirect result ─────────────── */
-getRedirectResult(auth)
-  .then(function(result) { /* onAuthStateChanged handles */ })
-  .catch(function(e) {
-    var msg = 'Sign-in failed. Please try again.';
-    if (e.code === 'auth/unauthorized-domain') msg = 'Domain not authorized. Contact admin.';
-    showLogin(msg);
-  });
+/* ── Handle return from Google redirect ─── */
+getRedirectResult(auth).catch(e => {
+  console.warn('[Auth] getRedirectResult error:', e.code);
+  setState('login', 'Sign-in failed. Please try again.');
+});
 
 /* ── Auth state observer ─────────────────── */
-onAuthStateChanged(auth, function(user) {
+let authResolved = false;
+
+onAuthStateChanged(auth, user => {
+  authResolved = true;
   if (user) {
     if (isAllowed(user.email)) {
-      sessionStorage.removeItem('gdb_denied_email');
-      showApp(user);
+      sessionStorage.removeItem('gdb_denied');
+      setState('app', user);
     } else {
-      /* ไม่ sign out — แค่แสดง error และ sign out เบื้องหลัง */
-      showPermissionError(user.email);
-      signOut(auth); /* sign out เงียบๆ ไม่ trigger redirect loop */
+      /* Sign out quietly, show denied, set flag to prevent login flash */
+      sessionStorage.setItem('gdb_denied', user.email);
+      setState('denied', user.email);
+      signOut(auth);
     }
   } else {
-    /* user = null → check ว่าเคย denied ไปแล้วหรือเปล่า */
-    var denied = sessionStorage.getItem('gdb_denied_email');
+    /* user = null */
+    const denied = sessionStorage.getItem('gdb_denied');
     if (denied) {
-      /* ยังอยู่หน้า denied — ไม่ต้องทำอะไร permission error ยังแสดงอยู่ */
+      /* Already showing denied screen — keep it */
+      setState('denied', denied);
     } else {
-      showLogin();
+      setState('login');
     }
   }
 });
 
 /* ── Sign in ─────────────────────────────── */
-function signInWithGoogle() {
-  sessionStorage.removeItem('gdb_denied_email');
-  var btn = document.getElementById('auth-google-btn');
-  var err = document.getElementById('auth-error');
-  if (err) err.textContent = '';
-  if (btn) { btn.disabled = true; btn.textContent = 'Redirecting\u2026'; }
-  signInWithRedirect(auth, provider)
-    .catch(function(e){ showLogin('Sign-in failed: ' + (e.message || e.code)); });
-}
-
-/* ── Wire up ─────────────────────────────── */
-document.getElementById('auth-google-btn')
-  ?.addEventListener('click', signInWithGoogle);
-
-document.getElementById('auth-logout-btn')
-  ?.addEventListener('click', function(){
-    sessionStorage.removeItem('gdb_denied_email');
-    signOut(auth);
+$('auth-google-btn')?.addEventListener('click', () => {
+  sessionStorage.removeItem('gdb_denied');
+  setState('loading');
+  signInWithRedirect(auth, provider).catch(e => {
+    setState('login', 'Sign-in failed: ' + (e.message || e.code));
   });
+});
 
-document.getElementById('auth-try-again-btn')
-  ?.addEventListener('click', function(){
-    sessionStorage.removeItem('gdb_denied_email');
-    showLogin();
-  });
+/* ── Sign out ────────────────────────────── */
+$('auth-logout-btn')?.addEventListener('click', () => {
+  sessionStorage.removeItem('gdb_denied');
+  signOut(auth);
+});
+
+/* ── Try again (after denied) ────────────── */
+$('auth-try-again-btn')?.addEventListener('click', () => {
+  sessionStorage.removeItem('gdb_denied');
+  setState('login');
+});

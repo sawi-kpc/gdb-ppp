@@ -28,6 +28,11 @@
     <span class="badge" id="ch-badge"></span>
     <span id="last-update"></span>
     <button class="refresh-btn" onclick="init()">&#8635; Refresh</button>
+    <div style="display:flex;align-items:center;gap:8px;border-left:1px solid rgba(255,255,255,.15);padding-left:12px;margin-left:4px">
+      <img id="ch-user-avatar" src="" alt="" style="display:none;width:22px;height:22px;border-radius:50%;vertical-align:middle">
+      <span id="ch-user-email" style="font-size:11px;color:var(--text2)"></span>
+      <button id="ch-logout-btn" style="padding:4px 10px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:5px;font-size:11px;cursor:pointer" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">Sign out</button>
+    </div>
   </div>
 </header>
 
@@ -126,6 +131,45 @@
 <script src="../js/channel-config.js"></script>
 <script src="../js/channel-data.js"></script>
 <script src="../js/channel-render.js"></script>
+<script type="module">
+  import { initializeApp }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getAuth, onAuthStateChanged, signOut }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+  const firebaseConfig = {
+    apiKey:            "AIzaSyCaS5kLNbm5lSLRHd1rdr0sXRCS5lB_Rgc",
+    authDomain:        "gdb-dashboard-prod.firebaseapp.com",
+    projectId:         "gdb-dashboard-prod",
+    storageBucket:     "gdb-dashboard-prod.firebasestorage.app",
+    messagingSenderId: "170622130981",
+    appId:             "1:170622130981:web:23302ed9a5ce4e82ac58cc"
+  };
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  /* Check auth — redirect to login if not signed in */
+  onAuthStateChanged(auth, function(user) {
+    if (!user) {
+      window.location.href = '../';
+    } else {
+      var emailEl  = document.getElementById('ch-user-email');
+      var avatarEl = document.getElementById('ch-user-avatar');
+      if (emailEl)  emailEl.textContent = user.displayName || user.email;
+      if (avatarEl && user.photoURL) {
+        avatarEl.src = user.photoURL;
+        avatarEl.style.display = 'inline-block';
+      }
+    }
+  });
+
+  document.getElementById('ch-logout-btn')
+    ?.addEventListener('click', function() {
+      signOut(auth).then(function() {
+        window.location.href = '../';
+      });
+    });
+</script>
 <script>
   window.onload = function() { initChannel('KP1'); };
 </script>

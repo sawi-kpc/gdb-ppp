@@ -1,11 +1,13 @@
 /* ══════════════════════════════════════════════
-   AUTH — Firebase Google SSO
-   Depends on: config.js, render.js, data.js
+   AUTH — Firebase Google SSO (Redirect flow)
+   ใช้ signInWithRedirect แทน signInWithPopup
+   เพราะ GitHub Pages ส่ง COOP header ที่บล็อก popup
 ══════════════════════════════════════════════ */
 
 import { initializeApp }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup,
+import { getAuth, GoogleAuthProvider,
+         signInWithRedirect, getRedirectResult,
          signOut, onAuthStateChanged }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
@@ -22,19 +24,16 @@ const app      = initializeApp(firebaseConfig);
 const auth     = getAuth(app);
 const provider = new GoogleAuthProvider();
 
-/* Optional: restrict to org domain
+/* Optional: restrict to org domain only
    provider.setCustomParameters({ hd: 'kingpower.com' }); */
 
-/* ── Show / Hide screens ─────────────────────
-   Use explicit style to avoid CSS race condition
-─────────────────────────────────────────────*/
+/* ── Show / Hide screens ─────────────────── */
 function showApp(user) {
   var authScreen = document.getElementById('auth-screen');
   var appScreen  = document.getElementById('app-screen');
   if (authScreen) authScreen.style.display = 'none';
   if (appScreen)  appScreen.style.display  = 'block';
 
-  /* User info in topbar */
   var emailEl = document.getElementById('auth-user-email');
   if (emailEl) emailEl.textContent = user.displayName || user.email;
 
@@ -44,29 +43,51 @@ function showApp(user) {
     avatarEl.style.display = 'inline-block';
   }
 
-  /* Load data — guard against loadData not ready */
   if (typeof loadData === 'function') {
-    try { loadData(); } catch(e) { console.error('[Auth] loadData error:', e); }
+    try { loadData(); }
+    catch(e) { console.error('[Auth] loadData error:', e); }
   } else {
-    /* Retry once after 200ms in case of slow parse */
     setTimeout(function() {
       if (typeof loadData === 'function') loadData();
-      else console.error('[Auth] loadData not found after retry — check js/data.js');
-    }, 200);
+      else console.error('[Auth] loadData not found');
+    }, 300);
   }
 }
 
-function showLogin() {
+function showLogin(msg) {
   var authScreen = document.getElementById('auth-screen');
   var appScreen  = document.getElementById('app-screen');
   if (authScreen) authScreen.style.display = 'flex';
   if (appScreen)  appScreen.style.display  = 'none';
+
+  /* Reset button state */
+  var btn = document.getElementById('auth-google-btn');
+  if (btn) { btn.disabled = false; btn.textContent = 'Sign in with Google'; }
+
+  if (msg) {
+    var err = document.getElementById('auth-error');
+    if (err) err.textContent = msg;
+  }
 }
 
-/* ── Auth state observer ─────────────────────
-   Fires on: page load (cached session), after
-   signIn, after signOut.
+/* ── Handle redirect result on page load ────
+   เมื่อ Google redirect กลับมา ให้ดึงผล login
 ─────────────────────────────────────────────*/
+getRedirectResult(auth)
+  .then(function(result) {
+    /* result จะเป็น null ถ้าไม่ได้มาจาก redirect */
+    if (result && result.user) {
+      /* onAuthStateChanged จะ handle ต่อเอง */
+    }
+  })
+  .catch(function(e) {
+    var msg = 'Sign-in failed. Please try again.';
+    if (e.code === 'auth/unauthorized-domain') msg = 'Domain not authorized. Contact admin.';
+    if (e.code === 'auth/account-exists-with-different-credential') msg = 'Account exists with different sign-in method.';
+    showLogin(msg);
+  });
+
+/* ── Auth state observer ─────────────────── */
 onAuthStateChanged(auth, function(user) {
   if (user) {
     showApp(user);
@@ -75,25 +96,20 @@ onAuthStateChanged(auth, function(user) {
   }
 });
 
-/* ── Sign in with Google ─────────────────── */
+/* ── Sign in: redirect to Google ─────────── */
 function signInWithGoogle() {
   var btn = document.getElementById('auth-google-btn');
   var err = document.getElementById('auth-error');
   if (err) err.textContent = '';
-  if (btn) { btn.disabled = true; btn.textContent = 'Signing in\u2026'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Redirecting\u2026'; }
 
-  signInWithPopup(auth, provider)
+  signInWithRedirect(auth, provider)
     .catch(function(e) {
-      var msg = 'Sign-in failed. Please try again.';
-      if (e.code === 'auth/popup-closed-by-user')  msg = 'Sign-in cancelled.';
-      if (e.code === 'auth/popup-blocked')          msg = 'Popup blocked \u2014 allow popups for this site.';
-      if (e.code === 'auth/unauthorized-domain')    msg = 'Domain not authorized. Contact admin.';
-      if (err) err.textContent = msg;
-      if (btn) { btn.disabled = false; btn.textContent = 'Sign in with Google'; }
+      showLogin('Sign-in failed: ' + (e.message || e.code));
     });
 }
 
-/* ── Wire up buttons ─────────────────────── */
+/* ── Sign out ────────────────────────────── */
 var loginBtn  = document.getElementById('auth-google-btn');
 var logoutBtn = document.getElementById('auth-logout-btn');
 

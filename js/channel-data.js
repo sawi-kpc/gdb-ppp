@@ -100,10 +100,19 @@ function loadData(channelKey, onSuccess, onError) {
 /* ── Lifecycle ───────────────────────────── */
 function init() {
   destroyCharts();
+  /* Hide error bar from previous load attempt */
+  var errBar = document.getElementById('error-bar');
+  if (errBar) errBar.style.display = 'none';
   showLoading('Fetching ' + CHANNEL_CFG.brand + ' data...');
   loadData(
     CHANNEL_CFG.key,
-    function(data, meta) { D = data; hideLoading(); setTimestamp(meta); buildPage(); },
+    function(data, meta) {
+      D = data;
+      hideLoading();
+      setTimestamp(meta);
+      /* Small timeout to ensure charts are fully destroyed before rebuilding */
+      setTimeout(function() { buildPage(); }, 50);
+    },
     showError
   );
 }

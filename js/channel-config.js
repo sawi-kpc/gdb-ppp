@@ -4,7 +4,7 @@
    all channel-specific labels/colors/keys.
 ══════════════════════════════════════════════ */
 
-var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzbNqmbHMy-H3fuAtWhICUATfQX5zgkXCzwJklhZP22UHR06Y_EO_P63Nrl8Q53XTFC_5A/exec';
+var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxqxGZhHYO2eVagiC3nsXmFPVVqcX3x6lqtNKFFmwdK1LqKpbRznKJWveiyejxKX5R1/exec';
 
 var CHANNEL_REGISTRY = {
 

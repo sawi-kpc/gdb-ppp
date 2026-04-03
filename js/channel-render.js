@@ -107,6 +107,8 @@ function ldsBar(label, data, color) {
 
 /* ── Build page (called after data loads) ── */
 function buildPage() {
+  /* Safety: always destroy existing charts before rebuilding */
+  destroyCharts();
   chartDefaults();
   var cfg = CHANNEL_CFG;
 

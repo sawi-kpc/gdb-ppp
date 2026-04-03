@@ -128,32 +128,23 @@
 </div></div>
 
 <script src="../js/chartjs.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="../js/channel-config.js"></script>
 <script src="../js/channel-data.js"></script>
 <script src="../js/channel-render.js"></script>
-<script type="module">
-  import { initializeApp }
-    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-  import { getAuth, onAuthStateChanged, signOut }
-    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-
-  const firebaseConfig = {
+<script>
+  firebase.initializeApp({
     apiKey:            "AIzaSyCaS5kLNbm5lSLRHd1rdr0sXRCS5lB_Rgc",
     authDomain:        "gdb-dashboard-prod.firebaseapp.com",
     projectId:         "gdb-dashboard-prod",
     storageBucket:     "gdb-dashboard-prod.firebasestorage.app",
     messagingSenderId: "170622130981",
     appId:             "1:170622130981:web:23302ed9a5ce4e82ac58cc"
-  };
-  const app  = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-
-  /* onAuthStateChanged fires twice on load:
-     1st: user=null (Firebase still initializing) — IGNORE
-     2nd: user={...} or null (Firebase resolved) — ACT
-     Use unsubscribe after first resolution to prevent double-fire */
-  const unsubscribe = onAuthStateChanged(auth, function(user) {
-    unsubscribe(); /* unsubscribe immediately after first resolution */
+  });
+  var _auth = firebase.auth();
+  var _unsub = _auth.onAuthStateChanged(function(user) {
+    _unsub();
     if (!user) {
       window.location.href = '../';
     } else {
@@ -164,18 +155,12 @@
         avatarEl.src = user.photoURL;
         avatarEl.style.display = 'inline-block';
       }
+      initChannel('JD');
     }
   });
-
-  document.getElementById('ch-logout-btn')
-    ?.addEventListener('click', function() {
-      signOut(auth).then(function() {
-        window.location.href = '../';
-      });
-    });
-</script>
-<script>
-  window.onload = function() { initChannel('JD'); };
+  document.getElementById('ch-logout-btn').addEventListener('click', function() {
+    _auth.signOut().then(function() { window.location.href = '../'; });
+  });
 </script>
 </body>
 </html>

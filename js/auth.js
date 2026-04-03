@@ -1,7 +1,6 @@
 /* ══════════════════════════════════════════════
    AUTH — Firebase Google SSO
    Depends on: config.js, render.js, data.js
-   (all must load before this module)
 ══════════════════════════════════════════════ */
 
 import { initializeApp }
@@ -23,73 +22,80 @@ const app      = initializeApp(firebaseConfig);
 const auth     = getAuth(app);
 const provider = new GoogleAuthProvider();
 
-/* Optional: restrict to org domain only
+/* Optional: restrict to org domain
    provider.setCustomParameters({ hd: 'kingpower.com' }); */
 
-/* ── Wait for all scripts to be ready ───────
-   data.js sets window._appReady=true at end.
-   auth.js waits for it before showing dashboard.
+/* ── Show / Hide screens ─────────────────────
+   Use explicit style to avoid CSS race condition
 ─────────────────────────────────────────────*/
-function waitForApp(cb) {
-  if (window._appReady) { cb(); return; }
-  const t = setInterval(function() {
-    if (window._appReady) { clearInterval(t); cb(); }
-  }, 50);
-  /* Timeout after 5s to avoid infinite wait */
-  setTimeout(function() { clearInterval(t); cb(); }, 5000);
+function showApp(user) {
+  var authScreen = document.getElementById('auth-screen');
+  var appScreen  = document.getElementById('app-screen');
+  if (authScreen) authScreen.style.display = 'none';
+  if (appScreen)  appScreen.style.display  = 'block';
+
+  /* User info in topbar */
+  var emailEl = document.getElementById('auth-user-email');
+  if (emailEl) emailEl.textContent = user.displayName || user.email;
+
+  var avatarEl = document.getElementById('auth-user-avatar');
+  if (avatarEl && user.photoURL) {
+    avatarEl.src = user.photoURL;
+    avatarEl.style.display = 'inline-block';
+  }
+
+  /* Load data — guard against loadData not ready */
+  if (typeof loadData === 'function') {
+    try { loadData(); } catch(e) { console.error('[Auth] loadData error:', e); }
+  } else {
+    /* Retry once after 200ms in case of slow parse */
+    setTimeout(function() {
+      if (typeof loadData === 'function') loadData();
+      else console.error('[Auth] loadData not found after retry — check js/data.js');
+    }, 200);
+  }
 }
 
-/* ── Auth state ──────────────────────────── */
+function showLogin() {
+  var authScreen = document.getElementById('auth-screen');
+  var appScreen  = document.getElementById('app-screen');
+  if (authScreen) authScreen.style.display = 'flex';
+  if (appScreen)  appScreen.style.display  = 'none';
+}
+
+/* ── Auth state observer ─────────────────────
+   Fires on: page load (cached session), after
+   signIn, after signOut.
+─────────────────────────────────────────────*/
 onAuthStateChanged(auth, function(user) {
   if (user) {
-    waitForApp(function() {
-      document.getElementById('auth-screen').style.display = 'none';
-      document.getElementById('app-screen').style.display  = 'block';
-
-      /* Show user info */
-      var emailEl = document.getElementById('auth-user-email');
-      if (emailEl) emailEl.textContent = user.displayName || user.email;
-
-      var avatarEl = document.getElementById('auth-user-avatar');
-      if (avatarEl && user.photoURL) {
-        avatarEl.src = user.photoURL;
-        avatarEl.style.display = 'inline-block';
-      }
-
-      /* Load dashboard data */
-      if (typeof loadData === 'function') {
-        loadData();
-      } else {
-        console.error('[Auth] loadData not found — check script load order');
-      }
-    });
+    showApp(user);
   } else {
-    document.getElementById('auth-screen').style.display = 'flex';
-    document.getElementById('app-screen').style.display  = 'none';
+    showLogin();
   }
 });
 
-/* ── Sign in ─────────────────────────────── */
-async function signInWithGoogle() {
+/* ── Sign in with Google ─────────────────── */
+function signInWithGoogle() {
   var btn = document.getElementById('auth-google-btn');
   var err = document.getElementById('auth-error');
   if (err) err.textContent = '';
   if (btn) { btn.disabled = true; btn.textContent = 'Signing in\u2026'; }
-  try {
-    await signInWithPopup(auth, provider);
-  } catch (e) {
-    var msg = 'Sign-in failed. Please try again.';
-    if (e.code === 'auth/popup-closed-by-user')  msg = 'Sign-in cancelled.';
-    if (e.code === 'auth/popup-blocked')          msg = 'Popup blocked \u2014 allow popups for this site.';
-    if (e.code === 'auth/unauthorized-domain')    msg = 'Domain not authorized. Contact admin.';
-    if (err) err.textContent = msg;
-    if (btn) { btn.disabled = false; btn.textContent = 'Sign in with Google'; }
-  }
+
+  signInWithPopup(auth, provider)
+    .catch(function(e) {
+      var msg = 'Sign-in failed. Please try again.';
+      if (e.code === 'auth/popup-closed-by-user')  msg = 'Sign-in cancelled.';
+      if (e.code === 'auth/popup-blocked')          msg = 'Popup blocked \u2014 allow popups for this site.';
+      if (e.code === 'auth/unauthorized-domain')    msg = 'Domain not authorized. Contact admin.';
+      if (err) err.textContent = msg;
+      if (btn) { btn.disabled = false; btn.textContent = 'Sign in with Google'; }
+    });
 }
 
-/* ── Wire up ─────────────────────────────── */
-document.getElementById('auth-google-btn')
-  ?.addEventListener('click', signInWithGoogle);
+/* ── Wire up buttons ─────────────────────── */
+var loginBtn  = document.getElementById('auth-google-btn');
+var logoutBtn = document.getElementById('auth-logout-btn');
 
-document.getElementById('auth-logout-btn')
-  ?.addEventListener('click', function() { signOut(auth); });
+if (loginBtn)  loginBtn.addEventListener('click', signInWithGoogle);
+if (logoutBtn) logoutBtn.addEventListener('click', function() { signOut(auth); });

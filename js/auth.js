@@ -1,27 +1,8 @@
 /* ══════════════════════════════════════════════
-   AUTH v2.3 — Simple & Reliable
-   Firebase Google SSO for GitHub Pages
+   AUTH v3.0 — Firebase Compat (non-module)
+   ใช้ Firebase compat SDK ไม่ใช่ ES module
+   เพื่อหลีกเลี่ยงปัญหา CORS/module import
 ══════════════════════════════════════════════ */
-
-import { initializeApp }
-  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider,
-         signInWithRedirect, getRedirectResult,
-         signOut, onAuthStateChanged }
-  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-
-/* ── Firebase init ───────────────────────── */
-const firebaseConfig = {
-  apiKey:            "AIzaSyCaS5kLNbm5lSLRHd1rdr0sXRCS5lB_Rgc",
-  authDomain:        "gdb-dashboard-prod.firebaseapp.com",
-  projectId:         "gdb-dashboard-prod",
-  storageBucket:     "gdb-dashboard-prod.firebasestorage.app",
-  messagingSenderId: "170622130981",
-  appId:             "1:170622130981:web:23302ed9a5ce4e82ac58cc"
-};
-const app      = initializeApp(firebaseConfig);
-const auth     = getAuth(app);
-const provider = new GoogleAuthProvider();
 
 /* ══ PERMISSION CONFIG ════════════════════
    วิธีที่ 1 (แนะนำ): จำกัด domain
@@ -30,105 +11,112 @@ const provider = new GoogleAuthProvider();
      ALLOWED_DOMAIN = null
      เพิ่ม email ใน ALLOWED_EMAILS
 ════════════════════════════════════════════ */
-const ALLOWED_DOMAIN = null;
-const ALLOWED_EMAILS = [
+var ALLOWED_DOMAIN = null;
+var ALLOWED_EMAILS = [
   'sawitree.jakkrawannit@kingpower.com',
   'chawanop.witthayaphirak@kingpower.com',
   'petchpailin.tocharoen@kingpower.com',
   'natpapat.kwaopiwong@kingpower.com',
-  'sawi.kpc@gmail.com',
+  'sawi.kpc@gmail.com'
   /* เพิ่ม email ที่นี่ */
 ];
 
+/* ── Firebase init (compat SDK) ──────────── */
+var firebaseConfig = {
+  apiKey:            "AIzaSyCaS5kLNbm5lSLRHd1rdr0sXRCS5lB_Rgc",
+  authDomain:        "gdb-dashboard-prod.firebaseapp.com",
+  projectId:         "gdb-dashboard-prod",
+  storageBucket:     "gdb-dashboard-prod.firebasestorage.app",
+  messagingSenderId: "170622130981",
+  appId:             "1:170622130981:web:23302ed9a5ce4e82ac58cc"
+};
+
+firebase.initializeApp(firebaseConfig);
+var auth     = firebase.auth();
+var provider = new firebase.auth.GoogleAuthProvider();
+
+/* ── Permission check ────────────────────── */
 function isAllowed(email) {
   if (!email) return false;
   if (ALLOWED_DOMAIN)
     return email.toLowerCase().endsWith('@' + ALLOWED_DOMAIN.toLowerCase());
   return ALLOWED_EMAILS
-    .map(e => e.toLowerCase().trim())
-    .includes(email.toLowerCase().trim());
+    .map(function(e){ return e.toLowerCase().trim(); })
+    .indexOf(email.toLowerCase().trim()) >= 0;
 }
 
 /* ── DOM helpers ─────────────────────────── */
-const $ = id => document.getElementById(id);
+function el(id) { return document.getElementById(id); }
+function show(id, type) { var e=el(id); if(e) e.style.display = type||'block'; }
+function hide(id) { var e=el(id); if(e) e.style.display = 'none'; }
 
-function show(id)  { const el = $(id); if(el) el.style.display = 'block'; }
-function hide(id)  { const el = $(id); if(el) el.style.display = 'none';  }
-function flex(id)  { const el = $(id); if(el) el.style.display = 'flex';  }
-
-/* ── Screen states ───────────────────────── */
+/* ── State machine ───────────────────────── */
 function setState(state, data) {
-  /* Always start by hiding everything */
   hide('app-screen');
-  flex('auth-screen');
+  show('auth-screen','flex');
   hide('auth-loading');
   hide('auth-login-wrap');
   hide('auth-permission-error');
-
-  const errEl = $('auth-error');
+  var errEl = el('auth-error');
   if (errEl) errEl.textContent = '';
 
   if (state === 'loading') {
-    flex('auth-loading');
+    show('auth-loading','flex');
 
   } else if (state === 'login') {
     show('auth-login-wrap');
-    const btn = $('auth-google-btn');
+    var btn = el('auth-google-btn');
     if (btn) { btn.disabled = false; btn.textContent = 'Sign in with Google'; }
     if (data && errEl) errEl.textContent = data;
 
   } else if (state === 'app') {
     hide('auth-screen');
     show('app-screen');
-    const emailEl  = $('auth-user-email');
-    const avatarEl = $('auth-user-avatar');
+    var emailEl  = el('auth-user-email');
+    var avatarEl = el('auth-user-avatar');
     if (emailEl)  emailEl.textContent = data.displayName || data.email;
     if (avatarEl && data.photoURL) {
       avatarEl.src = data.photoURL;
       avatarEl.style.display = 'inline-block';
     }
     if (typeof loadData === 'function') {
-      try { loadData(); } catch(e) { console.error('[Auth]', e); }
+      try { loadData(); } catch(e) { console.error('[Auth] loadData:', e); }
     } else {
-      setTimeout(() => { if (typeof loadData === 'function') loadData(); }, 300);
+      setTimeout(function(){ if (typeof loadData === 'function') loadData(); }, 300);
     }
 
   } else if (state === 'denied') {
     show('auth-permission-error');
-    const deniedEl = $('auth-denied-email');
+    var deniedEl = el('auth-denied-email');
     if (deniedEl) deniedEl.textContent = data || '';
   }
 }
 
-/* ── Init: show loading immediately ─────── */
+/* ── Init ────────────────────────────────── */
 setState('loading');
 
-/* ── Handle return from Google redirect ─── */
-getRedirectResult(auth).catch(e => {
-  console.warn('[Auth] getRedirectResult error:', e.code);
-  setState('login', 'Sign-in failed. Please try again.');
-});
+/* ── Handle redirect result ──────────────── */
+auth.getRedirectResult()
+  .then(function(result) { /* onAuthStateChanged handles */ })
+  .catch(function(e) {
+    console.warn('[Auth] redirect error:', e.code, e.message);
+    setState('login', 'Sign-in failed. Please try again.');
+  });
 
 /* ── Auth state observer ─────────────────── */
-let authResolved = false;
-
-onAuthStateChanged(auth, user => {
-  authResolved = true;
+auth.onAuthStateChanged(function(user) {
   if (user) {
     if (isAllowed(user.email)) {
       sessionStorage.removeItem('gdb_denied');
       setState('app', user);
     } else {
-      /* Sign out quietly, show denied, set flag to prevent login flash */
       sessionStorage.setItem('gdb_denied', user.email);
       setState('denied', user.email);
-      signOut(auth);
+      auth.signOut();
     }
   } else {
-    /* user = null */
-    const denied = sessionStorage.getItem('gdb_denied');
+    var denied = sessionStorage.getItem('gdb_denied');
     if (denied) {
-      /* Already showing denied screen — keep it */
       setState('denied', denied);
     } else {
       setState('login');
@@ -137,22 +125,24 @@ onAuthStateChanged(auth, user => {
 });
 
 /* ── Sign in ─────────────────────────────── */
-$('auth-google-btn')?.addEventListener('click', () => {
+el('auth-google-btn').addEventListener('click', function() {
   sessionStorage.removeItem('gdb_denied');
   setState('loading');
-  signInWithRedirect(auth, provider).catch(e => {
+  auth.signInWithRedirect(provider).catch(function(e) {
     setState('login', 'Sign-in failed: ' + (e.message || e.code));
   });
 });
 
 /* ── Sign out ────────────────────────────── */
-$('auth-logout-btn')?.addEventListener('click', () => {
+var logoutBtn = el('auth-logout-btn');
+if (logoutBtn) logoutBtn.addEventListener('click', function() {
   sessionStorage.removeItem('gdb_denied');
-  signOut(auth);
+  auth.signOut();
 });
 
-/* ── Try again (after denied) ────────────── */
-$('auth-try-again-btn')?.addEventListener('click', () => {
+/* ── Try again ───────────────────────────── */
+var tryAgainBtn = el('auth-try-again-btn');
+if (tryAgainBtn) tryAgainBtn.addEventListener('click', function() {
   sessionStorage.removeItem('gdb_denied');
   setState('login');
 });

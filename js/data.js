@@ -139,8 +139,10 @@ function getEmbedded(){return[
 ];}
 
 /* DOMContentLoaded: clock starts immediately, loadData called by auth.js after login */
+/* Signal that data.js has parsed — set immediately */
+window._appReady = true;
+
 window.addEventListener('DOMContentLoaded',function(){
   tickClock();
   setInterval(tickClock,1000);
-  window._appReady = true; /* signal auth.js that all scripts are loaded */
 });

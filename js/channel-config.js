@@ -4,6 +4,7 @@
    all channel-specific labels/colors/keys.
 ══════════════════════════════════════════════ */
 
+/* Default Apps Script URL (shared by all channels unless overridden below) */
 var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxqxGZhHYO2eVagiC3nsXmFPVVqcX3x6lqtNKFFmwdK1LqKpbRznKJWveiyejxKX5R1/exec';
 
 var CHANNEL_REGISTRY = {

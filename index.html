@@ -15,14 +15,7 @@
 .auth-label{font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;display:block}
 .auth-input{width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;margin-bottom:14px;outline:none;transition:border .15s}
 .auth-input:focus{border-color:#1a3a5c}
-.auth-btn{width:100%;padding:10px;background:#1a3a5c;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;margin-top:4px}
-.auth-google-btn{background:#fff;color:#333;border:1px solid #ddd;display:flex;align-items:center;justify-content:center;padding:11px;font-size:14px}
-.auth-google-btn:hover{background:#f8f8f8;box-shadow:0 1px 4px rgba(0,0,0,.12)}
-.auth-google-btn:disabled{opacity:.6;cursor:not-allowed}
-#auth-permission-error .auth-btn:hover{background:#e8edf2}
-#auth-loading{flex-direction:column;align-items:center;gap:12px;padding:20px 0}
-.auth-spinner{width:32px;height:32px;border:3px solid #e0e0e0;border-top-color:#1a3a5c;border-radius:50%;animation:auth-spin .7s linear infinite}
-@keyframes auth-spin{to{transform:rotate(360deg)}}
+.auth-btn{width:100%;padding:10px;background:#1a3a5c;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;margin-top:4px}}
 .auth-loading-text{font-size:12px;color:#aaa}
 .auth-btn:hover{background:#254f7a}
 .auth-btn:disabled{background:#aaa;cursor:not-allowed}
@@ -42,45 +35,16 @@
     <div class="auth-logo">GDB</div>
     <div class="auth-sub">Product &amp; Project Portfolio Review</div>
 
-    <!-- Loading state (shown while Firebase checks session) -->
-    <div id="auth-loading" style="display:flex">
-      <div class="auth-spinner"></div>
-      <div class="auth-loading-text">Checking authentication…</div>
-    </div>
+    <label class="auth-label" for="auth-email">Email</label>
+    <input class="auth-input" type="email" id="auth-email"
+           placeholder="your@email.com" autocomplete="email">
 
-    <!-- Login section -->
-    <div id="auth-login-wrap" style="display:none">
-      <button class="auth-btn auth-google-btn" id="auth-google-btn">
-        <svg width="18" height="18" viewBox="0 0 18 18" style="margin-right:8px;vertical-align:middle">
-          <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
-          <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
-          <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z"/>
-          <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/>
-        </svg>
-        Sign in with Google
-      </button>
-      <span class="auth-error" id="auth-error"></span>
-      <div style="font-size:11px;color:#bbb;margin-top:14px;text-align:center;line-height:1.6">
-        Use your Google account to access<br>GDB Product &amp; Project Portfolio Review
-      </div>
-    </div>
+    <label class="auth-label" for="auth-password">Password</label>
+    <input class="auth-input" type="password" id="auth-password"
+           placeholder="••••••••" autocomplete="current-password">
 
-    <!-- Permission denied section -->
-    <div id="auth-permission-error" style="display:none;text-align:center">
-      <div style="font-size:36px;margin-bottom:12px">&#x1F6AB;</div>
-      <div style="font-size:15px;font-weight:700;color:#A32D2D;margin-bottom:8px">Access denied</div>
-      <div style="font-size:12px;color:#888;margin-bottom:6px;line-height:1.7">
-        Your account does not have permission<br>to access this dashboard.
-      </div>
-      <div style="font-size:12px;font-weight:600;color:#555;background:#f5f5f5;padding:6px 12px;border-radius:6px;margin-bottom:16px;word-break:break-all" id="auth-denied-email"></div>
-      <div style="font-size:11px;color:#bbb;margin-bottom:16px;line-height:1.6">
-        Please contact your administrator<br>to request access.
-      </div>
-      <button class="auth-btn" id="auth-try-again-btn"
-              style="background:#f0f4f8;color:#555;font-size:12px;margin-top:0">
-        &#8592; Try a different account
-      </button>
-    </div>
+    <button class="auth-btn" id="auth-login-btn">Sign in</button>
+    <span class="auth-error" id="auth-error"></span>
   </div>
 </div><!-- /#auth-screen -->
 

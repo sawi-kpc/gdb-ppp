@@ -133,14 +133,14 @@ function lds(label, data, color, opts) {
   opts = opts || {};
   return {
     label: label, data: data, borderColor: color,
-    backgroundColor: opts.fill ? color + '33' : (opts.dashed ? 'transparent' : color + '15'),
-    fill: opts.fill ? true : (!opts.dashed && !opts.nd ? 'origin' : false),
+    backgroundColor: opts.fill ? color + '28' : 'transparent',
+    fill: !!opts.fill,
     borderWidth: opts.dashed ? 1.5 : 2.5,
-    pointRadius: opts.nd ? 0 : 4,
-    pointHoverRadius: 7,
+    pointRadius: opts.nd ? 0 : 3,
+    pointHoverRadius: 6,
     pointBackgroundColor: color,
-    pointBorderColor: '#161b22',
-    pointBorderWidth: 1.5,
+    pointBorderColor: 'transparent',
+    pointBorderWidth: 0,
     tension: 0.4,
     yAxisID: opts.y2 ? 'y2' : 'y',
     borderDash: opts.dashed ? [6, 4] : undefined

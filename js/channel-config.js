@@ -5,7 +5,7 @@
 ══════════════════════════════════════════════ */
 
 /* Default Apps Script URL (shared by all channels unless overridden below) */
-var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxy2NUdSQJcnHHj2xbCl0doEmvbp1xkvZvXM2gh5ZCvFiHg388c6Oiy65BwrPJV0hHs/exec';
+var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzncBKWopa1Ylllz7Q57XlCuyC5izhokhqEmBeglV34qpiC9ZyAxXuEgKO-1aRkUe7A/exec';
 
 var CHANNEL_REGISTRY = {
 

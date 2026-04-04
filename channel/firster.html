@@ -134,14 +134,16 @@
 <script src="../js/channel-data.js"></script>
 <script src="../js/channel-render.js"></script>
 <script>
-  firebase.initializeApp({
-    apiKey:            "AIzaSyCaS5kLNbm5lSLRHd1rdr0sXRCS5lB_Rgc",
-    authDomain:        "gdb-dashboard-prod.firebaseapp.com",
-    projectId:         "gdb-dashboard-prod",
-    storageBucket:     "gdb-dashboard-prod.firebasestorage.app",
-    messagingSenderId: "170622130981",
-    appId:             "1:170622130981:web:23302ed9a5ce4e82ac58cc"
-  });
+  if (!firebase.apps.length) {
+    firebase.initializeApp({
+      apiKey:            "AIzaSyCaS5kLNbm5lSLRHd1rdr0sXRCS5lB_Rgc",
+      authDomain:        "gdb-dashboard-prod.firebaseapp.com",
+      projectId:         "gdb-dashboard-prod",
+      storageBucket:     "gdb-dashboard-prod.firebasestorage.app",
+      messagingSenderId: "170622130981",
+      appId:             "1:170622130981:web:23302ed9a5ce4e82ac58cc"
+    });
+  }
   var _auth = firebase.auth();
   var _unsub = _auth.onAuthStateChanged(function(user) {
     _unsub();
@@ -158,9 +160,12 @@
       initChannel('F1');
     }
   });
-  document.getElementById('ch-logout-btn').addEventListener('click', function() {
-    _auth.signOut().then(function() { window.location.href = '../'; });
-  });
+  var _logoutBtn = document.getElementById('ch-logout-btn');
+  if (_logoutBtn) {
+    _logoutBtn.addEventListener('click', function() {
+      _auth.signOut().then(function() { window.location.href = '../'; });
+    });
+  }
 </script>
 </body>
 </html>

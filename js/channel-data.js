@@ -56,45 +56,61 @@ function applyChannelTheme(cfg) {
 
 /* ── Fetch data from Apps Script ─────────── */
 function loadData(channelKey, onSuccess, onError) {
-  /* Use JSONP instead of fetch() to bypass CORS restriction
-     Apps Script does not send Access-Control-Allow-Origin headers,
-     so fetch() always fails from GitHub Pages.
-     JSONP uses <script> tag which is not subject to CORS. */
   var baseUrl = (CHANNEL_CFG && CHANNEL_CFG.appsScriptUrl) ? CHANNEL_CFG.appsScriptUrl : APPS_SCRIPT_URL;
-  var cbName  = '_gdbCb_' + channelKey + '_' + Date.now();
-  var script  = document.createElement('script');
-  var timer   = null;
 
-  /* Timeout after 15 seconds */
-  timer = setTimeout(function() {
-    cleanup();
-    onError('Request timed out. Check Apps Script URL.');
-  }, 15000);
+  /* Try fetch() first (works on Chrome after JSONP fix via Apps Script),
+     fall back to JSONP for browsers that block fetch CORS */
+  var fetchUrl = baseUrl + '?channel=' + channelKey;
+  var cbName   = '_gdbCb_' + channelKey + '_' + Date.now();
+  var done     = false;
+  var timer    = null;
 
-  function cleanup() {
+  function succeed(json) {
+    if (done) return;
+    done = true;
     clearTimeout(timer);
-    if (script.parentNode) script.parentNode.removeChild(script);
-    try { delete window[cbName]; } catch(e) { window[cbName] = undefined; }
-  }
-
-  window[cbName] = function(json) {
-    cleanup();
     try {
-      if (json.error) throw new Error(json.error);
       if (!json[channelKey]) throw new Error('No data for channel: ' + channelKey);
       onSuccess(json[channelKey], json._meta);
-    } catch(e) {
-      onError(e.message);
-    }
-  };
+    } catch(e) { fail(e.message); }
+  }
 
-  script.onerror = function() {
-    cleanup();
-    onError('Failed to load data. Check Apps Script URL and deployment settings.');
-  };
+  function fail(msg) {
+    if (done) return;
+    done = true;
+    clearTimeout(timer);
+    onError(msg);
+  }
 
-  script.src = baseUrl + '?channel=' + channelKey + '&callback=' + cbName;
-  document.head.appendChild(script);
+  /* Try fetch() first */
+  fetch(fetchUrl)
+    .then(function(r) { return r.json(); })
+    .then(function(json) { succeed(json); })
+    .catch(function() {
+      /* fetch failed (CORS) — fall back to JSONP */
+      if (done) return;
+      var script = document.createElement('script');
+      timer = setTimeout(function() {
+        if (script.parentNode) script.parentNode.removeChild(script);
+        try { delete window[cbName]; } catch(e) {}
+        fail('Request timed out. Check Apps Script URL.');
+      }, 15000);
+
+      window[cbName] = function(json) {
+        if (script.parentNode) script.parentNode.removeChild(script);
+        try { delete window[cbName]; } catch(e) {}
+        succeed(json);
+      };
+
+      script.onerror = function() {
+        if (script.parentNode) script.parentNode.removeChild(script);
+        try { delete window[cbName]; } catch(e) {}
+        fail('Failed to load data. Check Apps Script URL.');
+      };
+
+      script.src = baseUrl + '?channel=' + channelKey + '&callback=' + cbName;
+      document.head.appendChild(script);
+    });
 }
 
 /* ── Lifecycle ───────────────────────────── */
@@ -104,17 +120,22 @@ function init() {
   var errBar = document.getElementById('error-bar');
   if (errBar) errBar.style.display = 'none';
   showLoading('Fetching ' + CHANNEL_CFG.brand + ' data...');
-  loadData(
-    CHANNEL_CFG.key,
+  /* Small delay to let Firebase auth and DOM fully settle — fixes Safari */
+  setTimeout(function() {
+    loadData(
+      CHANNEL_CFG.key,
     function(data, meta) {
       D = data;
       hideLoading();
+      /* Hide any previous error bar */
+      var errBar = document.getElementById('error-bar');
+      if (errBar) errBar.style.display = 'none';
       setTimestamp(meta);
-      /* Small timeout to ensure charts are fully destroyed before rebuilding */
       setTimeout(function() { buildPage(); }, 50);
     },
-    showError
-  );
+      showError
+    );
+  }, 100);
 }
 
 /* ── UI helpers ──────────────────────────── */

@@ -47,28 +47,56 @@ function kCard(label, val, vs, ft, col, lowerGood) {
 
 /* ── Chart defaults ──────────────────────── */
 var TIP = {
-  backgroundColor: '#161b22', borderColor: '#30363d', borderWidth: 1,
-  titleColor: '#8b949e', bodyColor: '#e6edf3', padding: 10
+  backgroundColor: '#0d1117',
+  borderColor: '#58a6ff',
+  borderWidth: 1,
+  titleColor: '#8b949e',
+  bodyColor: '#e6edf3',
+  padding: 12,
+  boxPadding: 4,
+  usePointStyle: true,
 };
 
 function chartDefaults() {
-  Chart.defaults.color       = '#484f58';
+  Chart.defaults.color       = '#8b949e';
   Chart.defaults.font.family = '-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif';
   Chart.defaults.font.size   = 11;
+  Chart.defaults.plugins.legend.display = true;
 }
 
 function mkLine(id, datasets, labels, yFn, y2Fn) {
   var ctx = document.getElementById(id); if (!ctx) return null;
   var scales = {
-    x: {grid: {color: 'rgba(48,54,61,0.5)'}, ticks: {color: '#484f58'}},
-    y: {grid: {color: 'rgba(48,54,61,0.5)'}, ticks: {color: '#484f58', callback: yFn || function(v) { return v; }}}
+    x: {
+      grid: {color: 'rgba(48,54,61,0.6)', drawBorder: false},
+      ticks: {color: '#8b949e', maxRotation: 0, autoSkipPadding: 12}
+    },
+    y: {
+      grid: {color: 'rgba(48,54,61,0.6)', drawBorder: false},
+      ticks: {color: '#8b949e', callback: yFn || function(v) { return v; }},
+      beginAtZero: false
+    }
   };
-  if (y2Fn) scales.y2 = {position: 'right', grid: {display: false}, ticks: {color: '#484f58', callback: y2Fn}};
+  if (y2Fn) scales.y2 = {
+    position: 'right',
+    grid: {display: false},
+    ticks: {color: '#8b949e', callback: y2Fn}
+  };
   return new Chart(ctx, {
-    type: 'line', data: {labels: labels, datasets: datasets},
+    type: 'line',
+    data: {labels: labels, datasets: datasets},
     options: {
-      responsive: true, interaction: {mode: 'index', intersect: false},
-      plugins: {legend: {labels: {usePointStyle: true, pointStyle: 'circle', boxWidth: 6, padding: 14}}, tooltip: TIP},
+      responsive: true,
+      interaction: {mode: 'index', intersect: false},
+      plugins: {
+        legend: {
+          labels: {
+            usePointStyle: true, pointStyle: 'circle',
+            boxWidth: 8, padding: 16, color: '#c9d1d9'
+          }
+        },
+        tooltip: TIP
+      },
       scales: scales
     }
   });
@@ -77,13 +105,25 @@ function mkLine(id, datasets, labels, yFn, y2Fn) {
 function mkBar(id, datasets, labels, yFn, stacked) {
   var ctx = document.getElementById(id); if (!ctx) return null;
   return new Chart(ctx, {
-    type: 'bar', data: {labels: labels, datasets: datasets},
+    type: 'bar',
+    data: {labels: labels, datasets: datasets},
     options: {
       responsive: true,
-      plugins: {legend: {labels: {usePointStyle: true, boxWidth: 6, padding: 14}}, tooltip: TIP},
+      plugins: {
+        legend: {labels: {usePointStyle: true, boxWidth: 8, padding: 16, color: '#c9d1d9'}},
+        tooltip: TIP
+      },
       scales: {
-        x: {stacked: !!stacked, grid: {color: 'rgba(48,54,61,0.5)'}, ticks: {color: '#484f58'}},
-        y: {stacked: !!stacked, grid: {color: 'rgba(48,54,61,0.5)'}, ticks: {color: '#484f58', callback: yFn || function(v) { return v; }}}
+        x: {
+          stacked: !!stacked,
+          grid: {color: 'rgba(48,54,61,0.4)', drawBorder: false},
+          ticks: {color: '#8b949e', maxRotation: 0}
+        },
+        y: {
+          stacked: !!stacked,
+          grid: {color: 'rgba(48,54,61,0.4)', drawBorder: false},
+          ticks: {color: '#8b949e', callback: yFn || function(v) { return v; }}
+        }
       }
     }
   });
@@ -93,16 +133,29 @@ function lds(label, data, color, opts) {
   opts = opts || {};
   return {
     label: label, data: data, borderColor: color,
-    backgroundColor: opts.fill ? color + '22' : 'transparent',
-    fill: !!opts.fill, borderWidth: opts.dashed ? 1.5 : 2,
-    pointRadius: opts.nd ? 0 : 3, pointHoverRadius: 5,
-    tension: 0.35, yAxisID: opts.y2 ? 'y2' : 'y',
-    borderDash: opts.dashed ? [5, 4] : undefined
+    backgroundColor: opts.fill ? color + '33' : (opts.dashed ? 'transparent' : color + '15'),
+    fill: opts.fill ? true : (!opts.dashed && !opts.nd ? 'origin' : false),
+    borderWidth: opts.dashed ? 1.5 : 2.5,
+    pointRadius: opts.nd ? 0 : 4,
+    pointHoverRadius: 7,
+    pointBackgroundColor: color,
+    pointBorderColor: '#161b22',
+    pointBorderWidth: 1.5,
+    tension: 0.4,
+    yAxisID: opts.y2 ? 'y2' : 'y',
+    borderDash: opts.dashed ? [6, 4] : undefined
   };
 }
 
 function ldsBar(label, data, color) {
-  return {label: label, data: data, backgroundColor: color + '99', borderColor: color, borderWidth: 1, borderRadius: 3};
+  return {
+    label: label, data: data,
+    backgroundColor: color + 'cc',
+    borderColor: color,
+    borderWidth: 0,
+    borderRadius: 4,
+    hoverBackgroundColor: color
+  };
 }
 
 /* ── Build page (called after data loads) ── */

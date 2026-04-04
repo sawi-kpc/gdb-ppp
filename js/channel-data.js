@@ -57,60 +57,44 @@ function applyChannelTheme(cfg) {
 /* ── Fetch data from Apps Script ─────────── */
 function loadData(channelKey, onSuccess, onError) {
   var baseUrl = (CHANNEL_CFG && CHANNEL_CFG.appsScriptUrl) ? CHANNEL_CFG.appsScriptUrl : APPS_SCRIPT_URL;
+  var cbName  = '_gdbCb_' + channelKey + '_' + Date.now();
+  var script  = document.createElement('script');
+  var timer   = null;
+  var done    = false;
 
-  /* Try fetch() first (works on Chrome after JSONP fix via Apps Script),
-     fall back to JSONP for browsers that block fetch CORS */
-  var fetchUrl = baseUrl + '?channel=' + channelKey;
-  var cbName   = '_gdbCb_' + channelKey + '_' + Date.now();
-  var done     = false;
-  var timer    = null;
+  timer = setTimeout(function() {
+    if (done) return;
+    done = true;
+    if (script.parentNode) script.parentNode.removeChild(script);
+    try { delete window[cbName]; } catch(e) {}
+    onError('Request timed out. Check Apps Script URL.');
+  }, 15000);
 
-  function succeed(json) {
+  window[cbName] = function(json) {
     if (done) return;
     done = true;
     clearTimeout(timer);
+    if (script.parentNode) script.parentNode.removeChild(script);
+    try { delete window[cbName]; } catch(e) {}
     try {
+      if (json.error) throw new Error(json.error);
       if (!json[channelKey]) throw new Error('No data for channel: ' + channelKey);
       onSuccess(json[channelKey], json._meta);
-    } catch(e) { fail(e.message); }
-  }
+    } catch(e) { onError(e.message); }
+  };
 
-  function fail(msg) {
+  script.onerror = function() {
     if (done) return;
     done = true;
     clearTimeout(timer);
-    onError(msg);
-  }
+    if (script.parentNode) script.parentNode.removeChild(script);
+    try { delete window[cbName]; } catch(e) {}
+    onError('Failed to load. Check Apps Script URL and deployment settings.');
+  };
 
-  /* Try fetch() first */
-  fetch(fetchUrl)
-    .then(function(r) { return r.json(); })
-    .then(function(json) { succeed(json); })
-    .catch(function() {
-      /* fetch failed (CORS) — fall back to JSONP */
-      if (done) return;
-      var script = document.createElement('script');
-      timer = setTimeout(function() {
-        if (script.parentNode) script.parentNode.removeChild(script);
-        try { delete window[cbName]; } catch(e) {}
-        fail('Request timed out. Check Apps Script URL.');
-      }, 15000);
-
-      window[cbName] = function(json) {
-        if (script.parentNode) script.parentNode.removeChild(script);
-        try { delete window[cbName]; } catch(e) {}
-        succeed(json);
-      };
-
-      script.onerror = function() {
-        if (script.parentNode) script.parentNode.removeChild(script);
-        try { delete window[cbName]; } catch(e) {}
-        fail('Failed to load data. Check Apps Script URL.');
-      };
-
-      script.src = baseUrl + '?channel=' + channelKey + '&callback=' + cbName;
-      document.head.appendChild(script);
-    });
+  /* No crossorigin attr — JSONP does not need CORS */
+  script.src = baseUrl + '?channel=' + channelKey + '&callback=' + cbName;
+  document.head.appendChild(script);
 }
 
 /* ── Lifecycle ───────────────────────────── */

@@ -1,0 +1,82 @@
+/* ── SHARED CSS — King Power KPI Dashboard ── */
+:root{
+  --bg:#0d1117;--surface:#161b22;--surface2:#1c2330;--border:#30363d;
+  --text:#e6edf3;--text2:#8b949e;--text3:#484f58;
+  --up:#3fb950;--down:#f85149;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:13px;min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+/* Loading */
+#loading-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:14px}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:15px;font-weight:600;color:var(--text)}
+.loading-sub{font-size:12px;color:var(--text2)}
+/* Error */
+#error-bar{display:none;background:#2d1b1b;border-bottom:1px solid #f85149;color:#f85149;padding:10px 20px;font-size:13px}
+/* Header */
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:var(--surface);border-bottom:1px solid var(--border);gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff;flex-shrink:0}
+.brand-name{font-size:15px;font-weight:700;color:var(--text)}
+.brand-sub{font-size:11px;color:var(--text2);margin-top:1px}
+.header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px}
+#last-update{font-size:11px;color:var(--text3)}
+.refresh-btn{padding:5px 13px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:6px;font-size:12px;cursor:pointer;transition:all .15s}
+.refresh-btn:hover{border-color:var(--accent);color:var(--accent)}
+/* Tabs */
+.tabs-bar{display:flex;gap:2px;padding:0 20px;background:var(--surface);border-bottom:1px solid var(--border)}
+.tab-btn{padding:11px 18px;font-size:12px;font-weight:600;color:var(--text2);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-btn:hover:not(.active){color:var(--text)}
+.tab-panel{display:none}.tab-panel.active{display:block}
+/* Container */
+.container{padding:18px 20px;max-width:1400px;margin:0 auto}
+/* Section header */
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.sec-title{font-size:15px;font-weight:700;color:var(--text)}
+.sec-sub{font-size:11px;color:var(--text2);margin-top:3px}
+/* Year toggle */
+.ytog{display:flex;gap:6px}
+.ybtn{padding:4px 12px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s}
+.ybtn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+/* Benchmark strip */
+.bstrip{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.bcard{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;flex:1;min-width:140px}
+.blabel{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.bvals{display:flex;flex-direction:column;gap:3px}
+.bval{font-size:20px;font-weight:700;color:var(--text)}
+.bsub{font-size:11px;color:var(--text3)}
+.bchg{font-size:11px;font-weight:600}.bchg.up{color:var(--up)}.bchg.dn{color:var(--down)}
+/* KPI cards */
+.kgrid{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.kcard{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;flex:1;min-width:130px;border-top:3px solid}
+.kcard.o{border-top-color:var(--accent)}.kcard.b{border-top-color:var(--accent2)}
+.kcard.g{border-top-color:#3fb950}.kcard.p{border-top-color:#a78bfa}
+.klabel{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.kval{font-size:22px;font-weight:700;color:var(--text);line-height:1}
+.kmeta{display:flex;gap:8px;margin-top:5px;flex-wrap:wrap;align-items:center}
+.kchg{font-size:11px;font-weight:600}.kchg.up{color:var(--up)}.kchg.dn{color:var(--down)}
+.kvs{font-size:10px;color:var(--text3)}
+/* Chart grid */
+.cgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:18px}
+.ccard{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px}
+.ccard.full{grid-column:1/-1}
+.ctitle{font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px}
+.cdesc{font-size:11px;color:var(--text2);margin-bottom:12px}
+/* Table */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead tr{background:var(--surface2)}
+th{padding:8px 10px;text-align:right;font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border)}
+th:first-child{text-align:left}
+td{padding:7px 10px;text-align:right;border-bottom:1px solid rgba(48,54,61,.5);color:var(--text)}
+td:first-child{text-align:left;color:var(--text2)}
+tr.yr26 td{color:var(--accent);font-weight:600}
+tr:hover td{background:var(--surface2)}
+@media(max-width:640px){
+  .cgrid{grid-template-columns:1fr}.kcard{min-width:calc(50% - 5px)}
+  header{padding:10px 14px}.container{padding:12px 14px}
+}

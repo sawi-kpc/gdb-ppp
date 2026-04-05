@@ -1,3 +1,23 @@
+/* ── COLOR PALETTE v4.0 ─────────────────────
+   Consistent across all channel dashboards
+   BLUE   = Gross Sales, Sessions, primary data
+   GREEN  = Net Sales, positive/actual trend
+   ORANGE = Orders, secondary bars, AOV
+   PURPLE = Customers, tertiary
+   TEAL   = Conversion Rate, efficiency
+   RED    = Discount %, cost metrics
+   AMBER  = Mkt-to-Sale %, blended cost
+   DIM    = Baseline/reference lines (dashed)
+─────────────────────────────────────────── */
+var C_BLUE   = '#58a6ff';
+var C_GREEN  = '#3fb950';
+var C_ORANGE = '#f0900d';
+var C_PURPLE = '#d2a8ff';
+var C_TEAL   = '#22d3a4';
+var C_RED    = '#f85149';
+var C_AMBER  = '#f59e0b';
+var C_DIM    = '#484f58';
+
 /* ══════════════════════════════════════════════
    CHANNEL RENDER — charts, cards, tables
    Depends on: channel-config.js, channel-data.js
@@ -202,9 +222,9 @@ function buildPage() {
   }
 
   CHARTS.rev = mkLine('rev-chart', [
-    lds('Gross Sales', revData,  'var(--accent)',  cfg.hasY24 ? {} : {fill: true}),
-    lds('Net Sales',   netData,  'var(--accent2)'),
-    lds('B2024 avg/mo', baseData, '#484f58', {dashed: true, nd: true}),
+    lds('Gross Sales', revData,  C_BLUE,  cfg.hasY24 ? {} : {fill: true}),
+    lds('Net Sales',   netData,  C_GREEN),
+    lds('B2024 avg/mo', baseData, C_DIM, {dashed: true, nd: true}),
   ], revLbl, function(v) { return '\u0e3f' + (v >= 1e6 ? (v/1e6).toFixed(0)+'M' : v >= 1e3 ? (v/1e3).toFixed(0)+'K' : '0'); });
 
   /* Orders chart */
@@ -218,13 +238,13 @@ function buildPage() {
   }
 
   CHARTS.ord = mkLine('ord-chart', [
-    lds('Orders',    ordData, 'var(--accent)'),
-    lds('Customers', cusData, 'var(--accent2)'),
+    lds('Orders',    ordData, C_ORANGE),
+    lds('Customers', cusData, C_PURPLE),
   ], revLbl, function(v) { return v >= 1e3 ? (v/1e3).toFixed(0)+'K' : Math.round(v).toString(); });
 
   CHARTS.eff = mkLine('eff-chart', [
-    lds('Discount %',    D.Discount_pct.y25.map(function(v) { return v != null ? v*100 : null; }), 'var(--accent)'),
-    lds('Mkt-to-Sale %', D.Mkt_to_Sale.y25.map(function(v)  { return v != null ? v*100 : null; }), 'var(--accent2)'),
+    lds('Discount %',    D.Discount_pct.y25.map(function(v) { return v != null ? v*100 : null; }), C_RED),
+    lds('Mkt-to-Sale %', D.Mkt_to_Sale.y25.map(function(v)  { return v != null ? v*100 : null; }), C_AMBER),
   ], lbl25, function(v) { return v.toFixed(0) + '%'; });
 
   /* Build sections for current active tab */
@@ -298,17 +318,17 @@ function buildTrSection(lbl25, lbl2526) {
   if (CHARTS.aovt){ CHARTS.aovt.destroy();CHARTS.aovt= null; }
 
   CHARTS.ses = mkBar('ses-chart', [
-    ldsBar('Sessions', D[SES].y25.concat(D[SES].y26), 'var(--accent)'),
+    ldsBar('Sessions', D[SES].y25.concat(D[SES].y26), C_BLUE),
   ], lbl2526, function(v) { return v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v >= 1e3 ? (v/1e3).toFixed(0)+'K' : Math.round(v).toString(); });
 
   CHARTS.cr = mkLine('cr-chart', [
-    lds('CR %',   D.CR.y25.concat(D.CR.y26).map(function(v) { return v != null ? v*100 : null; }), 'var(--accent2)'),
-    lds('B2024',  Array(14).fill(D.CR.b24 * 100), '#484f58', {dashed: true, nd: true}),
+    lds('CR %',   D.CR.y25.concat(D.CR.y26).map(function(v) { return v != null ? v*100 : null; }), C_TEAL),
+    lds('B2024',  Array(14).fill(D.CR.b24 * 100), C_DIM, {dashed: true, nd: true}),
   ], lbl2526, function(v) { return v.toFixed(2) + '%'; });
 
   CHARTS.aovt = mkLine('aovtr-chart', [
-    lds('AOV',       D.AOV.y25.concat(D.AOV.y26), 'var(--accent)'),
-    lds('B2024 avg', Array(14).fill(D.AOV.b24),    '#484f58', {dashed: true, nd: true}),
+    lds('AOV',       D.AOV.y25.concat(D.AOV.y26), C_ORANGE),
+    lds('B2024 avg', Array(14).fill(D.AOV.b24),    C_DIM, {dashed: true, nd: true}),
   ], lbl2526, function(v) { return '\u0e3f' + (v/1e3).toFixed(1) + 'K'; });
 }
 

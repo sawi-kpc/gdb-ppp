@@ -5,7 +5,7 @@
 
 let charts={};
 let sumYearFilter=['ROADMAP_2026'],initYearFilter=['all'],showNoYear=false,sumStage='all',hideNoDate=false;
-let listYearFilter=['ROADMAP_2026'];
+let listYearFilter=['all'];
 let listAssigneeFilter='all';
 
 const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -35,9 +35,9 @@ function getEnd(r){const p=getJ(r);return p?(p.end||null):(r&&/\d{4}-\d{2}-\d{2}
 function fmtDate(d){if(!d)return'—';const[y,m]=d.split('-');return MONTHS[+m-1]+' '+y}
 function cl(v){return String(v||'').replace(/^"|"$/g,'').trim()}
 function jiraLink(k){return`<a class="jira-link" href="${CONFIG.JIRA_BASE}${k}" target="_blank">${k}</a>`}
-function monBadge(v){if(!v)return'<span style="color:#ccc;font-size:10px">—</span>';const d=v.toLowerCase();if(d.includes('track'))return`<span class="mon-badge mon-ontrack">✅ On track</span>`;if(d.includes('risk'))return`<span class="mon-badge mon-atrisk">⚠️ At risk</span>`;if(d.includes('delay'))return`<span class="mon-badge mon-delayed">🆘 Delayed</span>`;return`<span style="font-size:10px;color:#888">${v}</span>`;}
+function monBadge(v){if(!v)return'<span style="color:var(--text3);font-size:10px">—</span>';const d=v.toLowerCase();if(d.includes('track'))return`<span class="mon-badge mon-ontrack">✅ On track</span>`;if(d.includes('risk'))return`<span class="mon-badge mon-atrisk">⚠️ At risk</span>`;if(d.includes('delay'))return`<span class="mon-badge mon-delayed">🆘 Delayed</span>`;return`<span style="font-size:10px;color:var(--text2)">${v}</span>`;}
 function monEmoji(v){if(!v)return'';const d=v.toLowerCase();if(d.includes('delay'))return'🆘 ';if(d.includes('risk'))return'⚠️ ';if(d.includes('track'))return'✅ ';return'';}
-function sPill(v){const m={'Parking Lot':'parking','Budget Approval':'budget','Discovery':'discovery','Ready for Delivery':'rfd','Delivery':'delivery','Done':'done'};const c=m[v]||'';return c?`<span class="pill p-${c}">${v}</span>`:`<span style="font-size:10px;color:#888">${v||'—'}</span>`;}
+function sPill(v){const m={'Parking Lot':'parking','Budget Approval':'budget','Discovery':'discovery','Ready for Delivery':'rfd','Delivery':'delivery','Done':'done'};const c=m[v]||'';return c?`<span class="pill p-${c}">${v}</span>`:`<span style="font-size:10px;color:var(--text2)">${v||'—'}</span>`;}
 function countBy(arr,key){return arr.reduce((a,d)=>{const v=d[key]||'(none)';a[v]=(a[v]||0)+1;return a},{});}
 
 /* Year filter */
@@ -220,7 +220,7 @@ function renderCompleted(){
   if(!wrap)return;
 
   if(!done.length){
-    wrap.innerHTML='<div style="color:#bbb;text-align:center;padding:40px;font-size:13px">No completed initiatives.</div>';
+    wrap.innerHTML='<div style="color:var(--text3);text-align:center;padding:40px;font-size:13px">No completed initiatives.</div>';
     return;
   }
 
@@ -249,7 +249,7 @@ function renderCompleted(){
     /* Business Impact with label */
     if(impact){
       html+='<div style="margin-top:6px">';
-      html+='<span style="font-size:9px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.06em">Business Impact</span>';
+      html+='<span style="font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">Business Impact</span>';
       html+='<div class="done-impact" style="margin-top:2px">'+impact+'</div>';
       html+='</div>';
     }
@@ -257,7 +257,7 @@ function renderCompleted(){
     /* KPI vs Target with label */
     if(kpi){
       html+='<div style="margin-top:5px">';
-      html+='<span style="font-size:9px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.06em">KPI vs Target</span>';
+      html+='<span style="font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">KPI vs Target</span>';
       html+='<div class="done-meta" style="margin-top:2px;color:#378ADD">'+kpi+'</div>';
       html+='</div>';
     }
@@ -305,11 +305,11 @@ function renderInitiatives(){
   const bg=filtered.filter(d=>d.Status==='Budget Approval');
   const rd=filtered.filter(d=>d.Status==='Ready for Delivery');
   const alerts=[...dl.map(d=>({t:'danger',key:d.Key,txt:`<strong>${d.Summary}</strong> — Delayed. Provide revised plan &amp; mitigation.`})),...ar.map(d=>({t:'warn',key:d.Key,txt:`<strong>${d.Summary}</strong> — At risk. Identify blockers.`})),...bg.map(d=>({t:'info',key:d.Key,txt:`<strong>${d.Summary}</strong> — Pending budget approval.`})),...rd.map(d=>({t:'info',key:d.Key,txt:`<strong>${d.Summary}</strong> — Ready for Delivery. Confirm sprint kick-off.`}))];
-  document.getElementById('init-alerts').innerHTML=alerts.length?alerts.map(a=>`<div class="alert-item ${a.t}"><span style="font-weight:700;font-size:10px;color:${a.t==='danger'?'#A32D2D':a.t==='warn'?'#633806':'#0C447C'};min-width:48px">${jiraLink(a.key)}</span><span style="font-size:11.5px;color:#333">${a.txt}</span></div>`).join(''):'<div style="color:#bbb;font-size:12px;padding:4px 0">No items requiring attention.</div>';
+  document.getElementById('init-alerts').innerHTML=alerts.length?alerts.map(a=>`<div class="alert-item ${a.t}"><span style="font-weight:700;font-size:10px;color:${a.t==='danger'?'#A32D2D':a.t==='warn'?'#633806':'#0C447C'};min-width:48px">${jiraLink(a.key)}</span><span style="font-size:11.5px;color:var(--text)">${a.txt}</span></div>`).join(''):'<div style="color:var(--text3);font-size:12px;padding:4px 0">No items requiring attention.</div>';
   /* delivery */
-  document.getElementById('init-delivery').innerHTML=filtered.filter(d=>d.Status==='Delivery').map(d=>`<tr><td>${jiraLink(d.Key)}</td><td style="font-weight:600;color:#1a3a5c">${d.Summary}</td><td>${monBadge(d['Project Monitoring Status'])}</td><td style="color:#555">${d['Implementation Status']||'—'}</td></tr>`).join('')||'<tr><td colspan="4" style="color:#bbb;text-align:center;padding:14px">None</td></tr>';
+  document.getElementById('init-delivery').innerHTML=filtered.filter(d=>d.Status==='Delivery').map(d=>`<tr><td>${jiraLink(d.Key)}</td><td style="font-weight:600;color:var(--text)">${d.Summary}</td><td>${monBadge(d['Project Monitoring Status'])}</td><td style="color:var(--text2)">${d['Implementation Status']||'—'}</td></tr>`).join('')||'<tr><td colspan="4" style="color:var(--text3);text-align:center;padding:14px">None</td></tr>';
   /* pipeline */
-  document.getElementById('init-pipeline').innerHTML=filtered.filter(d=>d.Status==='Discovery'||d.Status==='Ready for Delivery').map(d=>`<tr><td>${jiraLink(d.Key)}</td><td style="font-weight:600;color:#1a3a5c">${d.Summary}</td><td>${sPill(d.Status)}</td><td>${(d['Assignee.displayName']||'').split(' ')[0]||'—'}</td><td>${fmtDate(getStart(d['Target Project Start']||''))}</td></tr>`).join('')||'<tr><td colspan="5" style="color:#bbb;text-align:center;padding:14px">None</td></tr>';
+  document.getElementById('init-pipeline').innerHTML=filtered.filter(d=>d.Status==='Discovery'||d.Status==='Ready for Delivery').map(d=>`<tr><td>${jiraLink(d.Key)}</td><td style="font-weight:600;color:var(--text)">${d.Summary}</td><td>${sPill(d.Status)}</td><td>${(d['Assignee.displayName']||'').split(' ')[0]||'—'}</td><td>${fmtDate(getStart(d['Target Project Start']||''))}</td></tr>`).join('')||'<tr><td colspan="5" style="color:var(--text3);text-align:center;padding:14px">None</td></tr>';
 }
 
 /* CSV parser — handles normal row-per-record format */
@@ -374,7 +374,7 @@ function renderList(){
           ?(isD?`<span class="pill p-delayed">🆘 Delayed</span>`
             :isR?`<span class="pill p-atrisk">⚠️ At risk</span>`
             :isT?`<span class="pill p-ontrack">✅ On track</span>`:mon)
-          :'<span style="color:#ddd">—</span>';
+          :'<span style="color:var(--text3)">—</span>';
         const stMap={'Parking Lot':'parking','Budget Approval':'budget','Discovery':'discovery','Ready for Delivery':'rfd','Delivery':'delivery','Done':'done'};
         const stCls=stMap[d.Status]||'';
         const tpCls=d['Project Type']==='Strategic'?'strategic':d['Project Type']==='BAU'?'bau':'';
@@ -382,19 +382,19 @@ function renderList(){
         const a2=(d['Assignee (2nd).displayName']||'').split(' ')[0]||'—';
         return `<tr>
           <td>${jiraLink(d.Key)}</td>
-          <td style="font-weight:600;color:#1a3a5c;max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${d.Summary}">${d.Summary}</td>
+          <td style="font-weight:600;color:var(--text);max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${d.Summary}">${d.Summary}</td>
           <td>${stCls?`<span class="pill p-${stCls}">${d.Status}</span>`:d.Status}</td>
-          <td style="font-size:11px;color:#666">${d['Roadmap Status']||'—'}</td>
-          <td style="font-size:11px;color:#666;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${d['Project Goal']||''}">${d['Project Goal']||'—'}</td>
+          <td style="font-size:11px;color:var(--text2)">${d['Roadmap Status']||'—'}</td>
+          <td style="font-size:11px;color:var(--text2);max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${d['Project Goal']||''}">${d['Project Goal']||'—'}</td>
           <td>${tpCls?`<span class="pill p-${tpCls}">${d['Project Type']}</span>`:d['Project Type']||'—'}</td>
           <td style="font-size:11px">${a1}</td>
-          <td style="font-size:11px;color:#888">${a2}</td>
+          <td style="font-size:11px;color:var(--text2)">${a2}</td>
           <td>${monHtml}</td>
           <td style="font-size:11px">${fd(d['Target Project Start'])}</td>
           <td style="font-size:11px">${fd(d['Target Project End'])}</td>
         </tr>`;
       }).join('')
-    :'<tr><td colspan="11" style="text-align:center;color:#bbb;padding:24px">No initiatives match this filter.</td></tr>';
+    :'<tr><td colspan="11" style="text-align:center;color:var(--text3);padding:24px">No initiatives match this filter.</td></tr>';
 }
 
 function onAssigneeChange(val){

@@ -2,234 +2,55 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>GDB Product &amp; Project Portfolio Review</title>
-<link rel="stylesheet" href="css/style.css">
-
-<style>
-/* Auth screen */
-#auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f2f2f0}
-.auth-card{background:#fff;border-radius:12px;border:.5px solid #e0e0e0;padding:36px 40px;width:100%;max-width:380px;box-shadow:0 4px 24px rgba(0,0,0,.08)}
-.auth-logo{font-size:22px;font-weight:700;color:#1a3a5c;margin-bottom:4px}
-.auth-sub{font-size:12px;color:#999;margin-bottom:28px}
-.auth-label{font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;display:block}
-.auth-input{width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;margin-bottom:14px;outline:none;transition:border .15s}
-.auth-input:focus{border-color:#1a3a5c}
-.auth-btn{width:100%;padding:10px;background:#1a3a5c;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;margin-top:4px}}
-.auth-loading-text{font-size:12px;color:#aaa}
-.auth-btn:hover{background:#254f7a}
-.auth-btn:disabled{background:#aaa;cursor:not-allowed}
-.auth-error{font-size:11.5px;color:#A32D2D;background:#FFF5F5;border-radius:5px;padding:8px 10px;margin-top:10px;display:block;min-height:0}
-/* App screen */
-#app-screen{display:none}
-.auth-user-bar{display:flex;align-items:center;gap:8px;font-size:11px;color:#5a88a8}
-#auth-logout-btn{padding:3px 10px;background:#254f7a;color:#cde0f0;border:none;border-radius:4px;font-size:11px;cursor:pointer}
-#auth-logout-btn:hover{background:#2e6496}
-</style>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>GDB Dashboard — Sign in</title>
+<link rel="stylesheet" href="css/shared.css">
+<style>body{padding-top:0;}</style>
 </head>
-<body>
-
-<!-- ══ AUTH SCREEN ══════════════════════════════ -->
-<div id="auth-screen" style="display:flex">
-  <div class="auth-card">
-    <div class="auth-logo">GDB</div>
-    <div class="auth-sub">Product &amp; Project Portfolio Review</div>
-
-    <label class="auth-label" for="auth-email">Email</label>
-    <input class="auth-input" type="email" id="auth-email"
-           placeholder="your@email.com" autocomplete="email">
-
-    <label class="auth-label" for="auth-password">Password</label>
-    <input class="auth-input" type="password" id="auth-password"
-           placeholder="••••••••" autocomplete="current-password">
-
-    <button class="auth-btn" id="auth-login-btn">Sign in</button>
-    <span class="auth-error" id="auth-error"></span>
-  </div>
-</div><!-- /#auth-screen -->
-
-<!-- ══ APP SCREEN ════════════════════════════ -->
-<div id="app-screen" style="display:none">
-
-<div class="topbar">
-  <div class="topbar-logo">GDB</div>
-  <div class="topbar-sub">Product &amp; Project Portfolio Review</div>
-  <button class="tab-btn active" onclick="switchTab(0)">Summary</button>
-  <div class="tab-dropdown-wrap">
-    <button class="tab-btn" onclick="switchTab(1)">Initiatives <span class="tab-dropdown-arrow">&#9660;</span></button>
-    <div class="tab-dropdown-menu">
-      <button onclick="switchTab(2)">List</button>
-      <button onclick="switchTab(3)">Completed</button>
-    </div>
-  </div>
-  <button class="tab-btn" onclick="switchTab(4)">Issues <span class="tab-badge">soon</span></button>
-  <button class="tab-btn" onclick="switchTab(5)">Support Tasks <span class="tab-badge">soon</span></button>
-  <div class="topbar-right">
-    <div class="auth-user-bar">
-      <img id="auth-user-avatar" src="" alt="" style="display:none;width:22px;height:22px;border-radius:50%;vertical-align:middle;margin-right:4px">
-      <span id="auth-user-email"></span>
-      <button id="auth-logout-btn">Sign out</button>
-    </div>
-    <div class="fb-sep" style="border-color:#2a5a8c"></div>
-    <span style="color:#5a88a8;font-size:11px;border-right:1px solid #2a5a8c;padding-right:10px;margin-right:2px" id="current-dt"></span>
-    <span style="color:#7aa5c4;font-size:11px" id="refresh-time">—</span>
-    <button class="refresh-btn" onclick="loadData()">&#8635; Refresh</button>
-  </div>
+<body class="auth-page">
+<div class="auth-card">
+  <div class="auth-logo">GDB</div>
+  <div class="auth-sub">King Power Digital Commerce Dashboard</div>
+  <label class="auth-label" for="auth-email">Email</label>
+  <input class="auth-input" type="email" id="auth-email" placeholder="your@email.com" autocomplete="email">
+  <label class="auth-label" for="auth-password">Password</label>
+  <input class="auth-input" type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password">
+  <button class="auth-btn" id="auth-login-btn">Sign in</button>
+  <span class="auth-error" id="auth-error"></span>
 </div>
-
-<!-- TAB 0 SUMMARY -->
-<div class="tab-content active" id="tab-0">
-  <div class="filter-bar" style="margin-top:16px">
-    <span class="fb-label">Roadmap year:</span>
-    <div id="yf-sum" style="display:flex;gap:6px;flex-wrap:wrap"></div>
-  </div>
-  <div class="metrics-strip" id="sum-metrics"></div>
-  <div class="section">
-    <div class="sec-title">Initiative timeline</div>
-    <div class="tl-ctrl-row">
-      <span class="tl-ctrl-label">Focus:</span>
-      <select class="tl-ctrl-select" id="tl-start" onchange="renderSummary()"></select>
-      <span style="font-size:11px;color:#aaa">to</span>
-      <select class="tl-ctrl-select" id="tl-end" onchange="renderSummary()"></select>
-      <div class="fb-sep"></div>
-      <span class="tl-ctrl-label">Stage:</span>
-      <div id="sum-stage-filter" style="display:flex;gap:6px;flex-wrap:wrap"></div>
-      <div class="fb-sep"></div>
-      <button class="fb-btn" id="btn-hide-nodate" onclick="toggleHideNoDate(this)">Hide no-date items</button>
-      <div class="fb-sep"></div>
-      <span class="tl-today-badge" id="today-badge">Today</span>
-      <div class="tl-legend-row">
-        <span class="tl-leg"><span class="tl-leg-dot" style="background:#85B7EB"></span>Planned</span>
-        <span class="tl-leg"><span class="tl-leg-dot" style="background:#1D9E75"></span>Actual</span>
-        <span class="tl-leg"><span class="tl-leg-dot" style="background:#E24B4A"></span>Delayed</span>
-      </div>
-    </div>
-    <div class="tl-container"><div class="tl-inner" id="tl-inner"></div></div>
-  </div>
-</div>
-
-<!-- TAB 1 INITIATIVES -->
-<div class="tab-content" id="tab-1">
-  <div class="filter-bar" style="margin-top:16px">
-    <span class="fb-label">Roadmap year:</span>
-    <div id="yf-init" style="display:flex;gap:6px;flex-wrap:wrap"></div>
-    <div class="fb-sep"></div>
-    <button class="fb-btn" id="btn-no-year" onclick="toggleNoYear(this)">No roadmap year</button>
-  </div>
-  <div class="metrics-strip" id="init-metrics"></div>
-  <div class="two-col">
-    <div>
-      <div class="section" style="margin-bottom:12px">
-        <div class="sec-title">Attention required</div>
-        <div id="init-alerts"></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">By lifecycle status</div>
-        <div class="chart-sub">Count &amp; % of all items</div>
-        <div style="position:relative;height:200px"><canvas id="c-status"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">By project goal</div>
-        <div class="chart-sub">Count &amp; % of all items</div>
-        <div id="c-goal-wrap" style="position:relative;height:180px"><canvas id="c-goal"></canvas></div>
-      </div>
-      <div class="section" style="margin-bottom:12px">
-        <div class="sec-title">Active delivery snapshot</div>
-        <table class="dt"><thead><tr><th>Key</th><th>Initiative</th><th>Monitor</th><th>Impl. status</th></tr></thead>
-        <tbody id="init-delivery"></tbody></table>
-      </div>
-      <div class="section">
-        <div class="sec-title">Pipeline — Discovery &amp; Ready for Delivery</div>
-        <table class="dt"><thead><tr><th>Key</th><th>Initiative</th><th>Stage</th><th>Assignee</th><th>Target start</th></tr></thead>
-        <tbody id="init-pipeline"></tbody></table>
-      </div>
-    </div>
-    <div class="right-col">
-      <div class="chart-card">
-        <div class="chart-title">By roadmap status</div>
-        <div class="chart-sub">Count &amp; % of all items</div>
-        <div style="position:relative;height:200px"><canvas id="c-roadmap"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">By project type</div>
-        <div class="chart-sub">Count &amp; % of all items</div>
-        <div style="position:relative;height:200px"><canvas id="c-type"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">By primary assignee</div>
-        <div class="chart-sub">Assignee.displayName</div>
-        <div id="c-a1-wrap" style="position:relative;height:180px"><canvas id="c-a1"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">By 2nd assignee</div>
-        <div class="chart-sub">Assignee (2nd).displayName</div>
-        <div id="c-a2-wrap" style="position:relative;height:180px"><canvas id="c-a2"></canvas></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="tab-content" id="tab-2">
-  <!-- Initiatives List Tab -->
-  <div class="filter-bar" style="margin-top:16px">
-    <span class="fb-label">Roadmap year:</span>
-    <div id="yf-list" style="display:flex;gap:6px;flex-wrap:wrap"></div>
-    <div class="fb-sep"></div>
-    <span class="fb-label">Assignee:</span>
-    <select class="list-filter-select" id="af-list-select" onchange="onAssigneeChange(this.value)">
-      <option value="all">All assignees</option>
-    </select>
-  </div>
-  <div style="font-size:11px;color:#aaa;margin-bottom:10px" id="list-count"></div>
-  <table class="dt" id="list-table" style="font-size:11.5px">
-    <thead>
-      <tr>
-        <th style="width:72px">Key</th>
-        <th>Summary</th>
-        <th style="width:90px">Status</th>
-        <th style="width:90px">Roadmap</th>
-        <th style="width:110px">Project goal</th>
-        <th style="width:70px">Type</th>
-        <th style="width:110px">Assignee</th>
-        <th style="width:110px">Assignee 2nd</th>
-        <th style="width:100px">Monitor</th>
-        <th style="width:110px">Target start</th>
-        <th style="width:110px">Target end</th>
-      </tr>
-    </thead>
-    <tbody id="list-body"></tbody>
-  </table>
-</div>
-
-<div class="tab-content" id="tab-3">
-  <div class="filter-bar" style="margin-top:16px">
-    <span class="fb-label">Roadmap year:</span>
-    <div id="yf-done" style="display:flex;gap:6px;flex-wrap:wrap"></div>
-    <div class="fb-sep"></div>
-    <span class="fb-label">BU Owner:</span>
-    <select class="list-filter-select" id="done-bu-select" onchange="onDoneBUChange(this.value)">
-      <option value="all">All BU owners</option>
-    </select>
-  </div>
-  <div style="font-size:11px;color:#aaa;margin-bottom:10px" id="done-count"></div>
-  <div id="done-list-wrap"></div>
-</div>
-
-<div class="tab-content" id="tab-4">
-  <div class="coming-soon"><div class="cs-icon">&#128027;</div><div class="cs-title">Coming soon</div><div class="cs-sub">Issue tracker summary — Jira issue data for team monitoring.</div></div>
-</div>
-<div class="tab-content" id="tab-5">
-  <div class="coming-soon"><div class="cs-icon">&#127911;</div><div class="cs-title">Coming soon</div><div class="cs-sub">Support Tasks tracker — Jira support data for stakeholder request monitoring.</div></div>
-</div>
-
-</div><!-- /#app-screen -->
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="js/config.js"></script>
-<script src="js/render.js"></script>
-<script src="js/data.js"></script>
-<script src="js/auth.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:'AIzaSyCaS5kLNbm5lSLRHd1rdr0sXRCS5lB_Rgc',
+  authDomain:'gdb-dashboard-prod.firebaseapp.com',
+  projectId:'gdb-dashboard-prod',
+  storageBucket:'gdb-dashboard-prod.firebasestorage.app',
+  messagingSenderId:'170622130981',
+  appId:'1:170622130981:web:23302ed9a5ce4e82ac58cc'
+});
+var _auth = firebase.auth();
+_auth.onAuthStateChanged(function(user){ if(user) window.location.href='channel/'; });
+function doLogin(){
+  var email=document.getElementById('auth-email').value.trim();
+  var pass=document.getElementById('auth-password').value;
+  var btn=document.getElementById('auth-login-btn');
+  var err=document.getElementById('auth-error');
+  if(!email||!pass){err.textContent='Please enter email and password.';return;}
+  err.textContent=''; btn.disabled=true; btn.textContent='Signing in\u2026';
+  _auth.signInWithEmailAndPassword(email,pass)
+    .then(function(){window.location.href='channel/';})
+    .catch(function(e){
+      var msg='Login failed. Check your credentials.';
+      if(e.code==='auth/user-not-found') msg='Email not found.';
+      if(e.code==='auth/wrong-password') msg='Incorrect password.';
+      if(e.code==='auth/invalid-credential') msg='Invalid email or password.';
+      if(e.code==='auth/too-many-requests') msg='Too many attempts. Try again later.';
+      err.textContent=msg; btn.disabled=false; btn.textContent='Sign in';
+    });
+}
+document.getElementById('auth-login-btn').addEventListener('click',doLogin);
+document.getElementById('auth-password').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+</script>
 </body>
 </html>

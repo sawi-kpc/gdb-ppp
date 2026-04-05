@@ -6,34 +6,7 @@
 
 /* ── CSS for dropdown nav ────────────────── */
 var _headerStyle = document.createElement('style');
-_headerStyle.textContent = [
-  '.gdb-nav{position:fixed;top:var(--header-h);left:0;right:0;z-index:99;',
-  'height:var(--nav-h);background:var(--surface);border-bottom:1px solid var(--border);',
-  'display:flex;align-items:stretch;padding:0 20px;gap:2px;overflow-x:auto;}',
-  '.gdb-nav::-webkit-scrollbar{height:0;}',
-  '.gdb-nav-item{display:flex;align-items:center;padding:0 12px;font-size:12px;',
-  'font-weight:500;color:var(--text2);text-decoration:none;white-space:nowrap;',
-  'border-bottom:2px solid transparent;transition:all .15s;cursor:pointer;background:none;border-top:none;border-left:none;border-right:none;}',
-  '.gdb-nav-item:hover{color:var(--text);text-decoration:none;}',
-  '.gdb-nav-item.active{color:var(--accent);border-bottom-color:var(--accent);}',
-  '.gdb-nav-divider{width:1px;background:var(--border);margin:10px 8px;}',
-  '.gdb-nav-section{font-size:10px;font-weight:700;color:var(--text3);',
-  'text-transform:uppercase;letter-spacing:.08em;display:flex;align-items:center;padding:0 8px 0 4px;}',
-  '.gdb-nav-channel-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;flex-shrink:0;}',
-  /* Dropdown */
-  '.gdb-nav-dropdown{position:relative;display:flex;align-items:stretch;}',
-  '.gdb-nav-dropdown:hover .gdb-nav-dropdown-menu{display:block;}',
-  '.gdb-nav-dropdown-menu{display:none;position:absolute;top:100%;left:0;',
-  'background:var(--surface2);border:1px solid var(--border);border-radius:6px;',
-  'min-width:150px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.4);overflow:hidden;}',
-  '.gdb-nav-dropdown-menu a{display:block;padding:8px 14px;font-size:12px;',
-  'color:var(--text2);text-decoration:none;transition:background .1s;}',
-  '.gdb-nav-dropdown-menu a:hover{background:var(--border);color:var(--text);}',
-  '.gdb-nav-dropdown-menu a.active{color:var(--accent);background:rgba(88,166,255,.08);}',
-  '.gdb-nav-badge{font-size:9px;font-weight:700;color:var(--text3);',
-  'background:var(--surface2);border:1px solid var(--border);',
-  'border-radius:3px;padding:1px 5px;margin-left:5px;}'
-].join('');
+_headerStyle.textContent = '.gdb-nav{position:fixed;top:var(--header-h);left:0;right:0;z-index:99;height:var(--nav-h);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:stretch;padding:0 20px;gap:2px;overflow-x:auto;}.gdb-nav::-webkit-scrollbar{height:0;}.gdb-nav-item{display:flex;align-items:center;padding:0 12px;font-size:12px;font-weight:500;color:var(--text2);text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;transition:all .15s;cursor:pointer;background:none;border-top:none;border-left:none;border-right:none;}.gdb-nav-item:hover{color:var(--text);text-decoration:none;}.gdb-nav-item.active{color:var(--accent);border-bottom-color:var(--accent);}.gdb-nav-divider{width:1px;background:var(--border);margin:10px 8px;}.gdb-nav-section{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;display:flex;align-items:center;padding:0 8px 0 4px;}.gdb-nav-channel-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;flex-shrink:0;}.gdb-nav-dropdown{position:relative;display:flex;align-items:stretch;}.gdb-nav-dropdown:hover .gdb-nav-dropdown-menu{display:block;}.gdb-nav-dropdown-menu{display:none;position:absolute;top:100%;left:0;background:var(--surface2);border:1px solid var(--border);border-radius:6px;min-width:150px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.4);overflow:hidden;}.gdb-nav-dropdown-menu a{display:block;padding:8px 14px;font-size:12px;color:var(--text2);text-decoration:none;transition:background .1s;}.gdb-nav-dropdown-menu a:hover{background:var(--border);color:var(--text);}.gdb-nav-dropdown-menu a.active{color:var(--accent);background:rgba(88,166,255,.08);}.gdb-nav-badge{font-size:9px;font-weight:700;color:var(--text3);background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:1px 5px;margin-left:5px;}';
 document.head.appendChild(_headerStyle);
 
 /* ── BUILD HEADER ────────────────────────── */

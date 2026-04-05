@@ -1,4 +1,6 @@
 /* ══════════════════════════════════════════════
+/* Safe refresh-time update helper */
+function _setRefreshTime(txt){var el=((document.getElementById('refresh-time')||{})||{});if(el)el.textContent=txt;}
    DATA — fetch, parse, load
    Depends on: config.js, render.js
 ══════════════════════════════════════════════ */
@@ -35,20 +37,24 @@ function parseSheetRows(text,embeddedData){
 
 /* Data load — 3-tier: Apps Script → CSV direct → embedded */
 async function loadData(){
-  document.getElementById('refresh-time').textContent='Fetching\u2026';
+  _setRefreshTime('Fetching\u2026');
   let fetched=false;
   const ts=()=>new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
   if(!fetched&&CONFIG.APPS_SCRIPT_URL){
-    try{const r=await fetch(CONFIG.APPS_SCRIPT_URL);if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();if(j.data&&j.data.length>0){allData=j.data;fetched=true;document.getElementById('refresh-time').textContent=ts()+' (live via script)';}}catch(e){console.warn('[GDB] Apps Script:',e.message);}
+    try{const r=await fetch(CONFIG.APPS_SCRIPT_URL);if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();if(j.data&&j.data.length>0){allData=j.data;fetched=true;_setRefreshTime(ts()+' (live via script)');}}catch(e){console.warn('[GDB] Apps Script:',e.message);}
   }
   if(!fetched){
-    try{const r=await fetch(CONFIG.SHEET_URL,{mode:'cors'});if(!r.ok)throw new Error('HTTP '+r.status);const parsed=parseSheetRows(await r.text(),getEmbedded());if(parsed.length>0){allData=parsed;fetched=true;document.getElementById('refresh-time').textContent=ts()+' (live CSV)';}}catch(e){console.warn('[GDB] Direct CSV:',e.message);}
+    try{const r=await fetch(CONFIG.SHEET_URL,{mode:'cors'});if(!r.ok)throw new Error('HTTP '+r.status);const parsed=parseSheetRows(await r.text(),getEmbedded());if(parsed.length>0){allData=parsed;fetched=true;_setRefreshTime(ts()+' (live CSV)');}}catch(e){console.warn('[GDB] Direct CSV:',e.message);}
   }
   if(!fetched){
-    try{const proxy='https://corsproxy.io/?'+encodeURIComponent(CONFIG.SHEET_URL);const r=await fetch(proxy);if(!r.ok)throw new Error();const parsed=parseSheetRows(await r.text(),getEmbedded());if(parsed.length>0){allData=parsed;fetched=true;document.getElementById('refresh-time').textContent=ts()+' (via proxy)';}}catch(e){console.warn('[GDB] Proxy:',e.message);}
+    try{const proxy='https://corsproxy.io/?'+encodeURIComponent(CONFIG.SHEET_URL);const r=await fetch(proxy);if(!r.ok)throw new Error();const parsed=parseSheetRows(await r.text(),getEmbedded());if(parsed.length>0){allData=parsed;fetched=true;_setRefreshTime(ts()+' (via proxy)');}}catch(e){console.warn('[GDB] Proxy:',e.message);}
   }
-  if(!fetched){allData=getEmbedded();const _now=new Date();document.getElementById('refresh-time').textContent='\uD83D\uDCE6 Embedded data · '+_now.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+_now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+' — set APPS_SCRIPT_URL for live';}
+  if(!fetched){allData=getEmbedded();const _now=new Date();_setRefreshTime('\uD83D\uDCE6 Embedded data · '+_now.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+_now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+' — set APPS_SCRIPT_URL for live');}
   renderAll();
+  /* Hook for external pages (initiative/*.html) to run after data loads */
+  if (typeof window.onDataReady === 'function') {
+    window.onDataReady(allData);
+  }
 }
 
 
@@ -84,20 +90,24 @@ function parseSheetRows(text,embeddedData){
 
 /* Data load — 3-tier: Apps Script → CSV direct → embedded */
 async function loadData(){
-  document.getElementById('refresh-time').textContent='Fetching\u2026';
+  _setRefreshTime('Fetching\u2026');
   let fetched=false;
   const ts=()=>new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
   if(!fetched&&CONFIG.APPS_SCRIPT_URL){
-    try{const r=await fetch(CONFIG.APPS_SCRIPT_URL);if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();if(j.data&&j.data.length>0){allData=j.data;fetched=true;document.getElementById('refresh-time').textContent=ts()+' (live via script)';}}catch(e){console.warn('[GDB] Apps Script:',e.message);}
+    try{const r=await fetch(CONFIG.APPS_SCRIPT_URL);if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();if(j.data&&j.data.length>0){allData=j.data;fetched=true;_setRefreshTime(ts()+' (live via script)');}}catch(e){console.warn('[GDB] Apps Script:',e.message);}
   }
   if(!fetched){
-    try{const r=await fetch(CONFIG.SHEET_URL,{mode:'cors'});if(!r.ok)throw new Error('HTTP '+r.status);const parsed=parseSheetRows(await r.text(),getEmbedded());if(parsed.length>0){allData=parsed;fetched=true;document.getElementById('refresh-time').textContent=ts()+' (live CSV)';}}catch(e){console.warn('[GDB] Direct CSV:',e.message);}
+    try{const r=await fetch(CONFIG.SHEET_URL,{mode:'cors'});if(!r.ok)throw new Error('HTTP '+r.status);const parsed=parseSheetRows(await r.text(),getEmbedded());if(parsed.length>0){allData=parsed;fetched=true;_setRefreshTime(ts()+' (live CSV)');}}catch(e){console.warn('[GDB] Direct CSV:',e.message);}
   }
   if(!fetched){
-    try{const proxy='https://corsproxy.io/?'+encodeURIComponent(CONFIG.SHEET_URL);const r=await fetch(proxy);if(!r.ok)throw new Error();const parsed=parseSheetRows(await r.text(),getEmbedded());if(parsed.length>0){allData=parsed;fetched=true;document.getElementById('refresh-time').textContent=ts()+' (via proxy)';}}catch(e){console.warn('[GDB] Proxy:',e.message);}
+    try{const proxy='https://corsproxy.io/?'+encodeURIComponent(CONFIG.SHEET_URL);const r=await fetch(proxy);if(!r.ok)throw new Error();const parsed=parseSheetRows(await r.text(),getEmbedded());if(parsed.length>0){allData=parsed;fetched=true;_setRefreshTime(ts()+' (via proxy)');}}catch(e){console.warn('[GDB] Proxy:',e.message);}
   }
-  if(!fetched){allData=getEmbedded();const _now=new Date();document.getElementById('refresh-time').textContent='\uD83D\uDCE6 Embedded data · '+_now.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+_now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+' — set APPS_SCRIPT_URL for live';}
+  if(!fetched){allData=getEmbedded();const _now=new Date();_setRefreshTime('\uD83D\uDCE6 Embedded data · '+_now.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+_now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+' — set APPS_SCRIPT_URL for live');}
   renderAll();
+  /* Hook for external pages (initiative/*.html) to run after data loads */
+  if (typeof window.onDataReady === 'function') {
+    window.onDataReady(allData);
+  }
 }
 
 /* ── Initiatives List ────────────────────────────── */

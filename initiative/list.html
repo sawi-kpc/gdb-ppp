@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Initiatives List — GDB Dashboard</title>
+<title>Initiatives List — GDB</title>
 <link rel="stylesheet" href="../css/shared.css">
 <link rel="stylesheet" href="../css/initiative.css">
 </head>
@@ -12,7 +12,7 @@
 <div id="gdb-error"></div>
 <div id="gdb-loading"><div class="gdb-spinner"></div><div class="gdb-loading-text">Loading…</div></div>
 
-<div id="init-content" style="display:none">
+<div id="init-content" class="gdb-page" style="display:none">
 <!-- Initiatives List Tab -->
   <div class="filter-bar" style="margin-top:16px">
     <span class="fb-label">Roadmap year:</span>
@@ -44,6 +44,10 @@
   </table>
 </div>
 
+<!-- Placeholder for data.js timestamp display -->
+<span id="refresh-time" style="display:none"></span>
+<span id="current-dt" style="display:none"></span>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -52,15 +56,32 @@
 <script src="../js/render.js"></script>
 <script src="../js/data.js"></script>
 <script>
+/* Set callback BEFORE loadData() runs */
+window.onDataReady = function(data) {
+  document.getElementById('gdb-loading').style.display = 'none';
+  document.getElementById('init-content').style.display = 'block';
+  renderList();
+  if(typeof onAssigneeChange==="function")onAssigneeChange();
+  /* Update header time from data.js refresh-time span */
+  var rtEl = document.getElementById('refresh-time');
+  if (rtEl && typeof setGdbUpdateTime === 'function') {
+    setGdbUpdateTime(new Date().toISOString());
+  }
+};
+
 window.addEventListener('DOMContentLoaded', function() {
   buildGdbHeader({ showRefresh: true });
-  gdbAuthGuard(function(user, auth) {
-    loadData(function() {
-      document.getElementById('gdb-loading').style.display = 'none';
-      document.getElementById('init-content').style.display = 'block';
-      renderList();
-      if(typeof onAssigneeChange==="function") onAssigneeChange();
-    });
+  gdbAuthGuard(function(user) {
+    /* loadData() is async and calls renderAll() + window.onDataReady() when done */
+    loadData();
+  });
+  /* Wire refresh button to reload data */
+  document.addEventListener('click', function(e) {
+    if (e.target && e.target.id === 'gdb-refresh-btn') {
+      document.getElementById('gdb-loading').style.display = 'flex';
+      document.getElementById('init-content').style.display = 'none';
+      loadData();
+    }
   });
 });
 </script>

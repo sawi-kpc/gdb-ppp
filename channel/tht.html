@@ -3,37 +3,76 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>THT Performance | KPI Dashboard</title>
+<title>Channel Performance | KPI Dashboard</title>
 <link rel="stylesheet" href="../css/shared.css">
+<style>
+/* Channel-specific overrides */
+:root { --accent: #3b82f6; --accent2: #22d3a4; }
+/* Channel header old elements — hide, use gdb-header */
+header:not(.gdb-header) { display: none !important; }
+#loading-screen { display: none !important; }
+/* Channel tabs use page-tabs style */
+.tabs-bar { 
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  display: flex; gap: 2px; padding: 0 20px;
+  position: sticky; top: calc(var(--header-h) + var(--nav-h)); z-index: 50;
+}
+.tab-btn {
+  padding: 10px 16px; font-size: 12px; font-weight: 600;
+  color: var(--text2); border: none; background: none;
+  cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s;
+}
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-btn:hover:not(.active) { color: var(--text); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+.container { padding: 18px 20px; max-width: 1440px; margin: 0 auto; }
+/* KPI cards */
+.bstrip { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+.bcard { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; flex: 1; min-width: 140px; }
+.blabel { font-size: 10px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+.bval { font-size: 20px; font-weight: 700; }
+.bsub { font-size: 11px; color: var(--text3); }
+.bchg { font-size: 11px; font-weight: 600; } .bchg.up { color: var(--up); } .bchg.dn { color: var(--down); }
+.kgrid { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+.kcard { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; flex: 1; min-width: 130px; border-top: 3px solid; }
+.kcard.o { border-top-color: var(--accent); } .kcard.b { border-top-color: var(--accent2); }
+.kcard.g { border-top-color: #3fb950; } .kcard.p { border-top-color: #a78bfa; }
+.klabel { font-size: 10px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+.kval { font-size: 22px; font-weight: 700; line-height: 1; }
+.kmeta { display: flex; gap: 8px; margin-top: 5px; flex-wrap: wrap; align-items: center; }
+.kchg { font-size: 11px; font-weight: 600; } .kchg.up { color: var(--up); } .kchg.dn { color: var(--down); }
+.kvs { font-size: 10px; color: var(--text3); }
+/* Charts */
+.cgrid { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; margin-bottom: 18px; }
+.ccard { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+.ccard.full { grid-column: 1/-1; }
+.ctitle { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+.cdesc { font-size: 11px; color: var(--text2); margin-bottom: 12px; }
+/* Table */
+.tbl-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+thead tr { background: var(--surface2); }
+th { padding: 8px 10px; text-align: right; font-size: 10px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px solid var(--border); }
+th:first-child { text-align: left; }
+td { padding: 7px 10px; text-align: right; border-bottom: 1px solid rgba(48,54,61,.5); }
+td:first-child { text-align: left; color: var(--text2); }
+tr.yr26 td { color: var(--accent); font-weight: 600; }
+tr:hover td { background: var(--surface2); }
+.sec-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+.sec-title { font-size: 15px; font-weight: 700; } .sec-sub { font-size: 11px; color: var(--text2); margin-top: 3px; }
+.ytog { display: flex; gap: 6px; }
+.ybtn { padding: 4px 12px; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all .15s; }
+.ybtn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+@media(max-width:640px){
+  .cgrid { grid-template-columns: 1fr; }
+  .kcard { min-width: calc(50% - 5px); }
+}
+</style>
 </head>
 <body>
 
-<div id="loading-screen">
-  <div class="spinner"></div>
-  <div class="loading-text" id="ch-loading-text">Loading data...</div>
-  <div class="loading-sub">Connecting to Google Sheets...</div>
-</div>
-
-
-<header>
-  <div class="brand">
-    <div class="logo" id="ch-logo"></div>
-    <div>
-      <div class="brand-name" id="ch-brand-name"></div>
-      <div class="brand-sub"  id="ch-brand-sub"></div>
-    </div>
-  </div>
-  <div class="header-right">
-    <span class="badge" id="ch-badge"></span>
-    <span id="last-update"></span>
-    <button class="refresh-btn" onclick="init()">&#8635; Refresh</button>
-    <div style="display:flex;align-items:center;gap:8px;border-left:1px solid rgba(255,255,255,.15);padding-left:12px;margin-left:4px">
-      <img id="ch-user-avatar" src="" alt="" style="display:none;width:22px;height:22px;border-radius:50%;vertical-align:middle">
-      <span id="ch-user-email" style="font-size:11px;color:var(--text2)"></span>
-      <button id="ch-logout-btn" style="padding:4px 10px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:5px;font-size:11px;cursor:pointer" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">Sign out</button>
-    </div>
-  </div>
-</header>
+<div id="gdb-error" style="display:none;background:#2d1b1b;border-bottom:1px solid var(--down);color:var(--down);padding:8px 20px;font-size:12px;position:sticky;top:calc(var(--header-h) + var(--nav-h));z-index:49;"></div>
 
 <div class="tabs-bar">
   <button class="tab-btn active" onclick="switchTab('ov',this)">Overview</button>
@@ -126,6 +165,7 @@
   </div>
 </div></div>
 
+
 <script src="../js/chartjs.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -136,7 +176,7 @@
 <script>
 window.addEventListener('DOMContentLoaded', function() {
   buildGdbHeader({ showRefresh: true });
-  gdbAuthGuard(function(user, auth) {
+  gdbAuthGuard(function(user) {
     initChannel('THT');
   });
 });

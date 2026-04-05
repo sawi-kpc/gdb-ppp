@@ -398,6 +398,6 @@ function renderList(){
 }
 
 function onAssigneeChange(val){
-  listAssigneeFilter=val;
+  listAssigneeFilter = (val !== undefined && val !== null) ? val : 'all';
   renderList();
 }

@@ -22,7 +22,7 @@ function buildGdbInitiativeSubNav() {
   var listActive      = p.endsWith('/initiative/list.html') ? ' active' : '';
   var compActive      = p.endsWith('/initiative/completed.html') ? ' active' : '';
 
-  var subNav = '<div class="gdb-init-subnav">' +
+  var subNav = '<div class="gdb-init-subnav" id="gdb-init-subnav">' +
     '<a class="gdb-init-tab' + timelineActive + '" href="/gdb-ppp/initiative/index.html">Timeline</a>' +
     '<a class="gdb-init-tab' + dashActive + '" href="/gdb-ppp/initiative/dashboard.html">Dashboard</a>' +
     '<a class="gdb-init-tab' + listActive + '" href="/gdb-ppp/initiative/list.html">List</a>' +
@@ -30,7 +30,20 @@ function buildGdbInitiativeSubNav() {
   '</div>';
 
   document.body.insertAdjacentHTML('afterbegin', subNav);
+
+  /* Align subnav left edge with the PPP divider in the nav bar */
+  requestAnimationFrame(function() {
+    var subNavEl = document.getElementById('gdb-init-subnav');
+    if (!subNavEl) return;
+    /* Find the divider before PPP section to align from that point */
+    var divider = document.querySelector('.gdb-nav-divider');
+    if (divider) {
+      var rect = divider.getBoundingClientRect();
+      subNavEl.style.left = rect.right + 'px';
+    }
+  });
 }
+
 
 /* ── BUILD HEADER ────────────────────────── */
 function buildGdbHeader(opts) {
@@ -160,9 +173,9 @@ function setGdbUpdateTime(ts) {
   if (!el || !ts) return;
   var d = new Date(ts);
   el.textContent = d.toLocaleString('th-TH', {
-    timeZone:'Asia/Bangkok', hour12:false,
-    day:'2-digit', month:'short', year:'numeric',
-    hour:'2-digit', minute:'2-digit'
+    timeZone: 'Asia/Bangkok', hour12: false,
+    day: 'numeric', month: 'long', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit'
   });
 }
 

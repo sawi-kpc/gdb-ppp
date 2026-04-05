@@ -1,61 +1,129 @@
 /* ══════════════════════════════════════════════
-   GDB Header v4.0 — shared across ALL pages
-   Renders topbar + nav, handles auth state
+   GDB Header v4.1 — shared across ALL pages
+   Performance: Summary + Channels
+   PPP: Initiatives (dropdown) + Issues + Support
 ══════════════════════════════════════════════ */
 
-/* ── NAV CONFIG ─────────────────────────────── */
-var GDB_NAV = [
-  { label: 'Summary',     href: '/gdb-ppp/channel/',             icon: '◉' },
-  { label: 'Initiatives', href: '/gdb-ppp/initiative/index.html',    icon: '◈' },
-  { type: 'divider' },
-  { label: 'KP.com',   href: '/gdb-ppp/channel/kp.html',      color: '#3b82f6' },
-  { label: 'Firster',  href: '/gdb-ppp/channel/firster.html',  color: '#a855f7' },
-  { label: 'KP.CN',    href: '/gdb-ppp/channel/kpcn.html',     color: '#f0900d' },
-  { label: 'THT',      href: '/gdb-ppp/channel/tht.html',      color: '#10b981' },
-  { label: 'Dmall',    href: '/gdb-ppp/channel/dmall.html',    color: '#f59e0b' },
-  { label: 'JD',       href: '/gdb-ppp/channel/jd.html',       color: '#f43f5e' },
-];
+/* ── CSS for dropdown nav ────────────────── */
+var _headerStyle = document.createElement('style');
+_headerStyle.textContent = [
+  '.gdb-nav{position:fixed;top:var(--header-h);left:0;right:0;z-index:99;',
+  'height:var(--nav-h);background:var(--surface);border-bottom:1px solid var(--border);',
+  'display:flex;align-items:stretch;padding:0 20px;gap:2px;overflow-x:auto;}',
+  '.gdb-nav::-webkit-scrollbar{height:0;}',
+  '.gdb-nav-item{display:flex;align-items:center;padding:0 12px;font-size:12px;',
+  'font-weight:500;color:var(--text2);text-decoration:none;white-space:nowrap;',
+  'border-bottom:2px solid transparent;transition:all .15s;cursor:pointer;background:none;border-top:none;border-left:none;border-right:none;}',
+  '.gdb-nav-item:hover{color:var(--text);text-decoration:none;}',
+  '.gdb-nav-item.active{color:var(--accent);border-bottom-color:var(--accent);}',
+  '.gdb-nav-divider{width:1px;background:var(--border);margin:10px 8px;}',
+  '.gdb-nav-section{font-size:10px;font-weight:700;color:var(--text3);',
+  'text-transform:uppercase;letter-spacing:.08em;display:flex;align-items:center;padding:0 8px 0 4px;}',
+  '.gdb-nav-channel-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;flex-shrink:0;}',
+  /* Dropdown */
+  '.gdb-nav-dropdown{position:relative;display:flex;align-items:stretch;}',
+  '.gdb-nav-dropdown:hover .gdb-nav-dropdown-menu{display:block;}',
+  '.gdb-nav-dropdown-menu{display:none;position:absolute;top:100%;left:0;',
+  'background:var(--surface2);border:1px solid var(--border);border-radius:6px;',
+  'min-width:150px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.4);overflow:hidden;}',
+  '.gdb-nav-dropdown-menu a{display:block;padding:8px 14px;font-size:12px;',
+  'color:var(--text2);text-decoration:none;transition:background .1s;}',
+  '.gdb-nav-dropdown-menu a:hover{background:var(--border);color:var(--text);}',
+  '.gdb-nav-dropdown-menu a.active{color:var(--accent);background:rgba(88,166,255,.08);}',
+  '.gdb-nav-badge{font-size:9px;font-weight:700;color:var(--text3);',
+  'background:var(--surface2);border:1px solid var(--border);',
+  'border-radius:3px;padding:1px 5px;margin-left:5px;}'
+].join('');
+document.head.appendChild(_headerStyle);
 
-/* ── BUILD HEADER ───────────────────────────── */
+/* ── BUILD HEADER ────────────────────────── */
 function buildGdbHeader(opts) {
   opts = opts || {};
-  var currentPath = window.location.pathname;
+  var p = window.location.pathname;
 
-  /* Header HTML */
   var headerHtml = '<header class="gdb-header">' +
-    '<a class="gdb-header-brand" href="/gdb-ppp/summary.html">' +
+    '<a class="gdb-header-brand" href="/gdb-ppp/channel/">' +
       '<div class="gdb-logo">GDB</div>' +
       '<div><div class="gdb-brand-name">GDB Dashboard</div>' +
       '<div class="gdb-brand-sub">King Power Digital Commerce</div></div>' +
     '</a>' +
     '<div class="gdb-header-spacer"></div>' +
     '<div class="gdb-header-right">' +
-      (opts.showRefresh ? '<button class="gdb-refresh-btn" id="gdb-refresh-btn">↻ Refresh</button>' : '') +
+      (opts.showRefresh ? '<button class="gdb-refresh-btn" id="gdb-refresh-btn">\u21bb Refresh</button>' : '') +
       '<div class="gdb-update-time" id="gdb-update-time"></div>' +
       '<div class="gdb-user">' +
-        '<div class="gdb-user-avatar" id="gdb-user-avatar"><span id="gdb-user-initial">?</span><img id="gdb-user-photo" src="" alt="" style="display:none"></div>' +
+        '<div class="gdb-user-avatar" id="gdb-user-avatar">' +
+          '<span id="gdb-user-initial">?</span>' +
+          '<img id="gdb-user-photo" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%">' +
+        '</div>' +
         '<span class="gdb-user-name" id="gdb-user-name"></span>' +
       '</div>' +
       '<button class="gdb-signout-btn" id="gdb-signout-btn">Sign out</button>' +
     '</div>' +
   '</header>';
 
-  /* Nav HTML */
-  var navHtml = '<nav class="gdb-nav">';
-  GDB_NAV.forEach(function(item) {
-    if (item.type === 'divider') {
-      navHtml += '<div class="gdb-nav-divider"></div>';
-    } else {
-      var isActive = currentPath === item.href || currentPath.endsWith(item.href.split('/gdb-ppp')[1]);
-      var cls = 'gdb-nav-item' + (isActive ? ' active' : '');
-      var dot = item.color ? '<span class="gdb-nav-channel-dot" style="background:' + item.color + '"></span>' : '';
-      navHtml += '<a class="' + cls + '" href="' + item.href + '">' + dot + item.label + '</a>';
-    }
-  });
-  navHtml += '</nav>';
+  /* ── NAV ── */
+  var nav = '<nav class="gdb-nav">';
 
-  /* Inject into page */
-  document.body.insertAdjacentHTML('afterbegin', navHtml);
+  /* Performance section */
+  nav += '<span class="gdb-nav-section">Performance</span>';
+
+  /* Summary */
+  var sumActive = (p.endsWith('/channel/') || p.endsWith('/channel/index.html')) ? ' active' : '';
+  nav += '<a class="gdb-nav-item' + sumActive + '" href="/gdb-ppp/channel/">Summary</a>';
+
+  /* Channel links */
+  var channels = [
+    { key:'KP1',   label:'KP.com',  color:'#3b82f6', href:'/gdb-ppp/channel/kp.html' },
+    { key:'F1',    label:'Firster', color:'#a855f7', href:'/gdb-ppp/channel/firster.html' },
+    { key:'KPCN',  label:'KP.CN',   color:'#f0900d', href:'/gdb-ppp/channel/kpcn.html' },
+    { key:'THT',   label:'THT',     color:'#10b981', href:'/gdb-ppp/channel/tht.html' },
+    { key:'DMALL', label:'Dmall',   color:'#f59e0b', href:'/gdb-ppp/channel/dmall.html' },
+    { key:'JD',    label:'JD',      color:'#f43f5e', href:'/gdb-ppp/channel/jd.html' },
+  ];
+  channels.forEach(function(ch) {
+    var isActive = p.endsWith(ch.href.split('/gdb-ppp')[1]) ? ' active' : '';
+    nav += '<a class="gdb-nav-item' + isActive + '" href="' + ch.href + '">' +
+           '<span class="gdb-nav-channel-dot" style="background:' + ch.color + '"></span>' +
+           ch.label + '</a>';
+  });
+
+  /* Divider */
+  nav += '<div class="gdb-nav-divider"></div>';
+
+  /* PPP section */
+  nav += '<span class="gdb-nav-section">PPP</span>';
+
+  /* Initiatives dropdown */
+  var initPaths = ['/initiative/', '/initiative/index.html', '/initiative/dashboard.html', '/initiative/list.html', '/initiative/completed.html'];
+  var initActive = initPaths.some(function(ip){ return p.includes(ip); }) ? ' active' : '';
+  var dashActive = (p.endsWith('/initiative/dashboard.html')) ? ' active' : '';
+  var listActive = p.endsWith('/initiative/list.html') ? ' active' : '';
+  var compActive = p.endsWith('/initiative/completed.html') ? ' active' : '';
+
+  nav += '<div class="gdb-nav-dropdown">' +
+    '<a class="gdb-nav-item' + initActive + '" href="/gdb-ppp/initiative/index.html">' +
+    'Initiatives \u25be</a>' +
+    '<div class="gdb-nav-dropdown-menu">' +
+      '<a class="' + dashActive + '" href="/gdb-ppp/initiative/dashboard.html">Dashboard</a>' +
+      '<a class="' + listActive + '" href="/gdb-ppp/initiative/list.html">List</a>' +
+      '<a class="' + compActive + '" href="/gdb-ppp/initiative/completed.html">Completed</a>' +
+    '</div>' +
+  '</div>';
+
+  /* Issues */
+  var issueActive = p.includes('/issue/') ? ' active' : '';
+  nav += '<a class="gdb-nav-item' + issueActive + '" href="/gdb-ppp/issue/">' +
+         'Issues <span class="gdb-nav-badge">soon</span></a>';
+
+  /* Support */
+  var suppActive = p.includes('/support/') ? ' active' : '';
+  nav += '<a class="gdb-nav-item' + suppActive + '" href="/gdb-ppp/support/">' +
+         'Support Tasks <span class="gdb-nav-badge">soon</span></a>';
+
+  nav += '</nav>';
+
+  document.body.insertAdjacentHTML('afterbegin', nav);
   document.body.insertAdjacentHTML('afterbegin', headerHtml);
 
   /* Wire sign out */
@@ -75,23 +143,21 @@ function buildGdbHeader(opts) {
   if (refreshBtn) {
     refreshBtn.addEventListener('click', function() {
       if (typeof init === 'function') init();
+      else if (typeof loadData === 'function') loadData();
       else if (typeof loadSummary === 'function') loadSummary();
     });
   }
 }
 
-/* ── SET USER INFO ───────────────────────────── */
+/* ── SET USER ────────────────────────────── */
 function setGdbUser(user) {
-  var nameEl    = document.getElementById('gdb-user-name');
-  var initEl    = document.getElementById('gdb-user-initial');
-  var photoEl   = document.getElementById('gdb-user-photo');
-  var avatarEl  = document.getElementById('gdb-user-avatar');
-
   if (!user) return;
-
   var name = user.displayName || user.email || '';
-  if (nameEl)   nameEl.textContent = name;
-  if (initEl)   initEl.textContent = name.charAt(0).toUpperCase();
+  var nameEl   = document.getElementById('gdb-user-name');
+  var initEl   = document.getElementById('gdb-user-initial');
+  var photoEl  = document.getElementById('gdb-user-photo');
+  if (nameEl)  nameEl.textContent = name;
+  if (initEl)  initEl.textContent = name.charAt(0).toUpperCase();
   if (photoEl && user.photoURL) {
     photoEl.src = user.photoURL;
     photoEl.style.display = 'block';
@@ -99,19 +165,19 @@ function setGdbUser(user) {
   }
 }
 
-/* ── SET UPDATE TIME ─────────────────────────── */
+/* ── SET UPDATE TIME ─────────────────────── */
 function setGdbUpdateTime(ts) {
   var el = document.getElementById('gdb-update-time');
   if (!el || !ts) return;
   var d = new Date(ts);
-  el.textContent = 'Updated: ' + d.toLocaleString('th-TH', {
-    timeZone: 'Asia/Bangkok', hour12: false,
-    day: '2-digit', month: 'short', year: 'numeric',
-    hour: '2-digit', minute: '2-digit'
+  el.textContent = d.toLocaleString('th-TH', {
+    timeZone:'Asia/Bangkok', hour12:false,
+    day:'2-digit', month:'short', year:'numeric',
+    hour:'2-digit', minute:'2-digit'
   });
 }
 
-/* ── AUTH GUARD for channel/initiative pages ─── */
+/* ── AUTH GUARD ──────────────────────────── */
 function gdbAuthGuard(onUser) {
   if (!firebase.apps.length) {
     firebase.initializeApp({
@@ -126,10 +192,7 @@ function gdbAuthGuard(onUser) {
   var _auth = firebase.auth();
   var _unsub = _auth.onAuthStateChanged(function(user) {
     _unsub();
-    if (!user) {
-      window.location.href = '/gdb-ppp/';
-      return;
-    }
+    if (!user) { window.location.href = '/gdb-ppp/'; return; }
     setGdbUser(user);
     if (typeof onUser === 'function') onUser(user, _auth);
   });

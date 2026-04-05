@@ -42,7 +42,7 @@ function countBy(arr,key){return arr.reduce((a,d)=>{const v=d[key]||'(none)';a[v
 
 /* Year filter */
 function getYears(){const s=new Set();allData.forEach(d=>(d['Roadmap Year Plan']||'').split(';').forEach(y=>{if(y.trim())s.add(y.trim())}));return['all',...Array.from(s).sort()];}
-function renderYF(id,arr,cb){document.getElementById(id).innerHTML=getYears().map(y=>`<button class="fb-btn ${arr.includes(y)?'active':''}" onclick="(${cb.toString()})(this,'${y}')">${y==='all'?'All years':y.replace('ROADMAP_','')}</button>`).join('');}
+function renderYF(id,arr,cb){const _el=document.getElementById(id);if(!_el)return;_el.innerHTML=getYears().map(y=>`<button class="fb-btn ${arr.includes(y)?'active':''}" onclick="(${cb.toString()})(this,'${y}')">${y==='all'?'All years':y.replace('ROADMAP_','')}</button>`).join('');}
 function toggleYF(arr,val){if(val==='all')return['all'];const w=arr.filter(x=>x!=='all');const i=w.indexOf(val);if(i>=0){w.splice(i,1);return w.length===0?['all']:w;}return[...w,val];}
 function filterYear(data,arr){if(arr.includes('all'))return data;return data.filter(d=>{const ys=(d['Roadmap Year Plan']||'').split(';').map(x=>x.trim());return arr.some(y=>ys.includes(y));});}
 function filterNoYear(data){return data.filter(d=>!(d['Roadmap Year Plan']||'').trim());}

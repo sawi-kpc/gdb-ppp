@@ -103,7 +103,12 @@ async function loadData(){
 }
 
 /* ── Initiatives List ────────────────────────────── */
-function renderAll(){renderSummary();renderInitiatives();}
+function renderAll(){
+  /* Each render function is called safely — failure in one won't block others */
+  [renderSummary, renderInitiatives, renderList, renderCompleted].forEach(function(fn){
+    try { if(typeof fn==='function') fn(); } catch(e){ /* element not on this page */ }
+  });
+}
 
 function tickClock(){const el=document.getElementById('current-dt');if(!el)return;const n=new Date();el.textContent=n.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' · '+n.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
 

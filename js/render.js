@@ -116,7 +116,7 @@ function renderTimeline(data){
     const hasPlan=tS&&tE,hasActual=!!aS;
     const planBar=hasPlan?`<div class="tl-bar tl-bar-plan" style="left:${pct(tS).toFixed(2)}%;width:${wPct(tS,tE).toFixed(2)}%"></div>`:'';
     const actBar=hasActual?`<div class="tl-bar ${isD?'tl-bar-actual-del':'tl-bar-actual-ok'}" style="left:${pct(aS).toFixed(2)}%;width:${aE?wPct(aS,aE).toFixed(2):Math.max(.5,((Math.min(today,END)-new Date(aS))/totalMs*100)).toFixed(2)}%"></div>`:'';
-    const tLine=(tS||tE)?`<span><span style="color:#378ADD;font-weight:600;min-width:40px;display:inline-block">Target</span>${fmtDate(tS)} \u2192 ${fmtDate(tE)}</span>`:'';
+    const tLine=(tS||tE)?`<span><span style="color:var(--accent);font-weight:600;min-width:40px;display:inline-block">Target</span>${fmtDate(tS)} \u2192 ${fmtDate(tE)}</span>`:'';
     const aLine=(aS||aE)?`<span><span style="color:${isD?'#E24B4A':'#1D9E75'};font-weight:600;min-width:40px;display:inline-block">Actual</span>${fmtDate(aS)} \u2192 ${aE?fmtDate(aE):'In progress'}</span>`:'';
     const dLine=(tLine||aLine)?`<div class="tl-date-line">${[tLine,aLine].filter(Boolean).join('<br>')}</div>`:'';
     const emoji=mon?(isD?'🆘 ':isR?'⚠️ ':isT?'✅ ':''):'';
@@ -170,7 +170,7 @@ function renderSummary(){
 }
 
 /* ── Done initiatives list ────────────────── */
-let doneYearFilter=['ROADMAP_2026'];
+let doneYearFilter=['all'];
 let doneBUFilter='all';
 
 function renderCompleted(){
@@ -258,7 +258,7 @@ function renderCompleted(){
     if(kpi){
       html+='<div style="margin-top:5px">';
       html+='<span style="font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">KPI vs Target</span>';
-      html+='<div class="done-meta" style="margin-top:2px;color:#378ADD">'+kpi+'</div>';
+      html+='<div class="done-meta" style="margin-top:2px;color:var(--accent)">'+kpi+'</div>';
       html+='</div>';
     }
 

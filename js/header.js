@@ -6,8 +6,31 @@
 
 /* ── CSS for dropdown nav ────────────────── */
 var _headerStyle = document.createElement('style');
-_headerStyle.textContent = '.gdb-nav{position:fixed;top:var(--header-h);left:0;right:0;z-index:99;height:var(--nav-h);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:stretch;padding:0 20px;gap:2px;overflow:visible;}.gdb-nav::-webkit-scrollbar{height:0;}.gdb-nav-item{display:flex;align-items:center;padding:0 12px;font-size:12px;font-weight:500;color:var(--text2);text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;transition:all .15s;cursor:pointer;background:none;border-top:none;border-left:none;border-right:none;}.gdb-nav-item:hover{color:var(--text);text-decoration:none;}.gdb-nav-item.active{color:var(--accent);border-bottom-color:var(--accent);}.gdb-nav-divider{width:1px;background:var(--border);margin:10px 8px;}.gdb-nav-section{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;display:flex;align-items:center;padding:0 8px 0 4px;}.gdb-nav-channel-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;flex-shrink:0;}.gdb-nav-badge{font-size:9px;font-weight:700;color:var(--text3);background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:1px 5px;margin-left:5px;}.gdb-nav-sub-sep{color:var(--text3);padding:0 2px;font-size:11px;align-self:center;}.gdb-nav-sub-item{display:flex;align-items:center;padding:0 9px;font-size:11px;color:var(--text3);text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;transition:all .15s;}.gdb-nav-sub-item:hover{color:var(--text);text-decoration:none;}.gdb-nav-sub-item.active{color:var(--accent);border-bottom-color:var(--accent);}';
+_headerStyle.textContent = '.gdb-nav{position:fixed;top:var(--header-h);left:0;right:0;z-index:99;height:var(--nav-h);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:stretch;padding:0 20px;gap:2px;overflow:visible;}.gdb-nav::-webkit-scrollbar{height:0;}.gdb-nav-item{display:flex;align-items:center;padding:0 12px;font-size:12px;font-weight:500;color:var(--text2);text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;transition:all .15s;cursor:pointer;background:none;border-top:none;border-left:none;border-right:none;}.gdb-nav-item:hover{color:var(--text);text-decoration:none;}.gdb-nav-item.active{color:var(--accent);border-bottom-color:var(--accent);}.gdb-nav-divider{width:1px;background:var(--border);margin:10px 8px;}.gdb-nav-section{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;display:flex;align-items:center;padding:0 8px 0 4px;}.gdb-nav-channel-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;flex-shrink:0;}.gdb-nav-badge{font-size:9px;font-weight:700;color:var(--text3);background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:1px 5px;margin-left:5px;}.gdb-init-subnav{position:fixed;top:calc(var(--header-h) + var(--nav-h));left:0;right:0;z-index:98;height:36px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:stretch;padding:0 20px;gap:2px;}.gdb-init-tab{display:flex;align-items:center;padding:0 14px;font-size:12px;font-weight:500;color:var(--text2);text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;transition:all .15s;}.gdb-init-tab:hover{color:var(--text);text-decoration:none;}.gdb-init-tab.active{color:var(--accent);border-bottom-color:var(--accent);}.has-init-subnav{padding-top:calc(var(--header-h) + var(--nav-h) + 36px) !important;}';
 document.head.appendChild(_headerStyle);
+
+
+/* ── Initiative sub-tab bar ──────────────────────────────
+   Call this on initiative pages to render a tab bar
+   that appears below the main nav bar.
+   Styled identically to channel tab-bar (tabs-bar).
+─────────────────────────────────────────────────── */
+function buildGdbInitiativeSubNav() {
+  var p = window.location.pathname;
+  var timelineActive  = (p.endsWith('/initiative/index.html') || p.endsWith('/initiative/')) ? ' active' : '';
+  var dashActive      = p.endsWith('/initiative/dashboard.html') ? ' active' : '';
+  var listActive      = p.endsWith('/initiative/list.html') ? ' active' : '';
+  var compActive      = p.endsWith('/initiative/completed.html') ? ' active' : '';
+
+  var subNav = '<div class="gdb-init-subnav">' +
+    '<a class="gdb-init-tab' + timelineActive + '" href="/gdb-ppp/initiative/index.html">Timeline</a>' +
+    '<a class="gdb-init-tab' + dashActive + '" href="/gdb-ppp/initiative/dashboard.html">Dashboard</a>' +
+    '<a class="gdb-init-tab' + listActive + '" href="/gdb-ppp/initiative/list.html">List</a>' +
+    '<a class="gdb-init-tab' + compActive + '" href="/gdb-ppp/initiative/completed.html">Completed</a>' +
+  '</div>';
+
+  document.body.insertAdjacentHTML('afterbegin', subNav);
+}
 
 /* ── BUILD HEADER ────────────────────────── */
 function buildGdbHeader(opts) {
@@ -65,7 +88,7 @@ function buildGdbHeader(opts) {
   nav += '<div class="gdb-nav-divider"></div>';
 
   /* PPP section */
-  nav += '<span class="gdb-nav-section">PPP</span>';
+  nav += '<span class="gdb-nav-section">Products &amp; Projects Portfolio</span>';
 
   /* Initiatives dropdown */
   var initPaths = ['/initiative/', '/initiative/index.html', '/initiative/dashboard.html', '/initiative/list.html', '/initiative/completed.html'];
@@ -74,15 +97,8 @@ function buildGdbHeader(opts) {
   var listActive = p.endsWith('/initiative/list.html') ? ' active' : '';
   var compActive = p.endsWith('/initiative/completed.html') ? ' active' : '';
 
-  nav += '<div class="gdb-nav-dropdown">' +
-    '<a class="gdb-nav-item' + initActive + '" href="/gdb-ppp/initiative/index.html">' +
-    'Initiatives \u25be</a>' +
-    '<div class="gdb-nav-dropdown-menu">' +
-      '<a class="' + dashActive + '" href="/gdb-ppp/initiative/dashboard.html">Dashboard</a>' +
-      '<a class="' + listActive + '" href="/gdb-ppp/initiative/list.html">List</a>' +
-      '<a class="' + compActive + '" href="/gdb-ppp/initiative/completed.html">Completed</a>' +
-    '</div>' +
-  '</div>';
+  /* Initiatives — single nav item; sub-tabs rendered by buildGdbInitiativeSubNav() */
+  nav += '<a class="gdb-nav-item' + initActive + '" href="/gdb-ppp/initiative/index.html">Initiatives</a>';
 
   /* Issues */
   var issueActive = p.includes('/issue/') ? ' active' : '';

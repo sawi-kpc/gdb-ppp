@@ -102,7 +102,8 @@ function renderTimeline(data){
   function pct(ds){if(!ds)return null;const d=new Date(ds);if(d<START)return 0;if(d>END)return 100;return((d-START)/totalMs*100);}
   function wPct(s,e){const ds=new Date(s),de=new Date(e),cs=Math.max(ds,START),ce=Math.min(de,END);if(ce<=cs)return 0.8;return((ce-cs)/totalMs*100);}
   const todayP=pct(today.toISOString().slice(0,10));
-  document.getElementById('today-badge').textContent='Today: '+today.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  var _tb=document.getElementById('today-badge');
+  if(_tb) _tb.textContent='Today: '+today.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
   const todayMonIdx=mCols.findIndex(mc=>mc.year===today.getFullYear()&&mc.month===today.getMonth());
   const todayColBg=todayMonIdx>=0?`<div class="tl-col-bg" style="left:${(todayMonIdx/nM*100).toFixed(2)}%;width:${(100/nM).toFixed(2)}%"></div>`:'';
   const qtrHtml=qtrs.map(q=>`<div class="tl-qtr" style="flex:${q.count}">${q.label}</div>`).join('');

@@ -127,6 +127,7 @@ function checkAllLoaded() {
   document.getElementById('gdb-loading').style.display = 'none';
   document.getElementById('gdb-main').style.display = 'block';
   buildPage();
+  if (typeof setGdbUpdateTime === 'function') setGdbUpdateTime(new Date().toISOString());
 }
 
 /* ── Build page ─────────────────────────────── */

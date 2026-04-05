@@ -5,7 +5,7 @@
 
 let charts={};
 let sumYearFilter=['ROADMAP_2026'],initYearFilter=['all'],showNoYear=false,sumStage='all',hideNoDate=false;
-let listYearFilter=['all'];
+let listYearFilter=['ROADMAP_2026'];
 let listAssigneeFilter='all';
 
 const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -170,7 +170,7 @@ function renderSummary(){
 }
 
 /* ── Done initiatives list ────────────────── */
-let doneYearFilter=['all'];
+let doneYearFilter=['ROADMAP_2026'];
 let doneBUFilter='all';
 
 function renderCompleted(){

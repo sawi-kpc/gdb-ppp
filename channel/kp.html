@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>KP Performance | KPI Dashboard</title>
-<link rel="stylesheet" href="../css/channel.css">
+<link rel="stylesheet" href="../css/shared.css">
 </head>
 <body>
 
@@ -14,7 +14,6 @@
   <div class="loading-sub">Connecting to Google Sheets...</div>
 </div>
 
-<div id="error-bar"><strong>&#9888; Cannot load data &mdash; </strong><span id="error-msg"></span></div>
 
 <header>
   <div class="brand">
@@ -133,45 +132,13 @@
 <script src="../js/channel-config.js"></script>
 <script src="../js/channel-data.js"></script>
 <script src="../js/channel-render.js"></script>
+<script src="../js/header.js"></script>
 <script>
 window.addEventListener('DOMContentLoaded', function() {
-  if (!firebase.apps.length) {
-    firebase.initializeApp({
-      apiKey:            "AIzaSyCaS5kLNbm5lSLRHd1rdr0sXRCS5lB_Rgc",
-      authDomain:        "gdb-dashboard-prod.firebaseapp.com",
-      projectId:         "gdb-dashboard-prod",
-      storageBucket:     "gdb-dashboard-prod.firebasestorage.app",
-      messagingSenderId: "170622130981",
-      appId:             "1:170622130981:web:23302ed9a5ce4e82ac58cc"
-    });
-  }
-
-  var _auth = firebase.auth();
-
-  var _unsub = _auth.onAuthStateChanged(function(user) {
-    _unsub();
-    if (!user) {
-      window.location.href = '../';
-      return;
-    }
-    var emailEl  = document.getElementById('ch-user-email');
-    var avatarEl = document.getElementById('ch-user-avatar');
-    if (emailEl)  emailEl.textContent = user.displayName || user.email;
-    if (avatarEl && user.photoURL) {
-      avatarEl.src = user.photoURL;
-      avatarEl.style.display = 'inline-block';
-    }
+  buildGdbHeader({ showRefresh: true });
+  gdbAuthGuard(function(user, auth) {
     initChannel('KP1');
   });
-
-  var _logoutBtn = document.getElementById('ch-logout-btn');
-  if (_logoutBtn) {
-    _logoutBtn.addEventListener('click', function() {
-      _auth.signOut().then(function() {
-        window.location.href = '../';
-      });
-    });
-  }
 });
 </script>
 </body>

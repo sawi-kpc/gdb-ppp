@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>GDB Performance Dashboard</title>
+<link rel="stylesheet" href="../css/shared.css">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="../js/channel-config.js"></script>
+<script src="../js/header.js"></script>
+</head>
+<body>
+
+<div id="gdb-loading">
+  <div class="gdb-spinner"></div>
+  <div class="gdb-loading-text">Loading GDB Dashboard…</div>
+</div>
+<div id="gdb-error"></div>
+
+<div class="gdb-page" id="gdb-main" style="display:none">
+
+  <div class="gdb-sec-head">
+    <div>
+      <div class="gdb-sec-title">GDB Performance Dashboard</div>
+      <div class="gdb-sec-sub">Channel comparison · Live from Google Sheets</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <div class="yr-toggle">
+        <button class="yr-btn active" onclick="setYear('2025',this)">FY 2025</button>
+        <button class="yr-btn" onclick="setYear('2026',this)">2026 YTD</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Compare Table -->
+  <div class="chart-card" style="margin-bottom:20px">
+    <div class="chart-title">Key Metrics Comparison — All Channels</div>
+    <div class="chart-desc" id="summary-sub">FY 2025 full year vs B2024 baseline</div>
+    <div class="tbl-wrap" style="margin-top:12px">
+      <table class="compare-table" id="compare-table">
+        <thead id="compare-thead"></thead>
+        <tbody id="compare-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Channel Cards -->
+  <div class="gdb-sec-head" style="margin-top:8px">
+    <div class="gdb-sec-title">Channel Overview</div>
+  </div>
+  <div class="summary-channel-grid" id="channel-cards"></div>
+
+</div>
+
+<script>
+/* ── Data store ────────────────────────────── */
+var ALL_DATA  = {};
+var CURR_YEAR = '2025';
+var CHANNELS_ORDER = ['KP1','F1','KPCN','THT','DMALL','JD'];
+var LOADED = 0;
+var TOTAL  = CHANNELS_ORDER.length;
+var HAS_ERROR = false;
+
+/* ── KPI definitions for compare table ─────── */
+var KPI_ROWS = [
+  { key:'Gross_Sales', label:'Gross Sales',    ft:'thb',  lowerGood:false },
+  { key:'Net_Sales',   label:'Net Sales',      ft:'thb',  lowerGood:false },
+  { key:'Orders',      label:'Orders',         ft:'num',  lowerGood:false },
+  { key:'Customer',    label:'Customers',      ft:'num',  lowerGood:false },
+  { key:'CR',          label:'Conv. Rate',     ft:'pct2', lowerGood:false },
+  { key:'AOV',         label:'AOV',            ft:'thb',  lowerGood:false },
+  { key:'Discount_pct',label:'Discount %',     ft:'pct',  lowerGood:true  },
+  { key:'Mkt_to_Sale', label:'Mkt-to-Sale %',  ft:'pct',  lowerGood:true  },
+];
+
+/* ── Format ────────────────────────────────── */
+function fmt(v, t) {
+  if (v == null || isNaN(v)) return '—';
+  if (t==='thb')  return '฿'+(v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':v.toFixed(0));
+  if (t==='pct')  return (v*100).toFixed(1)+'%';
+  if (t==='pct2') return (v*100).toFixed(2)+'%';
+  if (t==='num')  return v>=1e6?(v/1e6).toFixed(2)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':Math.round(v).toLocaleString();
+  return String(v);
+}
+function pctChg(a,b){ if(!a||!b||a===0) return null; return (b-a)/Math.abs(a); }
+function sumA(a){ if(!a) return null; var s=0,has=false; a.forEach(function(v){if(v!=null){s+=v;has=true;}}); return has?s:null; }
+
+/* ── Load all channels via JSONP ────────────── */
+function loadChannel(key) {
+  var cfg    = CHANNEL_REGISTRY[key];
+  var cbName = '_sumCb_'+key+'_'+Date.now();
+  var script = document.createElement('script');
+  var done   = false;
+  var timer  = setTimeout(function(){
+    if(done) return; done=true;
+    if(script.parentNode) script.parentNode.removeChild(script);
+    try{delete window[cbName];}catch(e){}
+    HAS_ERROR = true;
+    checkAllLoaded();
+  }, 15000);
+
+  window[cbName] = function(json) {
+    if(done) return; done=true;
+    clearTimeout(timer);
+    if(script.parentNode) script.parentNode.removeChild(script);
+    try{delete window[cbName];}catch(e){}
+    if(json[key]) ALL_DATA[key] = json[key];
+    LOADED++;
+    checkAllLoaded();
+  };
+  script.onerror = function(){
+    if(done) return; done=true;
+    clearTimeout(timer);
+    if(script.parentNode) script.parentNode.removeChild(script);
+    try{delete window[cbName];}catch(e){}
+    LOADED++;
+    checkAllLoaded();
+  };
+  script.src = APPS_SCRIPT_URL + '?channel='+key+'&callback='+cbName;
+  document.head.appendChild(script);
+}
+
+function checkAllLoaded() {
+  if (LOADED < TOTAL) return;
+  document.getElementById('gdb-loading').style.display = 'none';
+  document.getElementById('gdb-main').style.display = 'block';
+  buildPage();
+}
+
+/* ── Build page ─────────────────────────────── */
+function buildPage() {
+  buildCompareTable();
+  buildChannelCards();
+}
+
+/* ── Get value for year ─────────────────────── */
+function getVal(d, kpi, yr) {
+  if (!d || !d[kpi]) return null;
+  var k = d[kpi];
+  if (yr === '2025') return k.b25 != null ? k.b25 : sumA(k.y25);
+  if (yr === '2026') {
+    if (k.y26 && k.y26.length > 0) {
+      var vals = k.y26.filter(function(v){return v!=null;});
+      return vals.length ? vals.reduce(function(a,b){return a+b;},0) : null;
+    }
+    return null;
+  }
+  return null;
+}
+
+function getBaseline(d, kpi) {
+  if (!d || !d[kpi]) return null;
+  return d[kpi].b24 != null ? d[kpi].b24 : null;
+}
+
+/* ── Session field helper ───────────────────── */
+function getSessionKey(channelKey) {
+  return (channelKey === 'F1') ? 'Session_SP' : 'Session';
+}
+
+/* ── Compare table ──────────────────────────── */
+function buildCompareTable() {
+  var orderedKeys = CHANNELS_ORDER.filter(function(k){ return ALL_DATA[k]; });
+  
+  /* Head */
+  var thead = '<tr><th>KPI</th>';
+  orderedKeys.forEach(function(key) {
+    var cfg = CHANNEL_REGISTRY[key];
+    thead += '<th><div class="ch-col-header"><span class="gdb-nav-channel-dot" style="background:'+cfg.accent+'"></span>'+
+              cfg.badge.replace(' Channel','')+'</div></th>';
+  });
+  thead += '</tr>';
+  document.getElementById('compare-thead').innerHTML = thead;
+
+  /* Body */
+  var tbody = '';
+  KPI_ROWS.forEach(function(row, ri) {
+    var kpiKey = row.key;
+    tbody += '<tr>';
+    tbody += '<td>'+row.label+'</td>';
+    
+    /* Get all values first to find best/worst */
+    var vals = orderedKeys.map(function(key) {
+      var d = ALL_DATA[key];
+      /* special: sessions field */
+      var actualKey = (kpiKey === 'Session') ? getSessionKey(key) : kpiKey;
+      return getVal(d, actualKey, CURR_YEAR);
+    });
+    
+    var numVals = vals.filter(function(v){ return v != null; });
+    var maxVal  = numVals.length ? Math.max.apply(null, numVals) : null;
+    var minVal  = numVals.length ? Math.min.apply(null, numVals) : null;
+    
+    orderedKeys.forEach(function(key, i) {
+      var d   = ALL_DATA[key];
+      var actualKey = (kpiKey === 'Session') ? getSessionKey(key) : kpiKey;
+      var val = vals[i];
+      var b24 = getBaseline(d, actualKey);
+      var chg = pctChg(b24, val);
+      
+      /* Highlight best/worst */
+      var isBest  = val != null && val === (row.lowerGood ? minVal : maxVal);
+      var isWorst = val != null && val === (row.lowerGood ? maxVal : minVal);
+      var bgStyle = isBest ? 'background:rgba(63,185,80,.08);' : isWorst ? 'background:rgba(248,81,73,.06);' : '';
+      
+      tbody += '<td style="font-weight:600;'+bgStyle+'>';
+      tbody += '<div>'+fmt(val, row.ft)+'</div>';
+      if (chg != null) {
+        var isGood = row.lowerGood ? chg<=0 : chg>=0;
+        var cls    = isGood ? 'up' : 'dn';
+        var arrow  = chg>=0 ? '▲' : '▼';
+        tbody += '<div style="font-size:10px;font-weight:500" class="kpi-chg '+cls+'">'+arrow+' '+(Math.abs(chg*100).toFixed(1))+'%</div>';
+      }
+      tbody += '</td>';
+    });
+    tbody += '</tr>';
+  });
+  document.getElementById('compare-tbody').innerHTML = tbody;
+  document.getElementById('summary-sub').textContent =
+    CURR_YEAR === '2025' ? 'FY 2025 full year vs B2024 baseline' : '2026 YTD vs same period 2025';
+}
+
+/* ── Channel cards ──────────────────────────── */
+function buildChannelCards() {
+  var container = document.getElementById('channel-cards');
+  var html = '';
+  CHANNELS_ORDER.forEach(function(key) {
+    var d   = ALL_DATA[key];
+    var cfg = CHANNEL_REGISTRY[key];
+    if (!d) {
+      html += '<div class="summary-channel-card" style="border-left-color:'+cfg.accent+';opacity:.5">'+
+              '<div class="summary-ch-header"><div class="summary-ch-logo" style="background:'+cfg.logoBg+'">'+cfg.logoText+'</div>'+
+              '<div><div class="summary-ch-name">'+cfg.badge.replace(' Channel','')+'</div>'+
+              '<div class="summary-ch-sub">Data unavailable</div></div></div></div>';
+      return;
+    }
+    var ses = getSessionKey(key);
+    var gs  = getVal(d, 'Gross_Sales', CURR_YEAR);
+    var ord = getVal(d, 'Orders', CURR_YEAR);
+    var cr  = getVal(d, 'CR', CURR_YEAR);
+    var aov = getVal(d, 'AOV', CURR_YEAR);
+    var sesV = getVal(d, ses, CURR_YEAR);
+    var gsChg = pctChg(d.Gross_Sales ? d.Gross_Sales.b24 : null, gs);
+    
+    function chip(val, ft, lbl) {
+      return '<div style="flex:1;min-width:100px">'+
+             '<div style="font-size:10px;color:var(--text2);margin-bottom:2px">'+lbl+'</div>'+
+             '<div style="font-size:16px;font-weight:700">'+fmt(val,ft)+'</div>'+
+             '</div>';
+    }
+    
+    html += '<a class="summary-channel-card" href="'+cfg.badge.replace(' Channel','').toLowerCase().replace('.','').replace('-','')+'.html" '+
+            'style="border-left-color:'+cfg.accent+';text-decoration:none;color:inherit;display:block" '+
+            'onclick="event.preventDefault();window.location.href=getChannelUrl(\'"'+key+'\')">'+
+            '<div class="summary-ch-header">'+
+              '<div class="summary-ch-logo" style="background:'+cfg.logoBg+'">'+cfg.logoText+'</div>'+
+              '<div>'+
+                '<div class="summary-ch-name">'+cfg.badge.replace(' Channel','')+'</div>'+
+                '<div class="summary-ch-sub">'+cfg.brandSub+'</div>'+
+              '</div>'+
+              (gsChg != null ? '<div style="margin-left:auto;font-size:11px;font-weight:600" class="kpi-chg '+(gsChg>=0?'up':'dn')+'">'+(gsChg>=0?'▲':'▼')+' '+(Math.abs(gsChg*100).toFixed(1))+'% YoY</div>' : '')+
+            '</div>'+
+            '<div style="display:flex;flex-wrap:wrap;gap:8px">'+
+              chip(gs,'thb','Gross Sales')+
+              chip(ord,'num','Orders')+
+              chip(sesV,'num','Sessions')+
+              chip(cr,'pct2','Conv. Rate')+
+            '</div>'+
+            '</a>';
+  });
+  container.innerHTML = html;
+}
+
+function getChannelUrl(key) {
+  var map = {KP1:'kp',F1:'firster',KPCN:'kpcn',THT:'tht',DMALL:'dmall',JD:'jd'};
+  return 'channel/'+( map[key]||key.toLowerCase())+'.html';
+}
+
+function setYear(yr, btn) {
+  CURR_YEAR = yr;
+  document.querySelectorAll('.yr-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  buildPage();
+}
+
+/* ── Init ───────────────────────────────────── */
+window.addEventListener('DOMContentLoaded', function() {
+  buildGdbHeader({ showRefresh: true });
+  gdbAuthGuard(function(user) {
+    CHANNELS_ORDER.forEach(function(key) { loadChannel(key); });
+  });
+});
+</script>
+</body>
+</html>

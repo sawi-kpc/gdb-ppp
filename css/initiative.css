@@ -105,8 +105,11 @@
 /* ── Done / Completed list ─────────────── */
 .done-list  { display:flex; flex-direction:column; gap:10px; }
 .done-item  {
-  background:var(--surface); border:1px solid var(--border);
-  border-radius:var(--radius); padding:14px 16px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--up);
+  border-radius: var(--radius);
+  padding: 14px 16px;
 }
 .done-key   { font-size:10px; color:var(--text3); font-weight:600; }
 .done-name  { font-size:14px; font-weight:700; margin:4px 0; }
@@ -215,13 +218,13 @@ table.dt tr:hover td { background: var(--border); }
 
 /* Done initiatives list */
 .done-list{margin-top:14px}
-.done-item{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:#F0FBF5;border-radius:7px;border-left:3px solid #5DCAA5;margin-bottom:8px}
+.done-item-legacy{display:none}
 .done-item:last-child{margin-bottom:0}
-.done-key{font-size:10px;font-weight:700;color:#5DCAA5;flex-shrink:0;padding-top:1px}
+.done-key{font-size:10px;font-weight:700;color:var(--up);flex-shrink:0;padding-top:1px}
 .done-body{flex:1}
 .done-name{font-size:12px;font-weight:600;color:var(--text);margin-bottom:3px}
 .done-meta{font-size:11px;color:var(--text3);line-height:1.5}
-.done-impact{font-size:11px;color:#085041;margin-top:4px;font-style:italic}
+.done-impact{font-size:11px;color:var(--text2);margin-top:4px;font-style:italic}
 
 /* ── Initiative selects — dark theme ──────── */
 select, .tl-ctrl-select, .list-filter-select {

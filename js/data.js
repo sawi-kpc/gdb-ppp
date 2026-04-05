@@ -104,7 +104,10 @@ async function loadData(){
 
 /* ── Initiatives List ────────────────────────────── */
 function renderAll(){
-  /* Each render function is called safely — failure in one won't block others */
+  /* If onDataReady is defined, this is a standalone initiative page
+     — skip renderAll, let onDataReady call the correct render fn */
+  if (typeof window.onDataReady === 'function') return;
+  /* Original PPP dashboard: call all render functions safely */
   [renderSummary, renderInitiatives, renderList, renderCompleted].forEach(function(fn){
     try { if(typeof fn==='function') fn(); } catch(e){ /* element not on this page */ }
   });

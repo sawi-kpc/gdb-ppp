@@ -112,9 +112,11 @@ function init() {
       D = data;
       hideLoading();
       /* Hide any previous error bar */
-      var errBar = document.getElementById('error-bar');
+      var errBar = document.getElementById('gdb-error');
       if (errBar) errBar.style.display = 'none';
       setTimestamp(meta);
+      /* Update shared header time */
+      if (meta && typeof setGdbUpdateTime === 'function') setGdbUpdateTime(meta.generated);
       setTimeout(function() { buildPage(); }, 50);
     },
       showError
@@ -146,12 +148,8 @@ function hideLoading() {
 
 function showError(msg) {
   hideLoading();
-  var el = document.getElementById('error-bar');
-  if (el) {
-    el.style.display = 'block';
-    var em = el.querySelector('#error-msg');
-    if (em) em.textContent = msg;
-  }
+  var el = document.getElementById('gdb-error');
+  if (el) { el.style.display = 'block'; el.textContent = '⚠ Cannot load data — ' + msg; }
 }
 
 function setTimestamp(meta) {

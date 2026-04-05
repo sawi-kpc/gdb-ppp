@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Initiatives Completed — GDB Dashboard</title>
+<link rel="stylesheet" href="../css/shared.css">
+<link rel="stylesheet" href="../css/initiative.css">
+</head>
+<body>
+
+<div id="gdb-error"></div>
+<div id="gdb-loading"><div class="gdb-spinner"></div><div class="gdb-loading-text">Loading…</div></div>
+
+<div id="init-content" style="display:none">
+<div class="filter-bar" style="margin-top:16px">
+    <span class="fb-label">Roadmap year:</span>
+    <div id="yf-done" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    <div class="fb-sep"></div>
+    <span class="fb-label">BU Owner:</span>
+    <select class="list-filter-select" id="done-bu-select" onchange="onDoneBUChange(this.value)">
+      <option value="all">All BU owners</option>
+    </select>
+  </div>
+  <div style="font-size:11px;color:#aaa;margin-bottom:10px" id="done-count"></div>
+  <div id="done-list-wrap"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="../js/config.js"></script>
+<script src="../js/header.js"></script>
+<script src="../js/render.js"></script>
+<script src="../js/data.js"></script>
+<script>
+window.addEventListener('DOMContentLoaded', function() {
+  buildGdbHeader({ showRefresh: true });
+  gdbAuthGuard(function(user, auth) {
+    loadData(function() {
+      document.getElementById('gdb-loading').style.display = 'none';
+      document.getElementById('init-content').style.display = 'block';
+      renderCompleted();
+      
+    });
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Initiatives Dashboard — GDB</title>
+<link rel="stylesheet" href="../css/shared.css">
+<link rel="stylesheet" href="../css/initiative.css">
+</head>
+<body>
+
+<div id="gdb-error"></div>
+<div id="gdb-loading"><div class="gdb-spinner"></div><div class="gdb-loading-text">Loading Initiatives…</div></div>
+
+<div id="init-content" class="gdb-page" style="display:none">
+<div class="filter-bar" style="margin-top:16px">
+    <span class="fb-label">Roadmap year:</span>
+    <div id="yf-init" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    <div class="fb-sep"></div>
+    <button class="fb-btn" id="btn-no-year" onclick="toggleNoYear(this)">No roadmap year</button>
+  </div>
+  <div class="metrics-strip" id="init-metrics"></div>
+  <div class="two-col">
+    <div>
+      <div class="section" style="margin-bottom:12px">
+        <div class="sec-title">Attention required</div>
+        <div id="init-alerts"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">By lifecycle status</div>
+        <div class="chart-sub">Count &amp; % of all items</div>
+        <div style="position:relative;height:200px"><canvas id="c-status"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">By project goal</div>
+        <div class="chart-sub">Count &amp; % of all items</div>
+        <div id="c-goal-wrap" style="position:relative;height:180px"><canvas id="c-goal"></canvas></div>
+      </div>
+      <div class="section" style="margin-bottom:12px">
+        <div class="sec-title">Active delivery snapshot</div>
+        <table class="dt"><thead><tr><th>Key</th><th>Initiative</th><th>Monitor</th><th>Impl. status</th></tr></thead>
+        <tbody id="init-delivery"></tbody></table>
+      </div>
+      <div class="section">
+        <div class="sec-title">Pipeline — Discovery &amp; Ready for Delivery</div>
+        <table class="dt"><thead><tr><th>Key</th><th>Initiative</th><th>Stage</th><th>Assignee</th><th>Target start</th></tr></thead>
+        <tbody id="init-pipeline"></tbody></table>
+      </div>
+    </div>
+    <div class="right-col">
+      <div class="chart-card">
+        <div class="chart-title">By roadmap status</div>
+        <div class="chart-sub">Count &amp; % of all items</div>
+        <div style="position:relative;height:200px"><canvas id="c-roadmap"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">By project type</div>
+        <div class="chart-sub">Count &amp; % of all items</div>
+        <div style="position:relative;height:200px"><canvas id="c-type"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">By primary assignee</div>
+        <div class="chart-sub">Assignee.displayName</div>
+        <div id="c-a1-wrap" style="position:relative;height:180px"><canvas id="c-a1"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">By 2nd assignee</div>
+        <div class="chart-sub">Assignee (2nd).displayName</div>
+        <div id="c-a2-wrap" style="position:relative;height:180px"><canvas id="c-a2"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="../js/config.js"></script>
+<script src="../js/header.js"></script>
+<script src="../js/render.js"></script>
+<script src="../js/data.js"></script>
+<script>
+window.addEventListener('DOMContentLoaded', function() {
+  buildGdbHeader({ showRefresh: true });
+  gdbAuthGuard(function(user, auth) {
+    loadData(function() {
+      document.getElementById('gdb-loading').style.display = 'none';
+      document.getElementById('init-content').style.display = 'block';
+      renderInitiatives();
+    });
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Support Tasks — GDB Dashboard</title>
+<link rel="stylesheet" href="../css/shared.css">
+</head>
+<body>
+<div id="gdb-error"></div>
+<div class="gdb-page" id="main-content" style="display:none">
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px">
+    <div style="font-size:48px">🎵</div>
+    <div style="font-size:20px;font-weight:700;color:var(--text)">Support Tasks</div>
+    <div style="font-size:14px;color:var(--text2)">Coming soon — Jira support data for stakeholder request monitoring</div>
+  </div>
+</div>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="../js/header.js"></script>
+<script>
+window.addEventListener('DOMContentLoaded', function() {
+  buildGdbHeader({});
+  gdbAuthGuard(function() {
+    document.getElementById('main-content').style.display = 'block';
+  });
+});
+</script>
+</body>
+</html>

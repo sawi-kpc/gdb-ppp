@@ -37,7 +37,7 @@ function parseSheetRows(text,embeddedData){
 async function loadData(){
   (function(){var _e=document.getElementById('refresh-time');if(_e)_e.textContent='Fetching\u2026';})();
   let fetched=false;
-  const ts=()=>new Date().toLocaleString('th-TH',{timeZone:'Asia/Bangkok',hour12:false,day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const ts=()=>new Date().toLocaleString('en-GB',{timeZone:'Asia/Bangkok',hour12:false,day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
   if(!fetched&&CONFIG.APPS_SCRIPT_URL){
     try{const r=await fetch(CONFIG.APPS_SCRIPT_URL);if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();if(j.data&&j.data.length>0){allData=j.data;fetched=true;(function(){var _e=document.getElementById('refresh-time');if(_e)_e.textContent=ts()+' (live via script)';})();}}catch(e){console.warn('[GDB] Apps Script:',e.message);}
   }
@@ -87,7 +87,7 @@ function parseSheetRows(text,embeddedData){
 async function loadData(){
   (function(){var _e=document.getElementById('refresh-time');if(_e)_e.textContent='Fetching\u2026';})();
   let fetched=false;
-  const ts=()=>new Date().toLocaleString('th-TH',{timeZone:'Asia/Bangkok',hour12:false,day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const ts=()=>new Date().toLocaleString('en-GB',{timeZone:'Asia/Bangkok',hour12:false,day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
   if(!fetched&&CONFIG.APPS_SCRIPT_URL){
     try{const r=await fetch(CONFIG.APPS_SCRIPT_URL);if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();if(j.data&&j.data.length>0){allData=j.data;fetched=true;(function(){var _e=document.getElementById('refresh-time');if(_e)_e.textContent=ts()+' (live via script)';})();}}catch(e){console.warn('[GDB] Apps Script:',e.message);}
   }
@@ -113,7 +113,7 @@ function renderAll(){
   });
 }
 
-function tickClock(){const el=document.getElementById('current-dt');if(!el)return;const n=new Date();el.textContent=n.toLocaleString('th-TH',{timeZone:'Asia/Bangkok',hour12:false,day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'})+' · '+n.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
+function tickClock(){const el=document.getElementById('current-dt');if(!el)return;const n=new Date();el.textContent=n.toLocaleString('en-GB',{timeZone:'Asia/Bangkok',hour12:false,day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'})+' · '+n.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
 
 function getEmbedded(){return[
 {'Key':'PPP-36','Summary':'New POS','Issue Type':'Initiative','Project Type':'Strategic','Status':'Parking Lot','Roadmap Status':'New','Project Goal':'Strategic Direction','Roadmap Year Plan':'','Assignee.displayName':'Chawanop Witthayaphirak','Assignee (2nd).displayName':'','Project Monitoring Status':'','Implementation Status':'','Dependency Systems':'','Target Project Start':'','Target Project End':'','Actual Project Start':'','Actual Project End':'','BU Owner':'The Able'},

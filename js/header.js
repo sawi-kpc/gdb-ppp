@@ -172,7 +172,7 @@ function setGdbUpdateTime(ts) {
   var el = document.getElementById('gdb-update-time');
   if (!el || !ts) return;
   var d = new Date(ts);
-  el.textContent = d.toLocaleString('th-TH', {
+  el.textContent = d.toLocaleString('en-GB', {
     timeZone: 'Asia/Bangkok', hour12: false,
     day: 'numeric', month: 'long', year: 'numeric',
     hour: '2-digit', minute: '2-digit', second: '2-digit'

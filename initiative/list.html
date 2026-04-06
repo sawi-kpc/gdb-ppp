@@ -51,17 +51,16 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="../js/config.js"></script>
+<script src="../js/initiative/config.js"></script>
 <script src="../js/header.js"></script>
-<script src="../js/render.js"></script>
-<script src="../js/data.js"></script>
+<script src="../js/initiative/render.js"></script>
+<script src="../js/initiative/data.js"></script>
 <script>
 /* Set callback BEFORE loadData() runs */
 window.onDataReady = function(data) {
   document.getElementById('gdb-loading').style.display = 'none';
   document.getElementById('init-content').style.display = 'block';
   renderList();
-  if(typeof onAssigneeChange==="function")onAssigneeChange();
   /* Update header time from data.js refresh-time span */
   var rtEl = document.getElementById('refresh-time');
   if (rtEl && typeof setGdbUpdateTime === 'function') {

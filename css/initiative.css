@@ -184,7 +184,7 @@ table.dt tr:hover td { background: var(--border); }
 .tl-label-head{width:240px;flex-shrink:0}
 .tl-grid-head{flex:1}
 .tl-status-head{width:100px;flex-shrink:0}
-.tl-row{display:flex;align-items:stretch;min-height:52px;border-bottom:1px solid #f5f5f5}
+.tl-row{display:flex;align-items:stretch;min-height:52px;border-bottom:1px solid rgba(48,54,61,0.5)}
 .tl-row:last-child{border-bottom:none}
 .tl-row.row-ontrack{background:rgba(63,185,80,.10)}
 .tl-row.row-atrisk{background:rgba(245,158,11,.11)}
@@ -210,7 +210,7 @@ table.dt tr:hover td { background: var(--border); }
 .tab-dropdown-menu button:hover{background:#254f7a;color:var(--surface)}
 .tab-dropdown-menu button.active{color:#5DCAA5;border-left-color:#5DCAA5;background:#1f4570}
 .tab-dropdown-arrow{font-size:9px;margin-left:4px;opacity:.6}
-.list-filter-select{padding:5px 10px;border:1px solid #ddd;border-radius:6px;font-size:11px;background:var(--surface);cursor:pointer;min-width:140px;color:var(--text2)}
+.list-filter-select{padding:5px 10px;border:1px solid var(--border);border-radius:6px;font-size:11px;background:var(--surface2);cursor:pointer;color:var(--text);min-width:140px;color:var(--text2)}
 .coming-soon{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:320px;gap:10px}
 .cs-icon{font-size:36px;opacity:.35}
 .cs-title{font-size:17px;font-weight:700;color:#ccc}
@@ -248,3 +248,30 @@ select option { background: var(--surface2); color: var(--text); }
 .metrics-strip { gap: 8px; margin-bottom: 12px; }
 .m-card { padding: 10px 14px; }
 .m-total, .m-value { font-size: 22px; }
+
+/* ── Select / dropdown — consolidated dark theme ── */
+select,
+.tl-ctrl-select,
+.list-filter-select {
+  background: var(--surface2) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text) !important;
+  border-radius: 5px;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  -webkit-appearance: auto;
+  appearance: auto;
+}
+select:focus,
+.tl-ctrl-select:focus,
+.list-filter-select:focus {
+  outline: none;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px rgba(88,166,255,.15);
+}
+select option,
+.tl-ctrl-select option {
+  background: var(--surface2);
+  color: var(--text);
+}

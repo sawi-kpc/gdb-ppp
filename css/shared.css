@@ -316,3 +316,16 @@ tr:hover td { background: var(--surface2); }
   .gdb-user-name { display: none; }
   .compare-table th, .compare-table td { padding: 6px 8px; }
 }
+
+/* ── Global select dark theme ─────────────────── */
+select {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 5px;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+select:focus { outline: none; border-color: var(--accent); }
+select option { background: var(--surface2); color: var(--text); }

@@ -9,14 +9,46 @@
    AMBER  = Mkt-to-Sale %, blended cost
    DIM    = Baseline/reference lines (dashed)
 ─────────────────────────────────────────── */
-var C_BLUE   = '#58a6ff';
-var C_GREEN  = '#3fb950';
-var C_ORANGE = '#f0900d';
-var C_PURPLE = '#d2a8ff';
-var C_TEAL   = '#22d3a4';
-var C_RED    = '#f85149';
-var C_AMBER  = '#f59e0b';
-var C_DIM    = '#484f58';
+/* Chart palette — resolved from CSS variables at runtime so
+   they automatically adapt when the user switches theme.
+   Fallback hex values are the dark-theme defaults.          */
+function _cv(v, fallback) {
+  var val = getComputedStyle(document.documentElement)
+              .getPropertyValue(v).trim();
+  return val || fallback;
+}
+function _getChartColors() {
+  return {
+    BLUE:   _cv('--chart-blue',   '#58a6ff'),
+    GREEN:  _cv('--chart-green',  '#3fb950'),
+    ORANGE: _cv('--chart-orange', '#f0900d'),
+    PURPLE: _cv('--chart-purple', '#d2a8ff'),
+    TEAL:   _cv('--chart-teal',   '#22d3a4'),
+    RED:    _cv('--chart-red',    '#f85149'),
+    AMBER:  _cv('--chart-amber',  '#f59e0b'),
+    DIM:    _cv('--chart-dim',    '#484f58'),
+  };
+}
+/* Initialise at load — overwritten on theme switch via rebuildCharts() */
+var _c = _getChartColors();
+var C_BLUE   = _c.BLUE;
+var C_GREEN  = _c.GREEN;
+var C_ORANGE = _c.ORANGE;
+var C_PURPLE = _c.PURPLE;
+var C_TEAL   = _c.TEAL;
+var C_RED    = _c.RED;
+var C_AMBER  = _c.AMBER;
+var C_DIM    = _c.DIM;
+
+/* Call this after theme change to refresh color vars + rebuild charts */
+function rebuildCharts() {
+  _c = _getChartColors();
+  C_BLUE = _c.BLUE; C_GREEN = _c.GREEN; C_ORANGE = _c.ORANGE;
+  C_PURPLE = _c.PURPLE; C_TEAL = _c.TEAL; C_RED = _c.RED;
+  C_AMBER = _c.AMBER; C_DIM = _c.DIM;
+  if (typeof destroyCharts === 'function') destroyCharts();
+  if (typeof buildPage === 'function') buildPage();
+}
 
 /* ══════════════════════════════════════════════
    CHANNEL RENDER — charts, cards, tables

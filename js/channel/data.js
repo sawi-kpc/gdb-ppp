@@ -3,6 +3,81 @@
    Depends on: channel-config.js (load first)
 ══════════════════════════════════════════════ */
 
+
+/* ══════════════════════════════════════════════════════════════
+   CACHE — localStorage, TTL driven by CACHE_CONFIG in config.js
+   Key format:  gdb_ch_<channelKey>
+   Stored JSON: { ts: <epoch ms>, data: <D object>, meta: <_meta> }
+══════════════════════════════════════════════════════════════ */
+
+function _cacheGet(key) {
+  if (!CACHE_CONFIG.enabled) return null;
+  try {
+    var raw = localStorage.getItem(CACHE_CONFIG.prefix + key);
+    if (!raw) return null;
+    var obj = JSON.parse(raw);
+    var ageMin = (Date.now() - obj.ts) / 60000;
+    if (ageMin > CACHE_CONFIG.ttlMinutes) return null;   /* stale */
+    return obj;
+  } catch(e) { return null; }
+}
+
+function _cacheSet(key, data, meta) {
+  if (!CACHE_CONFIG.enabled) return;
+  try {
+    localStorage.setItem(CACHE_CONFIG.prefix + key, JSON.stringify({
+      ts:   Date.now(),
+      data: data,
+      meta: meta,
+    }));
+  } catch(e) { /* storage full — silently skip */ }
+}
+
+/* Called by header Clear Cache button */
+function clearAllCache() {
+  try {
+    Object.keys(localStorage)
+      .filter(function(k) { return k.startsWith(CACHE_CONFIG.prefix); })
+      .forEach(function(k) { localStorage.removeItem(k); });
+  } catch(e) {}
+}
+
+/* Returns { ageMin, ageLabel } for the current channel's cache, or null */
+function getCacheAge(channelKey) {
+  try {
+    var raw = localStorage.getItem(CACHE_CONFIG.prefix + channelKey);
+    if (!raw) return null;
+    var obj = JSON.parse(raw);
+    var ageMin = (Date.now() - obj.ts) / 60000;
+    if (ageMin > CACHE_CONFIG.ttlMinutes) return null;
+    var label = ageMin < 1
+      ? 'just now'
+      : ageMin < 60
+        ? Math.floor(ageMin) + 'm ago'
+        : Math.floor(ageMin / 60) + 'h ago';
+    return { ageMin: ageMin, label: label };
+  } catch(e) { return null; }
+}
+
+
+/* Thin wrappers → delegate to gdbSetCacheBadge in header.js */
+function _showCacheBadge(ageInfo) {
+  if (typeof gdbSetCacheBadge === 'function')
+    gdbSetCacheBadge('cached', ageInfo ? '⚡ Cached · ' + ageInfo.label : '⚡ Cached');
+}
+function _showLiveBadge() {
+  if (typeof gdbSetCacheBadge === 'function')
+    gdbSetCacheBadge('live', '● Live data');
+}
+function _showLoadingBadge() {
+  if (typeof gdbSetCacheBadge === 'function')
+    gdbSetCacheBadge('loading', 'Loading…');
+}
+function _hideCacheBadge() {
+  if (typeof gdbSetCacheBadge === 'function')
+    gdbSetCacheBadge('hide');
+}
+
 var D           = null;
 var CHANNEL_CFG = null;
 var currentYear = '2025';
@@ -56,6 +131,18 @@ function applyChannelTheme(cfg) {
 
 /* ── Fetch data from Apps Script ─────────── */
 function loadData(channelKey, onSuccess, onError) {
+  /* ── Cache check ─────────────────────────────────────── */
+  var cached = _cacheGet(channelKey);
+  if (cached) {
+    /* Serve from cache — skip network entirely */
+    _showCacheBadge(getCacheAge(channelKey));
+    onSuccess(cached.data, cached.meta);
+    return;
+  }
+
+  /* No valid cache — fetch live data */
+  _showLoadingBadge();
+
   var baseUrl = (CHANNEL_CFG && CHANNEL_CFG.appsScriptUrl) ? CHANNEL_CFG.appsScriptUrl : APPS_SCRIPT_URL;
   var cbName  = '_gdbCb_' + channelKey + '_' + Date.now();
   var script  = document.createElement('script');
@@ -79,6 +166,8 @@ function loadData(channelKey, onSuccess, onError) {
     try {
       if (json.error) throw new Error(json.error);
       if (!json[channelKey]) throw new Error('No data for channel: ' + channelKey);
+      _cacheSet(channelKey, json[channelKey], json._meta);
+      _showLiveBadge();
       onSuccess(json[channelKey], json._meta);
     } catch(e) { onError(e.message); }
   };

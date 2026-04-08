@@ -5,7 +5,7 @@
 ══════════════════════════════════════════════ */
 
 /* Default Apps Script URL (shared by all channels unless overridden below) */
-var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzncBKWopa1Ylllz7Q57XlCuyC5izhokhqEmBeglV34qpiC9ZyAxXuEgKO-1aRkUe7A/exec';
+var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwg0RmbqI8hagFU1FYUybsVH7V_7AMEcf8By33aOHQed4neUcZzqzi4m1dVd5SHgugo/exec';
 
 var CHANNEL_REGISTRY = {
 
@@ -93,4 +93,15 @@ var CHANNEL_REGISTRY = {
     ovSub:        '2025 Monthly \u00b7 2026 YTD \u00b7 Live from Google Sheets',
   },
 
+};
+/* ── Cache configuration ─────────────────────────────────────
+   TTL = minutes before cached data is considered stale.
+   Set to 0 to disable caching (always fetch live).
+   CACHE_PREFIX must be unique to avoid collisions with
+   other apps using the same localStorage.
+────────────────────────────────────────────────────────────── */
+var CACHE_CONFIG = {
+  ttlMinutes:  60,          /* cache lifetime in minutes */
+  prefix:      'gdb_ch_',   /* localStorage key prefix   */
+  enabled:     true,        /* set false to disable       */
 };

@@ -17,6 +17,47 @@
   --radius:    8px;
   --header-h:  52px;
   --nav-h:     40px;
+  --purple:    #a78bfa;
+  --amber:     #f59e0b;
+  --teal:      #22d3a4;
+  /* chart palette — read by render.js via getComputedStyle */
+  --chart-blue:   #58a6ff;
+  --chart-green:  #3fb950;
+  --chart-orange: #f0900d;
+  --chart-purple: #d2a8ff;
+  --chart-teal:   #22d3a4;
+  --chart-red:    #f85149;
+  --chart-amber:  #f59e0b;
+  --chart-dim:    #484f58;
+}
+
+/* ── Light theme ─────────────────────────────────────────────
+   Applied when <html data-theme="light">
+   All other rules use CSS vars so they adapt automatically.
+──────────────────────────────────────────────────────────── */
+[data-theme="light"] {
+  --bg:        #ffffff;
+  --surface:   #f6f8fa;
+  --surface2:  #eaeef2;
+  --border:    #d0d7de;
+  --text:      #1f2328;
+  --text2:     #656d76;
+  --text3:     #9198a1;
+  --up:        #1a7f37;
+  --down:      #cf222e;
+  --accent:    #0969da;
+  --accent2:   #1a7f37;
+  --purple:    #8250df;
+  --amber:     #9a6700;
+  --teal:      #0d7377;
+  --chart-blue:   #0969da;
+  --chart-green:  #1a7f37;
+  --chart-orange: #bc4c00;
+  --chart-purple: #8250df;
+  --chart-teal:   #0d7377;
+  --chart-red:    #cf222e;
+  --chart-amber:  #9a6700;
+  --chart-dim:    #9198a1;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }

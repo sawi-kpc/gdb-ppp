@@ -6,7 +6,7 @@
 
 /* ── CSS for dropdown nav ────────────────── */
 var _headerStyle = document.createElement('style');
-_headerStyle.textContent = '.gdb-nav{position:fixed;top:var(--header-h);left:0;right:0;z-index:99;height:var(--nav-h);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:stretch;padding:0 20px;gap:2px;overflow:visible;}.gdb-nav::-webkit-scrollbar{height:0;}.gdb-nav-item{display:flex;align-items:center;padding:0 12px;font-size:12px;font-weight:500;color:var(--text2);text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;transition:all .15s;cursor:pointer;background:none;border-top:none;border-left:none;border-right:none;}.gdb-nav-item:hover{color:var(--text);text-decoration:none;}.gdb-nav-item.active{color:var(--accent);border-bottom-color:var(--accent);}.gdb-nav-divider{width:1px;background:var(--border);margin:10px 8px;}.gdb-nav-section{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;display:flex;align-items:center;padding:0 8px 0 4px;}.gdb-nav-channel-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;flex-shrink:0;}.gdb-nav-badge{font-size:9px;font-weight:700;color:var(--text3);background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:1px 5px;margin-left:5px;}.gdb-init-subnav{position:fixed;top:calc(var(--header-h) + var(--nav-h));left:0;right:0;z-index:98;height:36px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:stretch;padding:0 20px;gap:2px;}.gdb-init-tab{display:flex;align-items:center;padding:0 14px;font-size:12px;font-weight:500;color:var(--text2);text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;transition:all .15s;}.gdb-init-tab:hover{color:var(--text);text-decoration:none;}.gdb-init-tab.active{color:var(--accent);border-bottom-color:var(--accent);}.has-init-subnav{padding-top:calc(var(--header-h) + var(--nav-h) + 36px) !important;}';
+_headerStyle.textContent = '.gdb-nav{position:fixed;top:var(--header-h);left:0;right:0;z-index:99;height:var(--nav-h);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:stretch;padding:0 20px;gap:2px;overflow:visible;}.gdb-nav::-webkit-scrollbar{height:0;}.gdb-nav-item{display:flex;align-items:center;padding:0 12px;font-size:12px;font-weight:500;color:var(--text2);text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;transition:all .15s;cursor:pointer;background:none;border-top:none;border-left:none;border-right:none;}.gdb-nav-item:hover{color:var(--text);text-decoration:none;}.gdb-nav-item.active{color:var(--accent);border-bottom-color:var(--accent);}.gdb-nav-divider{width:1px;background:var(--border);margin:10px 8px;}.gdb-nav-section{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;display:flex;align-items:center;padding:0 8px 0 4px;}.gdb-nav-channel-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;flex-shrink:0;}.gdb-nav-badge{font-size:9px;font-weight:700;color:var(--text3);background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:1px 5px;margin-left:5px;}.gdb-clear-cache-btn{display:flex;align-items:center;gap:5px;padding:0 11px;height:28px;font-size:11px;font-weight:600;color:var(--text2);background:var(--surface2);border:1px solid var(--border);border-radius:5px;cursor:pointer;transition:all .15s;white-space:nowrap;}.gdb-clear-cache-btn:hover{color:var(--text);border-color:var(--text2);}.gdb-clear-cache-btn:active{opacity:.7;}.gdb-cache-badge{display:none;align-items:center;gap:5px;font-size:10px;font-weight:600;border-radius:4px;padding:2px 8px;white-space:nowrap;transition:all .3s;}.gdb-cache-badge.is-cached{color:#58a6ff;background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.25);}.gdb-cache-badge.is-live{color:#3fb950;background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.25);}.gdb-cache-badge.is-loading{color:var(--text3);background:var(--surface2);border:1px solid var(--border);}@keyframes gdb-pulse{0%,100%{opacity:1}50%{opacity:.35}}.gdb-cache-dot{width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0;}.is-live .gdb-cache-dot{background:#3fb950;animation:gdb-pulse 1.8s ease-in-out infinite;}.is-cached .gdb-cache-dot{background:#58a6ff;}.is-loading .gdb-cache-dot{background:var(--text3);}.gdb-init-subnav{position:fixed;top:calc(var(--header-h) + var(--nav-h));left:0;right:0;z-index:98;height:36px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:stretch;padding:0 20px;gap:2px;}.gdb-init-tab{display:flex;align-items:center;padding:0 14px;font-size:12px;font-weight:500;color:var(--text2);text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;transition:all .15s;}.gdb-init-tab:hover{color:var(--text);text-decoration:none;}.gdb-init-tab.active{color:var(--accent);border-bottom-color:var(--accent);}.has-init-subnav{padding-top:calc(var(--header-h) + var(--nav-h) + 36px) !important;}';
 document.head.appendChild(_headerStyle);
 
 
@@ -45,6 +45,20 @@ function buildGdbInitiativeSubNav() {
 }
 
 
+
+/* ── Cache status badge helpers (used by channel + initiative) ── */
+function gdbSetCacheBadge(state, label) {
+  /* state: 'live' | 'cached' | 'loading' | 'hide' */
+  var el  = document.getElementById('gdb-cache-badge');
+  var lbl = document.getElementById('gdb-cache-label');
+  if (!el) return;
+  el.classList.remove('is-live', 'is-cached', 'is-loading');
+  if (state === 'hide') { el.style.display = 'none'; return; }
+  el.style.display = 'inline-flex';
+  el.classList.add('is-' + state);
+  if (lbl) lbl.textContent = label || state;
+}
+
 /* ── BUILD HEADER ────────────────────────── */
 function buildGdbHeader(opts) {
   opts = opts || {};
@@ -59,6 +73,8 @@ function buildGdbHeader(opts) {
     '<div class="gdb-header-spacer"></div>' +
     '<div class="gdb-header-right">' +
       (opts.showRefresh ? '<button class="gdb-refresh-btn" id="gdb-refresh-btn">\u21bb Refresh</button>' : '') +
+      '<span class="gdb-cache-badge" id="gdb-cache-badge"><span class="gdb-cache-dot"></span><span id="gdb-cache-label"></span></span>' +
+      '<button class="gdb-clear-cache-btn" id="gdb-clear-cache-btn" title="Clear cached data and reload">\u2715 Clear cache</button>' +
       '<div class="gdb-update-time" id="gdb-update-time"></div>' +
       '<div class="gdb-user">' +
         '<div class="gdb-user-avatar" id="gdb-user-avatar">' +
@@ -149,6 +165,27 @@ function buildGdbHeader(opts) {
       else if (typeof loadSummary === 'function') loadSummary();
     });
   }
+  /* ── Clear Cache button ─────────────────────────────────── */
+  var clearCacheBtn = document.getElementById('gdb-clear-cache-btn');
+  if (clearCacheBtn) {
+    clearCacheBtn.addEventListener('click', function() {
+      if (typeof clearAllCache === 'function') {
+        clearAllCache();
+      } else {
+        try {
+          Object.keys(localStorage)
+            .filter(function(k) { return k.startsWith('gdb_'); })
+            .forEach(function(k) { localStorage.removeItem(k); });
+        } catch(e) {}
+      }
+      var badge = document.getElementById('gdb-cache-badge');
+      if (badge) badge.style.display = 'none';
+      clearCacheBtn.textContent = '↺ Clearing…';
+      clearCacheBtn.disabled = true;
+      setTimeout(function() { window.location.reload(); }, 300);
+    });
+  }
+
 }
 
 /* ── SET USER ────────────────────────────── */

@@ -9,13 +9,9 @@
    AMBER  = Mkt-to-Sale %, blended cost
    DIM    = Baseline/reference lines (dashed)
 ─────────────────────────────────────────── */
-/* Chart palette — resolved from CSS variables at runtime so
-   they automatically adapt when the user switches theme.
-   Fallback hex values are the dark-theme defaults.          */
-function _cv(v, fallback) {
-  var val = getComputedStyle(document.documentElement)
-              .getPropertyValue(v).trim();
-  return val || fallback;
+function _cv(v, fb) {
+  var val = getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  return val || fb;
 }
 function _getChartColors() {
   return {
@@ -29,7 +25,6 @@ function _getChartColors() {
     DIM:    _cv('--chart-dim',    '#484f58'),
   };
 }
-/* Initialise at load — overwritten on theme switch via rebuildCharts() */
 var _c = _getChartColors();
 var C_BLUE   = _c.BLUE;
 var C_GREEN  = _c.GREEN;
@@ -40,7 +35,6 @@ var C_RED    = _c.RED;
 var C_AMBER  = _c.AMBER;
 var C_DIM    = _c.DIM;
 
-/* Call this after theme change to refresh color vars + rebuild charts */
 function rebuildCharts() {
   _c = _getChartColors();
   C_BLUE = _c.BLUE; C_GREEN = _c.GREEN; C_ORANGE = _c.ORANGE;

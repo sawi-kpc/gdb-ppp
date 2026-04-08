@@ -34,12 +34,78 @@ function parseSheetRows(text,embeddedData){
 }
 
 /* Data load — 3-tier: Apps Script → CSV direct → embedded */
+
+/* ══════════════════════════════════════════════════════════════
+   CACHE — localStorage, TTL driven by CACHE_CONFIG in config.js
+   Key:  gdb_ini_allData
+   JSON: { ts: <epoch ms>, data: <allData array> }
+══════════════════════════════════════════════════════════════ */
+
+function _iniCacheGet() {
+  if (!CACHE_CONFIG.enabled) return null;
+  try {
+    var raw = localStorage.getItem(CACHE_CONFIG.prefix + 'allData');
+    if (!raw) return null;
+    var obj = JSON.parse(raw);
+    var ageMin = (Date.now() - obj.ts) / 60000;
+    if (ageMin > CACHE_CONFIG.ttlMinutes) return null;  /* stale */
+    return obj;
+  } catch(e) { return null; }
+}
+
+function _iniCacheSet(data) {
+  if (!CACHE_CONFIG.enabled) return;
+  try {
+    localStorage.setItem(CACHE_CONFIG.prefix + 'allData', JSON.stringify({
+      ts:   Date.now(),
+      data: data,
+    }));
+  } catch(e) {}
+}
+
+function clearAllCache() {
+  try {
+    Object.keys(localStorage)
+      .filter(function(k) { return k.startsWith(CACHE_CONFIG.prefix); })
+      .forEach(function(k) { localStorage.removeItem(k); });
+  } catch(e) {}
+}
+
+function getIniCacheAge() {
+  try {
+    var raw = localStorage.getItem(CACHE_CONFIG.prefix + 'allData');
+    if (!raw) return null;
+    var obj = JSON.parse(raw);
+    var ageMin = (Date.now() - obj.ts) / 60000;
+    if (ageMin > CACHE_CONFIG.ttlMinutes) return null;
+    var label = ageMin < 1 ? 'just now'
+      : ageMin < 60  ? Math.floor(ageMin) + 'm ago'
+      : Math.floor(ageMin / 60) + 'h ago';
+    return { ageMin: ageMin, label: label };
+  } catch(e) { return null; }
+}
+
 async function loadData(){
+  /* ── Initiative cache check ──────────────────────────── */
+  var _iniCached = _iniCacheGet();
+  if (_iniCached) {
+    allData = _iniCached.data;
+    var _age = getIniCacheAge();
+    if (typeof gdbSetCacheBadge === 'function')
+      gdbSetCacheBadge('cached', _age ? '⚡ Cached · ' + _age.label : '⚡ Cached');
+    renderAll();
+    if (typeof window.onDataReady === 'function') window.onDataReady(allData);
+    return;
+  }
+
   (function(){var _e=document.getElementById('refresh-time');if(_e)_e.textContent='Fetching\u2026';})();
+  if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('loading', 'Loading…');
   let fetched=false;
   const ts=()=>new Date().toLocaleString('en-GB',{timeZone:'Asia/Bangkok',hour12:false,day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
   if(!fetched&&CONFIG.APPS_SCRIPT_URL){
-    try{const r=await fetch(CONFIG.APPS_SCRIPT_URL);if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();if(j.data&&j.data.length>0){allData=j.data;fetched=true;(function(){var _e=document.getElementById('refresh-time');if(_e)_e.textContent=ts()+' (live via script)';})();}}catch(e){console.warn('[GDB] Apps Script:',e.message);}
+    try{const r=await fetch(CONFIG.APPS_SCRIPT_URL);if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();if(j.data&&j.data.length>0){allData=j.data;
+    _iniCacheSet(allData);
+    if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('live', '● Live data');fetched=true;(function(){var _e=document.getElementById('refresh-time');if(_e)_e.textContent=ts()+' (live via script)';})();}}catch(e){console.warn('[GDB] Apps Script:',e.message);}
   }
   if(!fetched){
     try{const r=await fetch(CONFIG.SHEET_URL,{mode:'cors'});if(!r.ok)throw new Error('HTTP '+r.status);const parsed=parseSheetRows(await r.text(),getEmbedded());if(parsed.length>0){allData=parsed;fetched=true;(function(){var _e=document.getElementById('refresh-time');if(_e)_e.textContent=ts()+' (live CSV)';})();}}catch(e){console.warn('[GDB] Direct CSV:',e.message);}
@@ -47,7 +113,9 @@ async function loadData(){
   if(!fetched){
     try{const proxy='https://corsproxy.io/?'+encodeURIComponent(CONFIG.SHEET_URL);const r=await fetch(proxy);if(!r.ok)throw new Error();const parsed=parseSheetRows(await r.text(),getEmbedded());if(parsed.length>0){allData=parsed;fetched=true;(function(){var _e=document.getElementById('refresh-time');if(_e)_e.textContent=ts()+' (via proxy)';})();}}catch(e){console.warn('[GDB] Proxy:',e.message);}
   }
-  if(!fetched){allData=getEmbedded();const _now=new Date();(function(){var _e=document.getElementById('refresh-time');if(_e)_e.textContent='\uD83D\uDCE6 Embedded data · '+_now.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+_now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+' — set APPS_SCRIPT_URL for live';})();}
+  if(!fetched){allData=getEmbedded();
+  _iniCacheSet(allData);
+  if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('live', '● Live data');;const _now=new Date();(function(){var _e=document.getElementById('refresh-time');if(_e)_e.textContent='\uD83D\uDCE6 Embedded data · '+_now.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+_now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+' — set APPS_SCRIPT_URL for live';})();}
   renderAll();
   if (typeof window.onDataReady === 'function') { window.onDataReady(allData); }
 }
@@ -85,11 +153,26 @@ function parseSheetRows(text,embeddedData){
 
 /* Data load — 3-tier: Apps Script → CSV direct → embedded */
 async function loadData(){
+  /* ── Initiative cache check ──────────────────────────── */
+  var _iniCached = _iniCacheGet();
+  if (_iniCached) {
+    allData = _iniCached.data;
+    var _age = getIniCacheAge();
+    if (typeof gdbSetCacheBadge === 'function')
+      gdbSetCacheBadge('cached', _age ? '⚡ Cached · ' + _age.label : '⚡ Cached');
+    renderAll();
+    if (typeof window.onDataReady === 'function') window.onDataReady(allData);
+    return;
+  }
+
   (function(){var _e=document.getElementById('refresh-time');if(_e)_e.textContent='Fetching\u2026';})();
+  if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('loading', 'Loading…');
   let fetched=false;
   const ts=()=>new Date().toLocaleString('en-GB',{timeZone:'Asia/Bangkok',hour12:false,day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
   if(!fetched&&CONFIG.APPS_SCRIPT_URL){
-    try{const r=await fetch(CONFIG.APPS_SCRIPT_URL);if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();if(j.data&&j.data.length>0){allData=j.data;fetched=true;(function(){var _e=document.getElementById('refresh-time');if(_e)_e.textContent=ts()+' (live via script)';})();}}catch(e){console.warn('[GDB] Apps Script:',e.message);}
+    try{const r=await fetch(CONFIG.APPS_SCRIPT_URL);if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();if(j.data&&j.data.length>0){allData=j.data;
+    _iniCacheSet(allData);
+    if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('live', '● Live data');fetched=true;(function(){var _e=document.getElementById('refresh-time');if(_e)_e.textContent=ts()+' (live via script)';})();}}catch(e){console.warn('[GDB] Apps Script:',e.message);}
   }
   if(!fetched){
     try{const r=await fetch(CONFIG.SHEET_URL,{mode:'cors'});if(!r.ok)throw new Error('HTTP '+r.status);const parsed=parseSheetRows(await r.text(),getEmbedded());if(parsed.length>0){allData=parsed;fetched=true;(function(){var _e=document.getElementById('refresh-time');if(_e)_e.textContent=ts()+' (live CSV)';})();}}catch(e){console.warn('[GDB] Direct CSV:',e.message);}
@@ -97,7 +180,9 @@ async function loadData(){
   if(!fetched){
     try{const proxy='https://corsproxy.io/?'+encodeURIComponent(CONFIG.SHEET_URL);const r=await fetch(proxy);if(!r.ok)throw new Error();const parsed=parseSheetRows(await r.text(),getEmbedded());if(parsed.length>0){allData=parsed;fetched=true;(function(){var _e=document.getElementById('refresh-time');if(_e)_e.textContent=ts()+' (via proxy)';})();}}catch(e){console.warn('[GDB] Proxy:',e.message);}
   }
-  if(!fetched){allData=getEmbedded();const _now=new Date();(function(){var _e=document.getElementById('refresh-time');if(_e)_e.textContent='\uD83D\uDCE6 Embedded data · '+_now.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+_now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+' — set APPS_SCRIPT_URL for live';})();}
+  if(!fetched){allData=getEmbedded();
+  _iniCacheSet(allData);
+  if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('live', '● Live data');;const _now=new Date();(function(){var _e=document.getElementById('refresh-time');if(_e)_e.textContent='\uD83D\uDCE6 Embedded data · '+_now.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+_now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+' — set APPS_SCRIPT_URL for live';})();}
   renderAll();
   if (typeof window.onDataReady === 'function') { window.onDataReady(allData); }
 }

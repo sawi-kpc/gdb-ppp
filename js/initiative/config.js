@@ -1,6 +1,6 @@
 
 const CONFIG = {
-  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwBOqvq8XKNTG5PDq2pDseoboHYlyfH21rfUl_BNQYK6bRkLsUuHWNuqvBKv6fn0oTo/exec',
+  APPS_SCRIPT_URL: '',
   SHEET_URL: 'https://docs.google.com/spreadsheets/d/1dEBSAcmkT5tQmzaQDQEieex3WMCyPBi1JjQdOpVH8Nc/gviz/tq?tqx=out:csv&gid=660147076',
   JIRA_BASE: 'https://kingpower.atlassian.net/browse/',
   TIMELINE_RANGE_OPTIONS: [
@@ -12,4 +12,15 @@ const CONFIG = {
     {val:'2027-01',label:'Jan 2027'},{val:'2027-06',label:'Jun 2027'},
     {val:'2027-12',label:'Dec 2027'},
   ],
+};
+
+/* ── Cache configuration ─────────────────────────────────────
+   Controls localStorage caching for initiative/PPP data.
+   Separate prefix from channel cache to allow independent
+   clearing.
+────────────────────────────────────────────────────────────── */
+var CACHE_CONFIG = {
+  ttlMinutes:  120,         /* initiative data changes less often  */
+  prefix:      'gdb_ini_',  /* localStorage key prefix             */
+  enabled:     true,
 };

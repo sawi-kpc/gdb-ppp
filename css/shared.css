@@ -20,7 +20,6 @@
   --purple:    #a78bfa;
   --amber:     #f59e0b;
   --teal:      #22d3a4;
-  /* chart palette — read by render.js via getComputedStyle */
   --chart-blue:   #58a6ff;
   --chart-green:  #3fb950;
   --chart-orange: #f0900d;
@@ -31,10 +30,6 @@
   --chart-dim:    #484f58;
 }
 
-/* ── Light theme ─────────────────────────────────────────────
-   Applied when <html data-theme="light">
-   All other rules use CSS vars so they adapt automatically.
-──────────────────────────────────────────────────────────── */
 [data-theme="light"] {
   --bg:        #ffffff;
   --surface:   #f6f8fa;

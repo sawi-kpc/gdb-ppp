@@ -194,8 +194,6 @@ function buildGdbHeader(opts) {
     });
   }
 
-}
-
   /* ── Theme toggle button ─────────────────────────────── */
   var _themeBtn = document.getElementById('gdb-theme-btn');
   if (_themeBtn) {
@@ -212,10 +210,10 @@ function buildGdbHeader(opts) {
       document.documentElement.style.removeProperty('background');
       localStorage.setItem('gdb_theme', next);
       _syncThemeBtn();
-      /* Re-render charts with CSS-var-resolved palette */
       if (typeof rebuildCharts === 'function') setTimeout(rebuildCharts, 40);
     });
   }
+}
 
 /* ── SET USER ────────────────────────────── */
 function setGdbUser(user) {

@@ -79,11 +79,11 @@ function buildGdbHeader(opts) {
     '</a>' +
     '<div class="gdb-header-spacer"></div>' +
     '<div class="gdb-header-right">' +
-      (opts.showRefresh ? '<button class="gdb-refresh-btn" id="gdb-refresh-btn">\u21bb Refresh</button>' : '') +
       '<span class="gdb-cache-badge" id="gdb-cache-badge"><span class="gdb-cache-dot"></span><span id="gdb-cache-label"></span></span>' +
-      '<button class="gdb-theme-btn" id="gdb-theme-btn">&#9680;</button>' +
-      '<button class="gdb-clear-cache-btn" id="gdb-clear-cache-btn" title="Clear cached data and reload">\u2715 Clear cache</button>' +
       '<div class="gdb-update-time" id="gdb-update-time"></div>' +
+      (opts.showRefresh ? '<button class="gdb-refresh-btn" id="gdb-refresh-btn">\u21bb Refresh</button>' : '') +
+      '<button class="gdb-clear-cache-btn" id="gdb-clear-cache-btn" title="Clear cached data and reload">\u2715 Clear cache</button>' +
+      '<button class="gdb-theme-btn" id="gdb-theme-btn">&#9680;</button>' +
       '<div class="gdb-user">' +
         '<div class="gdb-user-avatar" id="gdb-user-avatar">' +
           '<span id="gdb-user-initial">?</span>' +

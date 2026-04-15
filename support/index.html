@@ -5,26 +5,477 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Support Tasks — GDB Dashboard</title>
 <link rel="stylesheet" href="../css/shared.css">
+<style>
+
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+.page{max-width:1400px;margin:0 auto;padding:20px 24px}
+/* Header */
+.ph{margin-bottom:20px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.ph-title{font-size:18px;font-weight:700}
+.ph-sub{font-size:12px;color:var(--text2);margin-top:3px}
+/* Summary strip */
+.strip{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}
+.sc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:14px 16px;position:relative;overflow:hidden}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.sc.blue::before{background:var(--accent)}.sc.amber::before{background:var(--amber)}
+.sc.green::before{background:var(--up)}.sc.teal::before{background:var(--teal)}
+.sc.purple::before{background:var(--purple)}
+.sc-label{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.sc-num{font-size:26px;font-weight:700;line-height:1;margin-bottom:2px}
+.sc.blue .sc-num{color:var(--accent)}.sc.amber .sc-num{color:var(--amber)}
+.sc.green .sc-num{color:var(--up)}.sc.teal .sc-num{color:var(--teal)}
+.sc.purple .sc-num{color:var(--purple)}
+.sc-sub{font-size:11px;color:var(--text2)}
+/* Panel */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px}
+.ph2{padding:12px 16px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.pt{font-size:13px;font-weight:700}.ps{font-size:11px;color:var(--text2);margin-top:2px}
+.pb{padding:14px 16px}
+/* Filter bar */
+.fbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.fb{padding:4px 12px;font-size:11px;font-weight:600;border-radius:20px;cursor:pointer;
+  border:1px solid var(--border);background:var(--surface2);color:var(--text2);transition:all .15s}
+.fb.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.fb:hover:not(.active){color:var(--text)}
+.fsep{width:1px;height:20px;background:var(--border);margin:0 4px}
+/* Bar chart */
+.brow{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.blabel{font-size:11px;color:var(--text2);width:200px;flex-shrink:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btrack{flex:1;height:20px;background:var(--surface2);border-radius:3px;overflow:hidden}
+.bfill{height:100%;border-radius:3px;display:flex;align-items:center;
+  padding:0 8px;font-size:10px;font-weight:600;color:#fff;white-space:nowrap;min-width:28px;transition:width .4s}
+.bcount{font-size:11px;color:var(--text2);width:32px;text-align:right;flex-shrink:0}
+/* Assignee table */
+.atbl{width:100%;border-collapse:collapse;font-size:12px}
+.atbl th{padding:7px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text2);
+  text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)}
+.atbl th:not(:first-child){text-align:right}
+.atbl td{padding:7px 10px;border-bottom:1px solid rgba(48,54,61,.4);vertical-align:middle}
+.atbl td:not(:first-child){text-align:right}
+.atbl tr:last-child td{border-bottom:none}
+.atbl tr:hover td{background:var(--surface2)}
+.hbar-wrap{display:flex;justify-content:flex-end;align-items:center;gap:6px}
+.hbar{height:6px;border-radius:3px;background:var(--accent);flex-shrink:0}
+/* Main task table */
+.ttbl{width:100%;border-collapse:collapse;font-size:12px}
+.ttbl th{padding:8px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text2);
+  text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);
+  white-space:nowrap;cursor:pointer;user-select:none}
+.ttbl th:hover{color:var(--text)}
+.ttbl th.sorted{color:var(--accent)}
+.ttbl td{padding:8px 10px;border-bottom:1px solid rgba(48,54,61,.35);vertical-align:top}
+.ttbl tr:hover td{background:rgba(22,27,34,.7)}
+.ttbl tr:last-child td{border-bottom:none}
+/* Tags */
+.tag{display:inline-flex;align-items:center;font-size:10px;font-weight:600;
+  padding:2px 7px;border-radius:3px;white-space:nowrap}
+.tag.todo{background:rgba(245,158,11,.15);color:var(--amber);border:1px solid rgba(245,158,11,.3)}
+.tag.in-progress{background:rgba(88,166,255,.12);color:var(--accent);border:1px solid rgba(88,166,255,.25)}
+.tag.done{background:rgba(63,185,80,.1);color:var(--up);border:1px solid rgba(63,185,80,.2)}
+.tag.ppp{background:rgba(167,139,250,.12);color:var(--purple);border:1px solid rgba(167,139,250,.25)}
+/* Pattern cards */
+.pcard{background:var(--surface2);border-radius:7px;padding:14px 16px;
+  border-left:3px solid;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start}
+.pcard.high{border-left-color:var(--purple)}.pcard.med{border-left-color:var(--amber)}
+.pcard-icon{width:36px;height:36px;border-radius:6px;display:flex;align-items:center;
+  justify-content:center;font-size:16px;flex-shrink:0}
+.pcard.high .pcard-icon{background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.3)}
+.pcard.med .pcard-icon{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25)}
+.pcard-title{font-size:12px;font-weight:600;margin-bottom:4px;display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.pcard-desc{font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:6px}
+.pcard-meta{display:flex;flex-wrap:wrap;gap:10px}
+.pm{font-size:10px;color:var(--text3)}.pm strong{color:var(--text2)}
+/* Search input */
+.search-wrap{position:relative}
+.search-wrap input{background:var(--surface2);border:1px solid var(--border);
+  color:var(--text);border-radius:6px;padding:5px 10px 5px 28px;font-size:12px;
+  width:220px;outline:none;transition:border-color .15s}
+.search-wrap input:focus{border-color:var(--accent)}
+.search-wrap::before{content:'⌕';position:absolute;left:9px;top:50%;transform:translateY(-50%);
+  color:var(--text3);font-size:13px;pointer-events:none}
+/* Two col */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.tbl-scroll{overflow-x:auto}
+.empty{padding:24px;text-align:center;color:var(--text3);font-size:12px}
+@media(max-width:900px){.strip{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}}
+
+.page{max-width:none;padding:0}
+</style>
 </head>
 <body>
-<div id="gdb-error"></div>
-<div class="gdb-page" id="main-content" style="display:none">
-  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px">
-    <div style="font-size:48px">🎵</div>
-    <div style="font-size:20px;font-weight:700;color:var(--text)">Support Tasks</div>
-    <div style="font-size:14px;color:var(--text2)">Coming soon — Jira support data for stakeholder request monitoring</div>
+<div id="gdb-error" style="display:none;padding:12px 20px;background:rgba(248,81,73,.1);
+  border-bottom:1px solid rgba(248,81,73,.3);color:var(--down);font-size:12px"></div>
+
+<div id="gdb-loading" style="display:flex;flex-direction:column;align-items:center;
+  justify-content:center;min-height:60vh;gap:12px;color:var(--text2);font-size:13px">
+  <div style="width:32px;height:32px;border:2px solid var(--border);
+    border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite"></div>
+  Loading support tasks…
+  <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+</div>
+
+<div id="support-content" style="display:none;padding:20px 24px">
+
+<div class="ph">
+  <div>
+    <div class="ph-title">Support Tasks</div>
+    <div class="ph-sub">Operational workload monitoring · recurring patterns · initiative candidates</div>
+  </div>
+  <div id="last-updated" style="font-size:11px;color:var(--text3)"></div>
+</div>
+
+<div class="strip" id="strip"></div>
+
+<div class="two" style="margin-bottom:14px">
+  <div class="panel">
+    <div class="ph2"><div><div class="pt">Volume by group</div></div></div>
+    <div class="pb" id="group-chart"></div>
+  </div>
+  <div class="panel">
+    <div class="ph2"><div><div class="pt">Workload by assignee</div></div></div>
+    <div class="pb"><div class="tbl-scroll"><table class="atbl" id="assignee-tbl"></table></div></div>
   </div>
 </div>
+
+<div class="panel">
+  <div class="ph2">
+    <div><div class="pt">All Tasks</div><div class="ps" id="task-count-label"></div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <div class="search-wrap"><input type="text" id="search" placeholder="Search…" oninput="applyFilters()"></div>
+    </div>
+  </div>
+  <div class="pb">
+    <div class="fbar" id="status-filter">
+      <button class="fb active" onclick="setFilter('status','all',this)">All status</button>
+      <button class="fb" onclick="setFilter('status','To do',this)">⚠ Pending</button>
+      <button class="fb" onclick="setFilter('status','In Progress',this)">In Progress</button>
+      <button class="fb" onclick="setFilter('status','Done',this)">Done</button>
+      <div class="fsep"></div>
+    </div>
+    <div class="fbar" id="group-filter" style="margin-top:-8px"></div>
+    <div class="tbl-scroll">
+      <table class="ttbl">
+        <thead><tr>
+          <th onclick="sortBy('Key')">Key ↕</th>
+          <th onclick="sortBy('Summary')">Summary ↕</th>
+          <th onclick="sortBy('Status')">Status</th>
+          <th onclick="sortBy('Group')">Group</th>
+          <th>Component</th>
+          <th onclick="sortBy('Assignee')">Assignee</th>
+          <th onclick="sortBy('Due date')">Due date ↕</th>
+          <th onclick="sortBy('Hours')" style="text-align:right">Hours spent ↕</th>
+        </tr></thead>
+        <tbody id="task-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="ph2">
+    <div><div class="pt">◆ Recurring Patterns — Initiative Candidates</div>
+    <div class="ps">Auto-detected from support task data</div></div>
+  </div>
+  <div class="pb" id="patterns"></div>
+</div>
+
+</div><!-- /support-content -->
+
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="../js/support/config.js"></script>
 <script src="../js/header.js"></script>
+<script src="../js/support/data.js"></script>
 <script>
 window.addEventListener('DOMContentLoaded', function() {
-  buildGdbHeader({});
-  gdbAuthGuard(function() {
-    document.getElementById('main-content').style.display = 'block';
+  buildGdbHeader({ showRefresh: true });
+  gdbAuthGuard(function(user) {
+    loadSupportData(function(data) {
+      document.getElementById('gdb-loading').style.display = 'none';
+      document.getElementById('support-content').style.display = 'block';
+      setGdbUpdateTime(new Date().toISOString());
+      init();
+    }, function(err) {
+      document.getElementById('gdb-loading').style.display = 'none';
+      document.getElementById('support-content').style.display = 'block';
+      document.getElementById('gdb-error').textContent = 'Data error: ' + err;
+      document.getElementById('gdb-error').style.display = 'block';
+      init();
+    });
   });
+  document.getElementById('gdb-refresh-btn') &&
+    document.getElementById('gdb-refresh-btn').addEventListener('click', function() {
+      clearSupportCache();
+      loadSupportData(function() { init(); });
+    });
 });
+
+
+/* ── DATA ───────────────────────────────────────────────────
+   Replace this with JSONP/fetch from Apps Script in production.
+   Field: "Σ Time Spent" is in SECONDS → convert to hours.
+─────────────────────────────────────────────────────────── */
+var supportData = [
+  {Key:"GIT-2",Summary:"[Tiktok] กพ ยอด diff เยอะ by บัญชี",Status:"Done",Components:"firster-tiktok-social-commerce",Group:"firster_tiktok_report",Labels:"GDB_SUPPORT_202603",Due:"3/27/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:288000},
+  {Key:"GIT-3",Summary:"[TikTok] ทีมบัญชีขอ report ประจำเดือน Mar 2026",Status:"Done",Components:"firster-tiktok-social-commerce",Group:"firster_tiktok_report",Labels:"GDB_SUPPORT_202604",Due:"",Assignee:"Sodsaran Lertsirisappan",TimeSpentSec:3600},
+  {Key:"GIT-5",Summary:"[TikTok] Export Weekly Product Information - Mar 2026 (Week 4)",Status:"Done",Components:"firster-tiktok-social-commerce",Group:"firster_tiktok_report",Labels:"GDB_SUPPORT_202603",Due:"3/30/2026",Assignee:"Somrythi Pipat",TimeSpentSec:3600},
+  {Key:"GIT-7",Summary:"[Tiktok] Export Bi-weekly F1 product info - Mar 2026 (2)",Status:"Done",Components:"firster-tiktok-social-commerce",Group:"firster_tiktok_report",Labels:"GDB_SUPPORT_202603",Due:"3/5/2026",Assignee:"Natpapat Kwaopiwong",TimeSpentSec:0},
+  {Key:"GIT-8",Summary:"[TikTok] Export weekly sales report for F&A - Mar 2026 (Week 4)",Status:"Done",Components:"firster-tiktok-social-commerce",Group:"firster_tiktok_report",Labels:"GDB_SUPPORT_202603",Due:"4/1/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:3600},
+  {Key:"GIT-10",Summary:"[F1] Export & Pivot Monthly sales report for accounting - Mar 2026",Status:"Done",Components:"firster-commerce",Group:"firster_report",Labels:"GDB_SUPPORT_202604",Due:"4/2/2026",Assignee:"Somrythi Pipat",TimeSpentSec:3600},
+  {Key:"GIT-11",Summary:"[TikTok] Memo ออเดอร์ refund manual",Status:"In Progress",Components:"firster-tiktok-social-commerce",Group:"firster_tiktok_report",Labels:"",Due:"",Assignee:"",TimeSpentSec:0},
+  {Key:"GIT-12",Summary:"[F1 MA] Set Up Birthday Privileges - 21 Apr 2026",Status:"To do",Components:"firster-commerce",Group:"marketing_automation",Labels:"GDB_SUPPORT_202604",Due:"4/21/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:0},
+  {Key:"GIT-13",Summary:"[F1 MA] Set Up Main Campaign - 20 Apr 2026",Status:"To do",Components:"firster-commerce",Group:"marketing_automation",Labels:"GDB_SUPPORT_202604",Due:"4/20/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:0},
+  {Key:"GIT-14",Summary:"[F1 MA] Set Up Partner BeNeat&bTaskee Coupon - 1 Mar-30 Jun 2026",Status:"Done",Components:"firster-commerce",Group:"marketing_automation",Labels:"GDB_SUPPORT_202603",Due:"3/1/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:86400},
+  {Key:"GIT-15",Summary:"[F1 MA] Set Up Main Campaign - 2 Feb 2026",Status:"Done",Components:"firster-commerce",Group:"marketing_automation",Labels:"GDB_SUPPORT_202602",Due:"2/2/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:3600},
+  {Key:"GIT-16",Summary:"[F1 MA] Set Up Partner bTaskee Coupon - 1 Jan-30 Jun 2026",Status:"Done",Components:"firster-commerce",Group:"marketing_automation",Labels:"GDB_SUPPORT_202601",Due:"1/13/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:57600},
+  {Key:"GIT-17",Summary:"[F1 MA] Set Up VIP + Loyal (RFM) Promotion - 20-21 Feb 2026",Status:"Done",Components:"firster-commerce",Group:"marketing_automation",Labels:"GDB_SUPPORT_202602",Due:"2/20/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:21600},
+  {Key:"GIT-18",Summary:"[F1 MA] Set Up NPD + Partner Group - 13 Feb 2026",Status:"Done",Components:"firster-commerce",Group:"marketing_automation",Labels:"GDB_SUPPORT_202602",Due:"2/13/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:3600},
+  {Key:"GIT-19",Summary:"[F1 MA] Set Up Main Campaign - 2 Mar 2026",Status:"Done",Components:"firster-commerce",Group:"marketing_automation",Labels:"GDB_SUPPORT_202603",Due:"3/2/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:7200},
+  {Key:"GIT-20",Summary:"[F1 MA] Set Up At Risk Promotion - 15 Jan 2026",Status:"Done",Components:"firster-commerce",Group:"marketing_automation",Labels:"GDB_SUPPORT_202601",Due:"1/15/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:57600},
+  {Key:"GIT-21",Summary:"[F1 MA] Set Up NPD + Partner Group - 16 Jan 2026",Status:"Done",Components:"firster-commerce",Group:"marketing_automation",Labels:"GDB_SUPPORT_202601",Due:"1/16/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:3600},
+  {Key:"GIT-22",Summary:"[F1 MA] Set Up NPD + Partner Group - 13 Mar 2026",Status:"Done",Components:"firster-commerce",Group:"marketing_automation",Labels:"GDB_SUPPORT_202603",Due:"3/13/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:3600},
+  {Key:"GIT-23",Summary:"[F1 MA] Set Up New Customer First Order Coupon - 20 Apr 2026",Status:"To do",Components:"firster-commerce",Group:"marketing_automation",Labels:"GDB_SUPPORT_202604",Due:"4/20/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:0},
+  {Key:"GIT-24",Summary:"[F1 MA] Set Up VIP + Loyal (RFM) Promotion - 21-22 Mar 2026",Status:"Done",Components:"firster-commerce",Group:"marketing_automation",Labels:"GDB_SUPPORT_202603",Due:"3/21/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:7200},
+  {Key:"GIT-25",Summary:"[F1 MA] Set Up At Risk Promotion - 15 Mar 2026",Status:"Done",Components:"firster-commerce",Group:"marketing_automation",Labels:"GDB_SUPPORT_202603",Due:"3/15/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:3600},
+  {Key:"GIT-26",Summary:"[F1 MA] Set Up New Customer First Order Coupon - 6 Mar 2026",Status:"Done",Components:"firster-commerce",Group:"marketing_automation",Labels:"GDB_SUPPORT_202603",Due:"3/6/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:3600},
+  {Key:"GIT-27",Summary:"[F1 MA] Set Up VIP + Loyal (RFM) Promotion - 17/18 Jan 2026",Status:"Done",Components:"firster-commerce",Group:"marketing_automation",Labels:"GDB_SUPPORT_202601",Due:"1/18/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:7200},
+  {Key:"GIT-28",Summary:"[F1 MA] Set Up Partner BeNeat Coupon - 1 Mar-31 Aug 2026",Status:"Done",Components:"firster-commerce",Group:"marketing_automation",Labels:"GDB_SUPPORT_202603",Due:"3/1/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:172800},
+  {Key:"GIT-29",Summary:"[F1 MA] Set Up At Risk Promotion - 15 Feb 2026",Status:"Done",Components:"firster-commerce",Group:"marketing_automation",Labels:"GDB_SUPPORT_202602",Due:"2/15/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:21600},
+  {Key:"GIT-30",Summary:"[F1 MA] Set Up Adhoc SMS Sony WH-1000XM6 - 28 Jan 2026",Status:"Done",Components:"firster-commerce",Group:"marketing_automation",Labels:"GDB_SUPPORT_202601",Due:"1/28/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:3600},
+  {Key:"GIT-31",Summary:"[F1 MA] Set Up New Customer First Order Coupon - 1 Feb 2026",Status:"Done",Components:"firster-commerce",Group:"marketing_automation",Labels:"GDB_SUPPORT_202602",Due:"2/1/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:28800},
+  {Key:"GIT-32",Summary:"[F1 MA] Set Up Birthday Privileges - 9 Mar 2026",Status:"Done",Components:"firster-commerce",Group:"marketing_automation",Labels:"GDB_SUPPORT_202603",Due:"3/9/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:3600},
+  {Key:"GIT-33",Summary:"[F1 MA] Set Up Birthday Privileges - 17 Feb 2026",Status:"Done",Components:"firster-commerce",Group:"marketing_automation",Labels:"GDB_SUPPORT_202602",Due:"2/17/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:57600},
+  {Key:"GIT-34",Summary:"[F1 MA] Set Up Main Campaign - 7 Jan 2026",Status:"Done",Components:"firster-commerce",Group:"marketing_automation",Labels:"GDB_SUPPORT_202601",Due:"1/7/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:3600},
+  {Key:"GIT-35",Summary:"[F1 MA] Set Up At Risk Reminder - 25 Mar 2026",Status:"Done",Components:"firster-commerce",Group:"marketing_automation",Labels:"GDB_SUPPORT_202603",Due:"3/25/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:10800},
+  {Key:"GIT-36",Summary:"[F1 MA] Set Up At Risk Promotion - 20 Apr 2026",Status:"To do",Components:"firster-commerce",Group:"marketing_automation",Labels:"GDB_SUPPORT_202604",Due:"4/20/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:0},
+  {Key:"GIT-37",Summary:"[F1 MA] Set Up VIP + Loyal (RFM) Promotion - 16-17 Apr 2026",Status:"To do",Components:"firster-commerce",Group:"marketing_automation",Labels:"GDB_SUPPORT_202604",Due:"",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:0},
+  {Key:"GIT-38",Summary:"[Tiktok] Update stock support March (1)",Status:"Done",Components:"firster-tiktok-social-commerce",Group:"firster_tiktok_update_stock",Labels:"GDB_SUPPORT_202603",Due:"3/5/2026",Assignee:"Natpapat Kwaopiwong",TimeSpentSec:1800},
+  {Key:"GIT-39",Summary:"[Tiktok] Update stock support March (1)",Status:"Done",Components:"firster-tiktok-social-commerce",Group:"firster_tiktok_update_stock",Labels:"GDB_SUPPORT_202603",Due:"3/5/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:0},
+  {Key:"GIT-40",Summary:"[Tiktok] Update stock support March (1)",Status:"Done",Components:"firster-tiktok-social-commerce",Group:"firster_tiktok_update_stock",Labels:"GDB_SUPPORT_202603",Due:"3/5/2026",Assignee:"Somrythi Pipat",TimeSpentSec:0},
+  {Key:"GIT-43",Summary:"[F1 MA] Request new SFMC account for Marketing team",Status:"In Progress",Components:"firster-commerce",Group:"marketing_automation",Labels:"GDB_SUPPORT_202604",Due:"4/10/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:0},
+  {Key:"GIT-44",Summary:"[F1 MA] Set Up VIP + Loyal (RFM) Promotion - 16-17 Apr 2026",Status:"To do",Components:"firster-commerce",Group:"marketing_automation",Labels:"GDB_SUPPORT_202604",Due:"4/16/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:0},
+  {Key:"GIT-45",Summary:"[Tiktok] Query order report for accounting - March 2026",Status:"To do",Components:"",Group:"firster_tiktok_report",Labels:"",Due:"",Assignee:"Somrythi Pipat",TimeSpentSec:0},
+  {Key:"GIT-46",Summary:"[TikTok] Export weekly sales report for F&A - Mar 2026 (Week 1)",Status:"Done",Components:"firster-tiktok-social-commerce",Group:"firster_tiktok_report",Labels:"GDB_SUPPORT_202603",Due:"3/10/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:3600},
+  {Key:"GIT-47",Summary:"[TikTok] Export weekly sales report for F&A - Mar 2026 (Week 2)",Status:"Done",Components:"firster-tiktok-social-commerce",Group:"firster_tiktok_report",Labels:"GDB_SUPPORT_202603",Due:"3/17/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:3600},
+  {Key:"GIT-48",Summary:"[TikTok] Export weekly sales report for F&A - Mar 2026 (Week 3)",Status:"Done",Components:"firster-tiktok-social-commerce",Group:"firster_tiktok_report",Labels:"GDB_SUPPORT_202603",Due:"3/24/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:3600},
+  {Key:"GIT-49",Summary:"[TikTok] Export daily sales report for F&A (1-14 Feb 2026)",Status:"Done",Components:"firster-tiktok-social-commerce",Group:"firster_tiktok_report",Labels:"GDB_SUPPORT_202602",Due:"2/16/2026",Assignee:"Somrythi Pipat",TimeSpentSec:54000},
+  {Key:"GIT-50",Summary:"[TikTok] Export daily sales report for F&A (15-28 Feb 2026)",Status:"Done",Components:"firster-tiktok-social-commerce",Group:"firster_tiktok_report",Labels:"GDB_SUPPORT_202602",Due:"3/2/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:50400},
+  {Key:"GIT-51",Summary:"[TikTok] Export daily sales report for F&A - Jan 2026",Status:"Done",Components:"firster-tiktok-social-commerce",Group:"firster_tiktok_report",Labels:"GDB_SUPPORT_202601",Due:"2/2/2026",Assignee:"Somrythi Pipat",TimeSpentSec:111600},
+  {Key:"GIT-52",Summary:"[Salesforce CRM] Add CRM user role",Status:"Done",Components:"firster-commerce",Group:"other",Labels:"GDB_SUPPORT_202601",Due:"1/30/2026",Assignee:"Sodsaran Lertsirisampan",TimeSpentSec:0},
+];
+
+/* ── Helpers ─────────────────────────────────────────────── */
+var JIRA_BASE = 'https://kingpower.atlassian.net/browse/';
+function secToHours(s){ return s>0?(s/3600).toFixed(1)+'h':'—'; }
+function fmtGroup(g){ return g.replace(/_/g,' '); }
+function statusTag(s){
+  var cls = s==='Done'?'done':s==='In Progress'?'in-progress':'todo';
+  return '<span class="tag '+cls+'">'+s+'</span>';
+}
+function isOverdue(due,status){
+  if(!due||status==='Done') return false;
+  return new Date(due)<new Date();
+}
+
+/* ── State ───────────────────────────────────────────────── */
+var activeStatus='all', activeGroup='all', searchQ='', sortCol='Key', sortAsc=true;
+
+/* ── Build summary strip ─────────────────────────────────── */
+function buildStrip(data){
+  var total=data.length;
+  var todo=data.filter(d=>d.Status==='To do').length;
+  var inprog=data.filter(d=>d.Status==='In Progress').length;
+  var totalSec=data.reduce(function(a,d){return a+d.TimeSpentSec;},0);
+  var recurring=data.filter(d=>d.Group==='marketing_automation'||d.Group==='firster_tiktok_report').length;
+  var overdue=data.filter(d=>isOverdue(d.Due,d.Status)).length;
+  document.getElementById('strip').innerHTML=
+    '<div class="sc blue"><div class="sc-label">Total Tasks</div><div class="sc-num">'+total+'</div><div class="sc-sub">Jan–Apr 2026</div></div>'+
+    '<div class="sc amber"><div class="sc-label">Pending / To do</div><div class="sc-num">'+todo+'</div><div class="sc-sub">'+(overdue>0?'<span style="color:var(--down)">'+overdue+' overdue</span>':'all on track')+'</div></div>'+
+    '<div class="sc blue"><div class="sc-label">In Progress</div><div class="sc-num">'+inprog+'</div><div class="sc-sub">active now</div></div>'+
+    '<div class="sc teal"><div class="sc-label">Total Hours Logged</div><div class="sc-num">'+secToHours(totalSec)+'</div><div class="sc-sub">across all assignees</div></div>'+
+    '<div class="sc purple"><div class="sc-label">Recurring Tasks</div><div class="sc-num">'+recurring+'</div><div class="sc-sub">→ initiative candidates</div></div>';
+}
+
+/* ── Build group bar chart ───────────────────────────────── */
+function buildGroupChart(data){
+  var counts={};
+  data.forEach(function(d){ counts[d.Group]=(counts[d.Group]||0)+1; });
+  var sorted=Object.entries(counts).sort(function(a,b){return b[1]-a[1];});
+  var max=sorted[0]?sorted[0][1]:1;
+  var colors={'marketing_automation':'#a78bfa','firster_tiktok_report':'#58a6ff',
+    'firster_tiktok_update_stock':'#f59e0b','firster_report':'#3fb950','other':'#484f58'};
+  var html=sorted.map(function(e){
+    var pct=Math.round(e[1]/max*100);
+    var col=colors[e[0]]||'#484f58';
+    return '<div class="brow"><div class="blabel">'+fmtGroup(e[0])+'</div>'+
+      '<div class="btrack"><div class="bfill" style="width:'+pct+'%;background:'+col+'">'+e[1]+'</div></div>'+
+      '<div class="bcount">'+e[1]+'</div></div>';
+  }).join('');
+  document.getElementById('group-chart').innerHTML=html;
+}
+
+/* ── Build assignee table ────────────────────────────────── */
+function buildAssigneeTable(data){
+  var agg={};
+  data.forEach(function(d){
+    var name=d.Assignee||'(unassigned)';
+    if(!agg[name]) agg[name]={tasks:0,sec:0,pending:0};
+    agg[name].tasks++;
+    agg[name].sec+=d.TimeSpentSec;
+    if(d.Status==='To do'||d.Status==='In Progress') agg[name].pending++;
+  });
+  var rows=Object.entries(agg).sort(function(a,b){return b[1].tasks-a[1].tasks;});
+  var maxH=Math.max.apply(null,rows.map(function(r){return r[1].sec;}));
+  var html='<thead><tr><th>Assignee</th><th style="text-align:right">Tasks</th>'+
+    '<th style="text-align:right">Hours</th><th style="text-align:right">Load</th>'+
+    '<th style="text-align:right">Pending</th></tr></thead><tbody>'+
+    rows.map(function(r){
+      var n=r[0],v=r[1];
+      var barW=maxH>0?Math.round(v.sec/maxH*80):4;
+      return '<tr><td style="font-weight:600">'+n+'</td>'+
+        '<td>'+v.tasks+'</td>'+
+        '<td style="color:var(--teal)">'+secToHours(v.sec)+'</td>'+
+        '<td><div class="hbar-wrap"><div class="hbar" style="width:'+barW+'px"></div></div></td>'+
+        '<td>'+(v.pending>0?'<span class="tag todo">'+v.pending+'</span>':'—')+'</td></tr>';
+    }).join('')+'</tbody>';
+  document.getElementById('assignee-tbl').innerHTML=html;
+}
+
+/* ── Build group filter pills ─────────────────────────────── */
+function buildGroupFilter(data){
+  var groups=[...new Set(data.map(function(d){return d.Group;}).filter(Boolean))].sort();
+  var el=document.getElementById('group-filter');
+  el.innerHTML='<button class="fb active" onclick="setFilter(\'group\',\'all\',this)">All groups</button>'+
+    groups.map(function(g){
+      return '<button class="fb" onclick="setFilter(\'group\',\''+g+'\',this)">'+fmtGroup(g)+'</button>';
+    }).join('');
+}
+
+/* ── Build task table ────────────────────────────────────── */
+function buildTaskTable(data){
+  if(!data.length){
+    document.getElementById('task-tbody').innerHTML='<tr><td colspan="8" class="empty">No tasks match this filter.</td></tr>';
+    document.getElementById('task-count-label').textContent='0 tasks';
+    return;
+  }
+  document.getElementById('task-count-label').textContent='Showing '+data.length+' tasks';
+  var today=new Date();
+  var html=data.map(function(d){
+    var overdue=isOverdue(d.Due,d.Status);
+    var dueHtml=d.Due
+      ?(overdue?'<span style="color:var(--down);font-weight:600">'+d.Due+'</span>':d.Due)
+      :'—';
+    var timeHtml=d.TimeSpentSec>0?'<span style="color:var(--teal)">'+secToHours(d.TimeSpentSec)+'</span>':'—';
+    return '<tr>'+
+      '<td><a href="'+JIRA_BASE+d.Key+'" target="_blank" style="color:var(--accent);font-weight:700;text-decoration:none;white-space:nowrap">'+d.Key+'↗</a></td>'+
+      '<td style="min-width:260px;max-width:380px">'+d.Summary+'</td>'+
+      '<td>'+statusTag(d.Status)+'</td>'+
+      '<td><span style="font-size:11px;color:var(--text2)">'+fmtGroup(d.Group||'—')+'</span></td>'+
+      '<td><span style="font-size:10px;color:var(--text3)">'+((d.Components||'').split(';')[0]||'—')+'</span></td>'+
+      '<td style="font-size:11px;white-space:nowrap">'+(d.Assignee||'<span style="color:var(--down)">unassigned</span>')+'</td>'+
+      '<td style="font-size:11px;white-space:nowrap">'+dueHtml+'</td>'+
+      '<td style="text-align:right">'+timeHtml+'</td>'+
+      '</tr>';
+  }).join('');
+  document.getElementById('task-tbody').innerHTML=html;
+}
+
+/* ── Patterns analysis (dynamic) ───────────────────────────── */
+function buildPatterns(data){
+  var groups={};
+  data.forEach(function(d){
+    if(!groups[d.Group]) groups[d.Group]={count:0,sec:0,assignees:new Set()};
+    groups[d.Group].count++;
+    groups[d.Group].sec+=d.TimeSpentSec;
+    if(d.Assignee) groups[d.Group].assignees.add(d.Assignee);
+  });
+  var html='';
+  Object.entries(groups).sort(function(a,b){return b[1].count-a[1].count;}).forEach(function(e){
+    var g=e[0],v=e[1];
+    if(v.count<3) return;
+    var isSingle=v.assignees.size===1;
+    var hrs=(v.sec/3600).toFixed(1);
+    var priority=v.count>=15?'high':'med';
+    var icon=g.includes('marketing')?'⚙':g.includes('tiktok')?'📊':'📋';
+    var pppHint=g==='marketing_automation'?'→ SFMC Journey automation':
+                g==='firster_tiktok_report'?'→ Accelerate PPP-2 (TikTok F&A Report)':
+                g==='firster_tiktok_update_stock'?'→ Automate stock sync process':'→ Review process';
+    html+='<div class="pcard '+priority+'">'+
+      '<div class="pcard-icon">'+icon+'</div>'+
+      '<div style="flex:1">'+
+        '<div class="pcard-title">'+fmtGroup(g)+
+          ' — '+v.count+' tasks'+
+          (isSingle?'<span class="tag ppp">Single assignee risk</span>':'')+
+          '<span class="tag"style="background:rgba(88,166,255,.1);color:var(--accent);border:1px solid rgba(88,166,255,.2)">'+(priority==='high'?'High':'Medium')+' priority</span>'+
+        '</div>'+
+        '<div class="pcard-desc">'+v.count+' recurring tasks logged. '+
+          (hrs>0?'<strong>'+hrs+'h</strong> manual time spent. ':'')+
+          (isSingle?'All assigned to single person — single point of failure. ':'')+
+          pppHint+
+        '</div>'+
+        '<div class="pcard-meta">'+
+          '<div class="pm">Tasks: <strong>'+v.count+'</strong></div>'+
+          '<div class="pm">Hours: <strong>'+(hrs>0?hrs+'h':'—')+'</strong></div>'+
+          '<div class="pm">Assignees: <strong>'+[...v.assignees].join(', ')+'</strong></div>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  });
+  document.getElementById('patterns').innerHTML=html||'<div class="empty">No recurring patterns detected.</div>';
+}
+
+/* ── Filter + sort pipeline ──────────────────────────────── */
+function getFiltered(){
+  return supportData.filter(function(d){
+    var okStatus = activeStatus==='all'||d.Status===activeStatus;
+    var okGroup  = activeGroup==='all'||d.Group===activeGroup;
+    var q=searchQ.toLowerCase();
+    var okSearch = !q||d.Key.toLowerCase().includes(q)||d.Summary.toLowerCase().includes(q)||
+                   (d.Assignee||'').toLowerCase().includes(q);
+    return okStatus&&okGroup&&okSearch;
+  }).sort(function(a,b){
+    var va=a[sortCol]||'', vb=b[sortCol]||'';
+    if(sortCol==='Hours'){ va=a.TimeSpentSec; vb=b.TimeSpentSec; }
+    if(va<vb) return sortAsc?-1:1;
+    if(va>vb) return sortAsc?1:-1;
+    return 0;
+  });
+}
+function applyFilters(){ buildTaskTable(getFiltered()); }
+function setFilter(type,val,btn){
+  if(type==='status'){
+    activeStatus=val;
+    document.querySelectorAll('#status-filter .fb').forEach(function(b){b.classList.remove('active');});
+  } else {
+    activeGroup=val;
+    document.querySelectorAll('#group-filter .fb').forEach(function(b){b.classList.remove('active');});
+  }
+  btn.classList.add('active');
+  applyFilters();
+}
+function sortBy(col){
+  if(sortCol===col) sortAsc=!sortAsc; else { sortCol=col; sortAsc=true; }
+  applyFilters();
+}
+
+/* ── Init ───────────────────────────────────────────────── */
+function init(){
+  document.getElementById('last-updated').textContent=
+    'Last updated: '+new Date().toLocaleString('en-GB',{day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  buildStrip(supportData);
+  buildGroupChart(supportData);
+  buildAssigneeTable(supportData);
+  buildGroupFilter(supportData);
+  buildTaskTable(getFiltered());
+  buildPatterns(supportData);
+}
+init();
+
 </script>
 </body>
 </html>

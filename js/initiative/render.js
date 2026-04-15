@@ -34,7 +34,7 @@ function getStart(r){const p=getJ(r);return p?(p.start||null):(r&&/\d{4}-\d{2}-\
 function getEnd(r){const p=getJ(r);return p?(p.end||null):(r&&/\d{4}-\d{2}-\d{2}/.test(r)?r.match(/(\d{4}-\d{2}-\d{2})/)[1]:null)}
 function fmtDate(d){if(!d)return'—';const[y,m]=d.split('-');return MONTHS[+m-1]+' '+y}
 function cl(v){return String(v||'').replace(/^"|"$/g,'').trim()}
-function jiraLink(k){return`<a class="jira-link" href="${CONFIG.JIRA_BASE}${k}" target="_blank">${k}</a>`}
+function jiraLink(k){return`<a class="jira-link" href="${CONFIG.JIRA_BASE}${k}" target="_blank">${k} ↗</a>`}
 function monBadge(v){if(!v)return'<span style="color:var(--text3);font-size:10px">—</span>';const d=v.toLowerCase();if(d.includes('track'))return`<span class="mon-badge mon-ontrack">✅ On track</span>`;if(d.includes('risk'))return`<span class="mon-badge mon-atrisk">⚠️ At risk</span>`;if(d.includes('delay'))return`<span class="mon-badge mon-delayed">🆘 Delayed</span>`;return`<span style="font-size:10px;color:var(--text2)">${v}</span>`;}
 function monEmoji(v){if(!v)return'';const d=v.toLowerCase();if(d.includes('delay'))return'🆘 ';if(d.includes('risk'))return'⚠️ ';if(d.includes('track'))return'✅ ';return'';}
 function sPill(v){const m={'Parking Lot':'parking','Budget Approval':'budget','Discovery':'discovery','Ready for Delivery':'rfd','Delivery':'delivery','Done':'done'};const c=m[v]||'';return c?`<span class="pill p-${c}">${v}</span>`:`<span style="font-size:10px;color:var(--text2)">${v||'—'}</span>`;}

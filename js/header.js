@@ -140,12 +140,12 @@ function buildGdbHeader(opts) {
   /* Issues */
   var issueActive = p.includes('/issue/') ? ' active' : '';
   nav += '<a class="gdb-nav-item' + issueActive + '" href="/gdb-ppp/issue/">' +
-         'Issues <span class="gdb-nav-badge">soon</span></a>';
+         'Issues</a>';
 
   /* Support */
   var suppActive = p.includes('/support/') ? ' active' : '';
   nav += '<a class="gdb-nav-item' + suppActive + '" href="/gdb-ppp/support/">' +
-         'Support Tasks <span class="gdb-nav-badge">soon</span></a>';
+         'Support Tasks</a>';
 
   nav += '</nav>';
 

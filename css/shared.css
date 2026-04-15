@@ -372,3 +372,36 @@ select {
 }
 select:focus { outline: none; border-color: var(--accent); }
 select option { background: var(--surface2); color: var(--text); }
+
+
+/* ── Dark Eye Comfort — warm amber tint on dark background ──
+   Keeps dark bg but shifts all cool blue-gray tones warm.
+   bg/surface: warm dark brown-gray (not cold blue-black)
+   text: warm off-white with amber tint
+   accent: amber-gold instead of cold blue
+   Charts: warmer, slightly muted versions
+────────────────────────────────────────────────────────── */
+[data-theme="dark-warm"] {
+  --bg:        #1a1510;
+  --surface:   #221c15;
+  --surface2:  #2b231a;
+  --border:    #3d3228;
+  --text:      #e8dcc8;
+  --text2:     #a89880;
+  --text3:     #6b5c48;
+  --up:        #4a9e5c;
+  --down:      #e06050;
+  --accent:    #d4a040;
+  --accent2:   #4a9e5c;
+  --purple:    #b088e0;
+  --amber:     #d4a040;
+  --teal:      #40b8a8;
+  --chart-blue:   #7ab0e0;
+  --chart-green:  #4a9e5c;
+  --chart-orange: #d4782a;
+  --chart-purple: #b088e0;
+  --chart-teal:   #40b8a8;
+  --chart-red:    #e06050;
+  --chart-amber:  #d4a040;
+  --chart-dim:    #6b5c48;
+}

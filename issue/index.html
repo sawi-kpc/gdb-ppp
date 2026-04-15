@@ -5,26 +5,603 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Issues — GDB Dashboard</title>
 <link rel="stylesheet" href="../css/shared.css">
+<style>
+
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+.page{max-width:1400px;margin:0 auto;padding:20px 24px}
+.ph{margin-bottom:20px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.ph-title{font-size:18px;font-weight:700}
+.ph-sub{font-size:12px;color:var(--text2);margin-top:3px}
+/* Strip */
+.strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.sc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:14px 16px;position:relative;overflow:hidden}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.sc.red::before{background:var(--down)}.sc.amber::before{background:var(--amber)}
+.sc.blue::before{background:var(--accent)}.sc.green::before{background:var(--up)}
+.sc-label{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.sc-num{font-size:26px;font-weight:700;line-height:1;margin-bottom:2px}
+.sc.red .sc-num{color:var(--down)}.sc.amber .sc-num{color:var(--amber)}
+.sc.blue .sc-num{color:var(--accent)}.sc.green .sc-num{color:var(--up)}
+.sc-sub{font-size:11px;color:var(--text2)}
+/* Panel */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px}
+.ph2{padding:12px 16px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.pt{font-size:13px;font-weight:700}.ps{font-size:11px;color:var(--text2);margin-top:2px}
+.pb{padding:14px 16px}
+/* Filter */
+.fbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.fb{padding:4px 12px;font-size:11px;font-weight:600;border-radius:20px;cursor:pointer;
+  border:1px solid var(--border);background:var(--surface2);color:var(--text2);transition:all .15s}
+.fb.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.fb:hover:not(.active){color:var(--text)}
+/* Search */
+.search-wrap{position:relative}
+.search-wrap input{background:var(--surface2);border:1px solid var(--border);
+  color:var(--text);border-radius:6px;padding:5px 10px 5px 28px;font-size:12px;
+  width:220px;outline:none}
+.search-wrap input:focus{border-color:var(--accent)}
+.search-wrap::before{content:'⌕';position:absolute;left:9px;top:50%;transform:translateY(-50%);
+  color:var(--text3);font-size:13px;pointer-events:none}
+/* Tags */
+.tag{display:inline-flex;align-items:center;font-size:10px;font-weight:600;
+  padding:2px 7px;border-radius:3px;white-space:nowrap}
+.tag.open{background:rgba(248,81,73,.15);color:var(--down);border:1px solid rgba(248,81,73,.25)}
+.tag.in-progress{background:rgba(245,158,11,.12);color:var(--amber);border:1px solid rgba(245,158,11,.25)}
+.tag.done{background:rgba(63,185,80,.1);color:var(--up);border:1px solid rgba(63,185,80,.2)}
+.tag.ppp{background:rgba(167,139,250,.12);color:var(--purple);border:1px solid rgba(167,139,250,.25)}
+/* Issue cards */
+.issue-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:12px}
+.icard{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:14px 16px;position:relative;overflow:hidden;
+  transition:border-color .15s}
+.icard:hover{border-color:var(--text3)}
+.icard::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+.icard.open::before{background:var(--down)}
+.icard.in-progress::before{background:var(--amber)}
+.icard.done::before{background:var(--up)}
+.icard-top{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.ikey{font-size:11px;font-weight:700}
+.ikey a{color:var(--accent);text-decoration:none}
+.ikey a:hover{text-decoration:underline}
+.isummary{font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px;line-height:1.4}
+.comps{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+.comp{font-size:9px;padding:1px 7px;border-radius:10px;
+  background:var(--surface);border:1px solid var(--border);color:var(--text2)}
+.iassign{font-size:11px;color:var(--text2);margin-bottom:6px}
+/* ── Incident Timeline Visualization ─── */
+.itl{margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.itl-title{font-size:10px;font-weight:600;color:var(--text2);
+  text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+/* Horizontal segmented bar */
+.itl-bar-wrap{position:relative;margin-bottom:8px}
+.itl-bar-track{display:flex;height:22px;border-radius:4px;overflow:hidden;gap:1px}
+.itl-seg{display:flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:700;color:#fff;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;padding:0 6px;
+  transition:opacity .2s;cursor:default;position:relative}
+.itl-seg:hover{opacity:.85}
+.itl-seg.detect{background:#484f58}   /* gray — pre-fix / unknown duration */
+.itl-seg.fixing{background:#f59e0b}   /* amber — time to fix */
+.itl-seg.resolved{background:#3fb950} /* green — fixed */
+.itl-seg.ongoing{background:rgba(248,81,73,.7)} /* red pulse — still open */
+@keyframes itl-pulse{0%,100%{opacity:.7}50%{opacity:1}}
+.itl-seg.ongoing{animation:itl-pulse 2s ease-in-out infinite}
+/* Milestone markers below bar */
+.itl-marks{display:grid;margin-top:6px}
+.itl-mark{font-size:9px;line-height:1.4}
+.itl-mark-label{color:var(--text3);margin-bottom:1px}
+.itl-mark-val{color:var(--text2);font-weight:600}
+/* Stage duration badges */
+.itl-durations{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.itl-dur{font-size:10px;padding:2px 8px;border-radius:3px;font-weight:600}
+.itl-dur.d-detect{background:rgba(72,79,88,.25);color:var(--text2)}
+.itl-dur.d-fix{background:rgba(245,158,11,.15);color:var(--amber)}
+.itl-dur.d-total{background:rgba(63,185,80,.1);color:var(--up)}
+.itl-dur.d-ongoing{background:rgba(248,81,73,.12);color:var(--down)}
+/* No-data state */
+.itl-nodata{font-size:11px;color:var(--text3);padding:6px 0;font-style:italic}
+/* Issue table */
+.itbl{width:100%;border-collapse:collapse;font-size:12px}
+.itbl th{padding:8px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text2);
+  text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);
+  cursor:pointer;white-space:nowrap}
+.itbl th:hover{color:var(--text)}
+.itbl td{padding:8px 10px;border-bottom:1px solid rgba(48,54,61,.35);vertical-align:top}
+.itbl tr:hover td{background:rgba(22,27,34,.7)}
+.itbl tr:last-child td{border-bottom:none}
+.tbl-scroll{overflow-x:auto}
+/* Initiative hint */
+.init-hint{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;
+  background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,.2);
+  border-radius:6px;margin-top:8px}
+.ih-
+/* View toggle */
+.vtog{display:flex;gap:4px}
+.vbtn{padding:4px 10px;font-size:11px;font-weight:600;border-radius:4px;cursor:pointer;
+  border:1px solid var(--border);background:var(--surface2);color:var(--text2);transition:all .15s}
+.vbtn.active{background:var(--surface);color:var(--text);border-color:var(--text3)}
+.empty{padding:24px;text-align:center;color:var(--text3);font-size:12px}
+@media(max-width:900px){.strip{grid-template-columns:repeat(2,1fr)}.issue-grid{grid-template-columns:1fr}}
+
+/* GDB page layout overrides */
+.page{max-width:none;padding:0}
+</style>
 </head>
 <body>
-<div id="gdb-error"></div>
-<div class="gdb-page" id="main-content" style="display:none">
-  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px">
-    <div style="font-size:48px">🐛</div>
-    <div style="font-size:20px;font-weight:700;color:var(--text)">Issues</div>
-    <div style="font-size:14px;color:var(--text2)">Coming soon — Jira issue tracker integration</div>
+<div id="gdb-error" style="display:none;padding:12px 20px;background:rgba(248,81,73,.1);
+  border-bottom:1px solid rgba(248,81,73,.3);color:var(--down);font-size:12px"></div>
+
+<!-- Loading state -->
+<div id="gdb-loading" style="display:flex;flex-direction:column;align-items:center;
+  justify-content:center;min-height:60vh;gap:12px;color:var(--text2);font-size:13px">
+  <div style="width:32px;height:32px;border:2px solid var(--border);
+    border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite"></div>
+  Loading issues…
+  <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+</div>
+
+<!-- Main content -->
+<div id="issue-content" style="display:none;padding:20px 24px">
+
+<div class="ph">
+  <div>
+    <div class="ph-title">Platform Issues</div>
+    <div class="ph-sub">Active issues, resolution timeline, and systemic patterns</div>
+  </div>
+  <div id="last-updated" style="font-size:11px;color:var(--text3)"></div>
+</div>
+
+<div class="strip" id="strip"></div>
+
+<div class="panel">
+  <div class="ph2">
+    <div><div class="pt">Issue List</div><div class="ps" id="count-label"></div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <div class="search-wrap"><input type="text" id="search" placeholder="Search…" oninput="applyFilters()"></div>
+      <div class="vtog">
+        <button class="vbtn active" onclick="setView('card',this)">Cards</button>
+        <button class="vbtn" onclick="setView('table',this)">Table</button>
+      </div>
+    </div>
+  </div>
+  <div class="pb">
+    <div class="fbar" id="status-filter">
+      <button class="fb active" onclick="setFilter('all',this)">All</button>
+      <button class="fb" onclick="setFilter('Open',this)">⚠ Open</button>
+      <button class="fb" onclick="setFilter('In Progress',this)">In Progress</button>
+      <button class="fb" onclick="setFilter('Done',this)">Resolved</button>
+    </div>
+    <div id="card-view"><div class="issue-grid" id="issue-grid"></div></div>
+    <div id="table-view" style="display:none">
+      <div class="tbl-scroll">
+        <table class="itbl">
+          <thead><tr>
+            <th onclick="sortBy('Key')">Key</th>
+            <th onclick="sortBy('Summary')">Summary</th>
+            <th onclick="sortBy('Status')">Status</th>
+            <th>Components</th>
+            <th onclick="sortBy('Assignee')">Assignee</th>
+            <th onclick="sortBy('mttr')">MTTR</th>
+            <th>Root cause</th>
+          </tr></thead>
+          <tbody id="issue-tbody"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </div>
+
+<div class="panel">
+  <div class="ph2">
+    <div><div class="pt">◆ Systemic Issues — Initiative Conversion Candidates</div>
+    <div class="ps">Issues indicating process gaps that should be addressed via initiatives</div></div>
+  </div>
+  <div class="pb" id="init-section"></div>
+</div>
+
+</div><!-- /issue-content -->
+
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="../js/issue/config.js"></script>
 <script src="../js/header.js"></script>
+<script src="../js/issue/data.js"></script>
 <script>
 window.addEventListener('DOMContentLoaded', function() {
-  buildGdbHeader({});
-  gdbAuthGuard(function() {
-    document.getElementById('main-content').style.display = 'block';
+  buildGdbHeader({ showRefresh: true });
+  gdbAuthGuard(function(user) {
+    loadIssueData(function(data) {
+      document.getElementById('gdb-loading').style.display = 'none';
+      document.getElementById('issue-content').style.display = 'block';
+      setGdbUpdateTime(new Date().toISOString());
+      init(data);
+    }, function(err) {
+      document.getElementById('gdb-loading').style.display = 'none';
+      document.getElementById('issue-content').style.display = 'block';
+      document.getElementById('gdb-error').textContent = 'Data error: ' + err;
+      document.getElementById('gdb-error').style.display = 'block';
+      init(getEmbeddedIssues());
+    });
   });
+  document.getElementById('gdb-refresh-btn') &&
+    document.getElementById('gdb-refresh-btn').addEventListener('click', function() {
+      clearIssueCache();
+      loadIssueData(function(data) { init(data); });
+    });
 });
+
+/* ── Render logic (from prototype) ─────────────── */
+
+var JIRA_BASE = 'https://kingpower.atlassian.net/browse/';
+
+/* ── DATA (replace with JSONP from Apps Script) ─────────── */
+var RAW_ISSUES = [
+  {Key:"GIT-42",Summary:"[OMISE] เงินไม่พอคืนให้ลูกค้าผ่าน Omise (เกิดจากไม่มีเงินหมุนเวียนช่วงข้ามเดือน)",
+   Status:"In Progress",Components:"firster-commerce",Group:"",Labels:"",Due:"",
+   Assignee:"Somrythi Pipat",
+   FailureOccurs:"",CorrectionBegins:"4/7/2026 12:00",FailureResolved:"",
+   RootCause:"Insufficient float at month-end cycle"},
+  {Key:"GIT-41",Summary:"[K2] System Down - ไม่สามารถทำ process Refund ผ่าน K2 ได้",
+   Status:"Open",Components:"k2",Group:"",Labels:"",Due:"",
+   Assignee:"",
+   FailureOccurs:"",CorrectionBegins:"",FailureResolved:"",RootCause:""},
+  {Key:"GIT-9",Summary:"[ALL] System Down",
+   Status:"In Progress",Components:"firster-commerce;firster-tiktok-social-commerce;jd-phamacy-marketplace-cn;kingpower-commerce-cn;kingpower-commerce-th;kingpower-douyin-social-commerce;taihaitao-commerce-cn",
+   Group:"",Labels:"",Due:"",
+   Assignee:"Chawanop Witthayaphirak",
+   FailureOccurs:"",CorrectionBegins:"3/25/2026 8:00",FailureResolved:"",RootCause:""},
+  {Key:"GIT-4",Summary:"[SAP] System Down",
+   Status:"In Progress",Components:"firster-commerce;firster-tiktok-social-commerce;jd-phamacy-marketplace-cn;kingpower-commerce-cn;kingpower-commerce-th;kingpower-douyin-social-commerce;taihaitao-commerce-cn",
+   Group:"",Labels:"",Due:"",
+   Assignee:"Chawanop Witthayaphirak",
+   FailureOccurs:"3/23/2026 22:30",CorrectionBegins:"3/24/2026 10:00",FailureResolved:"",
+   RootCause:"SAP system outage — multi-channel impact"},
+  {Key:"GIT-1",Summary:"[F1] ใบเสร็จ ABB ไม่แสดงค่า Delivery fee ซึ่งเคยแสดงได้มาก่อน",
+   Status:"Open",Components:"firster-commerce",Group:"",Labels:"",Due:"3/31/2026",
+   Assignee:"Somrythi Pipat",
+   FailureOccurs:"",CorrectionBegins:"",FailureResolved:"",RootCause:""},
+];
+
+/* ── Helpers ─────────────────────────────────────────────── */
+function statusTag(s){
+  var m={Open:'open','In Progress':'in-progress',Done:'done'};
+  return '<span class="tag '+(m[s]||'open')+'">'+s+'</span>';
+}
+function calcMTTR(f,r){
+  if(!f||!r) return null;
+  var ms=new Date(r)-new Date(f);
+  if(ms<=0) return null;
+  var h=ms/3600000;
+  return h<24?h.toFixed(1)+'h':((h/24).toFixed(1)+'d');
+}
+function calcMTTRHours(f,r){
+  if(!f||!r) return null;
+  return (new Date(r)-new Date(f))/3600000;
+}
+function compsHtml(c){
+  var parts=(c||'').split(';').filter(Boolean);
+  if(!parts.length) return '<span style="color:var(--text3)">—</span>';
+  return parts.map(function(p,i){
+    if(i>=3) return i===3?'<span class="comp">+'+( parts.length-3)+' more</span>':'';
+    return '<span class="comp">'+p+'</span>';
+  }).filter(Boolean).join('');
+}
+function isOverdue(due,status){
+  if(!due||status==='Done') return false;
+  return new Date(due)<new Date();
+}
+
+/* ── State ───────────────────────────────────────────────── */
+var activeStatus='all', searchQ='', sortCol='Key', sortAsc=true, activeView='card';
+
+/* ── Build strip ─────────────────────────────────────────── */
+function buildStrip(data){
+  var open=data.filter(function(d){return d.Status==='Open';}).length;
+  var inprog=data.filter(function(d){return d.Status==='In Progress';}).length;
+  var done=data.filter(function(d){return d.Status==='Done';}).length;
+  var unassigned=data.filter(function(d){return !d.Assignee&&d.Status!=='Done';}).length;
+  var multiChannel=data.filter(function(d){return (d.Components||'').split(';').length>=3;}).length;
+  var mttrValues=data.map(function(d){return calcMTTRHours(d.FailureOccurs,d.FailureResolved);}).filter(Boolean);
+  var avgMttr=mttrValues.length?( mttrValues.reduce(function(a,v){return a+v;},0)/mttrValues.length).toFixed(1)+'h':'—';
+  document.getElementById('strip').innerHTML=
+    '<div class="sc red"><div class="sc-label">Open Issues</div><div class="sc-num">'+open+'</div>'+
+      '<div class="sc-sub">'+(unassigned>0?'<span style="color:var(--down)">'+unassigned+' unassigned</span>':'all assigned')+'</div></div>'+
+    '<div class="sc amber"><div class="sc-label">In Progress</div><div class="sc-num">'+inprog+'</div><div class="sc-sub">active now</div></div>'+
+    '<div class="sc blue"><div class="sc-label">Multi-channel Impact</div><div class="sc-num">'+multiChannel+'</div><div class="sc-sub">affects 3+ channels</div></div>'+
+    '<div class="sc green"><div class="sc-label">Avg MTTR</div><div class="sc-num">'+avgMttr+'</div><div class="sc-sub">mean time to resolve</div></div>';
+}
+
+/* ── Build card view ─────────────────────────────────────── */
+function buildCards(data){
+  if(!data.length){
+    document.getElementById('issue-grid').innerHTML='<div class="empty" style="grid-column:1/-1">No issues match this filter.</div>';
+    return;
+  }
+  document.getElementById('count-label').textContent='Showing '+data.length+' issue'+(data.length!==1?'s':'');
+  var statusClass={Open:'open','In Progress':'in-progress',Done:'done'};
+  var html=data.map(function(d){
+    var cls=statusClass[d.Status]||'open';
+    var overdue=isOverdue(d.Due,d.Status);
+    var mttr=calcMTTR(d.FailureOccurs,d.FailureResolved);
+    var mttrH=calcMTTRHours(d.FailureOccurs,d.FailureResolved);
+    var hasTimeline=d.FailureOccurs||d.CorrectionBegins||d.FailureResolved;
+    var multiCh=(d.Components||'').split(';').length>=3;
+    var isSystemic=multiCh||(d.Summary||'').includes('System Down');
+
+    var timelineHtml='';
+    if(hasTimeline){
+      timelineHtml = buildIncidentTimeline(d);
+    }
+
+    var initHint='';
+    if(d.Key==='GIT-42') initHint='<div class="init-hint"><span>◆</span><div class="ih-body">Process gap: no automated float monitoring at month-end. Recurring risk → consider payment ops initiative</div></div>';
+    if(d.Key==='GIT-9'||d.Key==='GIT-4') initHint='<div class="init-hint"><span>◆</span><div class="ih-body">Cross-channel system resilience gap. Relates to PPP-9 (Single Commerce Platform) scope.</div></div>';
+
+    return '<div class="icard '+cls+'">'+
+      '<div class="icard-top">'+
+        '<span class="ikey"><a href="'+JIRA_BASE+d.Key+'" target="_blank">'+d.Key+' ↗</a></span>'+
+        statusTag(d.Status)+
+        (multiCh?'<span class="tag" style="background:rgba(248,81,73,.1);color:var(--down);border:1px solid rgba(248,81,73,.2)">Multi-channel</span>':'')+
+        (overdue?'<span class="tag open">Overdue</span>':'')+
+        (!d.Assignee&&d.Status!=='Done'?'<span class="tag open">Unassigned</span>':'')+
+      '</div>'+
+      '<div class="isummary">'+d.Summary+'</div>'+
+      '<div class="comps">'+compsHtml(d.Components)+'</div>'+
+      '<div class="iassign">'+
+        (d.Assignee?'Assignee: <strong>'+d.Assignee+'</strong>':'<span style="color:var(--down)">No assignee</span>')+
+        (d.Due&&d.Status!=='Done'?' · Due: <span style="color:'+(overdue?'var(--down)':'var(--text2)')+'">'+d.Due+'</span>':'')+
+      '</div>'+
+      (d.RootCause?'<div style="font-size:11px;color:var(--text2);padding:6px 0;border-top:1px solid var(--border);margin-top:4px">Root cause: '+d.RootCause+'</div>':'')+
+      timelineHtml+
+      initHint+
+    '</div>';
+  }).join('');
+  document.getElementById('issue-grid').innerHTML=html;
+}
+
+/* ── Build table view ────────────────────────────────────── */
+function buildTable(data){
+  document.getElementById('count-label').textContent='Showing '+data.length+' issue'+(data.length!==1?'s':'');
+  if(!data.length){
+    document.getElementById('issue-tbody').innerHTML='<tr><td colspan="7" class="empty">No issues match this filter.</td></tr>';
+    return;
+  }
+  var html=data.map(function(d){
+    var mttr=calcMTTR(d.FailureOccurs,d.FailureResolved);
+    var overdue=isOverdue(d.Due,d.Status);
+    return '<tr>'+
+      '<td><a href="'+JIRA_BASE+d.Key+'" target="_blank" style="color:var(--accent);font-weight:700;text-decoration:none;white-space:nowrap">'+d.Key+' ↗</a></td>'+
+      '<td style="min-width:200px;max-width:340px">'+d.Summary+'</td>'+
+      '<td>'+statusTag(d.Status)+
+        (overdue?'<br><span style="font-size:10px;color:var(--down)">Overdue</span>':'')+
+      '</td>'+
+      '<td><div class="comps">'+compsHtml(d.Components)+'</div></td>'+
+      '<td style="font-size:11px">'+(d.Assignee||'<span style="color:var(--down)">—</span>')+'</td>'+
+      '<td style="font-size:11px;white-space:nowrap;color:var(--up)">'+(mttr||'—')+'</td>'+
+      '<td style="font-size:11px;color:var(--text2);max-width:200px">'+(d.RootCause||'—')+'</td>'+
+    '</tr>';
+  }).join('');
+  document.getElementById('issue-tbody').innerHTML=html;
+}
+
+/* ── Build initiative section (dynamic) ─────────────────── */
+function buildInitSection(data){
+  var systemic=data.filter(function(d){
+    return (d.Components||'').split(';').length>=3||
+           d.RootCause||
+           (d.Summary||'').includes('System Down')||
+           (d.Summary||'').includes('OMISE')||
+           (d.Summary||'').includes('K2');
+  });
+  if(!systemic.length){
+    document.getElementById('init-section').innerHTML='<div class="empty">No systemic patterns detected in current data.</div>';
+    return;
+  }
+  var groups={payment:[],platform:[],funnel:[]};
+  systemic.forEach(function(d){
+    if(d.Summary.includes('OMISE')||d.Summary.includes('K2')||d.Summary.includes('Refund')) groups.payment.push(d);
+    else if(d.Summary.includes('System Down')||d.Summary.includes('SAP')) groups.platform.push(d);
+    else groups.funnel.push(d);
+  });
+  var html='';
+  if(groups.platform.length){
+    html+='<div style="background:var(--surface2);border-radius:7px;padding:14px 16px;border-left:3px solid var(--down);margin-bottom:10px">'+
+      '<div style="font-size:12px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:6px">'+
+        '🖥 Platform Resilience — '+groups.platform.length+' system-down events'+
+        '<span class="tag ppp">New PPP candidate</span>'+
+      '</div>'+
+      '<div style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:6px">'+
+        'SAP and full-stack system outages affecting all channels simultaneously. Each event impacts all 7 commerce channels.'+
+        ' No automated alerting or failover appears to be in place. Should be addressed in PPP-9 (Single Commerce Platform) or as a standalone resilience initiative.'+
+      '</div>'+
+      '<div style="display:flex;gap:12px;flex-wrap:wrap">'+
+        '<div style="font-size:10px;color:var(--text3)">Issues: <strong style="color:var(--text2)">'+groups.platform.map(function(d){return d.Key;}).join(', ')+'</strong></div>'+
+        '<div style="font-size:10px;color:var(--text3)">Channels affected: <strong style="color:var(--text2)">All 7</strong></div>'+
+        '<div style="font-size:10px;color:var(--text3)">Recommendation: <strong style="color:var(--text2)">Add to PPP-9 scope or create resilience PPP</strong></div>'+
+      '</div>'+
+    '</div>';
+  }
+  if(groups.payment.length){
+    html+='<div style="background:var(--surface2);border-radius:7px;padding:14px 16px;border-left:3px solid var(--amber);margin-bottom:10px">'+
+      '<div style="font-size:12px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:6px">'+
+        '💳 Payment Operations Gap — '+groups.payment.length+' recurring issues'+
+        '<span class="tag ppp">New PPP candidate</span>'+
+      '</div>'+
+      '<div style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:6px">'+
+        'OMISE float shortage (GIT-42) and K2 refund system down (GIT-41) both indicate no automated payment monitoring or buffer management.'+
+        ' These issues will recur every month-end without a structural fix.'+
+      '</div>'+
+      '<div style="display:flex;gap:12px;flex-wrap:wrap">'+
+        '<div style="font-size:10px;color:var(--text3)">Issues: <strong style="color:var(--text2)">'+groups.payment.map(function(d){return d.Key;}).join(', ')+'</strong></div>'+
+        '<div style="font-size:10px;color:var(--text3)">Recurrence: <strong style="color:var(--amber)">Monthly</strong></div>'+
+        '<div style="font-size:10px;color:var(--text3)">Recommendation: <strong style="color:var(--text2)">Payment ops monitoring initiative</strong></div>'+
+      '</div>'+
+    '</div>';
+  }
+  if(groups.funnel.length){
+    html+='<div style="background:var(--surface2);border-radius:7px;padding:14px 16px;border-left:3px solid var(--accent)">'+
+      '<div style="font-size:12px;font-weight:600;margin-bottom:4px">🧾 Other systemic issues ('+groups.funnel.length+')</div>'+
+      '<div style="font-size:11px;color:var(--text2)">'+groups.funnel.map(function(d){return d.Key+': '+d.Summary;}).join(' · ')+'</div>'+
+    '</div>';
+  }
+  document.getElementById('init-section').innerHTML=html;
+}
+
+/* ── Filter + sort ───────────────────────────────────────── */
+function getFiltered(){
+  return RAW_ISSUES.filter(function(d){
+    var okStatus=activeStatus==='all'||d.Status===activeStatus;
+    var q=document.getElementById('search').value.toLowerCase();
+    var okSearch=!q||d.Key.toLowerCase().includes(q)||d.Summary.toLowerCase().includes(q)||
+                  (d.Assignee||'').toLowerCase().includes(q)||
+                  (d.Components||'').toLowerCase().includes(q);
+    return okStatus&&okSearch;
+  }).sort(function(a,b){
+    var va,vb;
+    if(sortCol==='mttr'){va=calcMTTRHours(a.FailureOccurs,a.FailureResolved)||999;vb=calcMTTRHours(b.FailureOccurs,b.FailureResolved)||999;}
+    else{va=a[sortCol]||'';vb=b[sortCol]||'';}
+    if(va<vb)return sortAsc?-1:1;if(va>vb)return sortAsc?1:-1;return 0;
+  });
+}
+function applyFilters(){
+  var data=getFiltered();
+  if(activeView==='card') buildCards(data);
+  else buildTable(data);
+}
+function setFilter(val,btn){
+  activeStatus=val;
+  document.querySelectorAll('#status-filter .fb').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  applyFilters();
+}
+function sortBy(col){
+  if(sortCol===col) sortAsc=!sortAsc; else{sortCol=col;sortAsc=true;}
+  applyFilters();
+}
+function setView(view,btn){
+  activeView=view;
+  document.querySelectorAll('.vbtn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  document.getElementById('card-view').style.display=view==='card'?'block':'none';
+  document.getElementById('table-view').style.display=view==='table'?'block':'none';
+  applyFilters();
+}
+
+
+/* ── Incident Timeline Visualization ───────────────────────
+   Renders a segmented horizontal bar showing:
+   Stage 1 (gray)  = Detection → Fix started  (response time)
+   Stage 2 (amber) = Fix started → Resolved   (fix duration)
+   If still open → pulsing red "Ongoing" bar
+   All durations shown as human-readable labels.
+──────────────────────────────────────────────────────────── */
+function buildIncidentTimeline(d) {
+  var F  = d.FailureOccurs     ? new Date(d.FailureOccurs)     : null;
+  var C  = d.CorrectionBegins  ? new Date(d.CorrectionBegins)  : null;
+  var R  = d.FailureResolved   ? new Date(d.FailureResolved)   : null;
+  var NOW = new Date();
+
+  /* Human-readable duration */
+  function durLabel(ms) {
+    if (!ms || ms <= 0) return null;
+    var h = ms / 3600000;
+    if (h < 1)  return Math.round(h * 60) + 'min';
+    if (h < 24) return h.toFixed(1) + 'h';
+    return (h / 24).toFixed(1) + 'd';
+  }
+
+  /* Compute durations */
+  var detectMs = (F && C) ? (C - F) : null;         /* detection → fix start */
+  var fixMs    = (C && R) ? (R - C) : null;          /* fix start → resolved  */
+  var totalMs  = (F && R) ? (R - F) : null;          /* total MTTR            */
+  var ongoingMs = (C && !R) ? (NOW - C) : null;      /* fix in progress so far */
+
+  /* Segment widths — proportional to durations */
+  var segments = [];
+
+  if (F && C && R) {
+    /* Full data: 3 stages */
+    var total = R - F;
+    var w1 = Math.max(Math.round((C - F) / total * 100), 8);
+    var w2 = Math.max(100 - w1, 8);
+    segments = [
+      { cls:'detect',  w:w1, label:'Detected → Fix started', dur:durLabel(detectMs) },
+      { cls:'resolved',w:w2, label:'Fix started → Resolved', dur:durLabel(fixMs) },
+    ];
+  } else if (F && C && !R) {
+    /* Failure known, fix started, not yet resolved */
+    var detectW = Math.max(Math.round((C - F) / ((NOW - F) || 1) * 100), 15);
+    var fixW = 100 - detectW;
+    segments = [
+      { cls:'detect', w:detectW, label:'Detection lag',    dur:durLabel(detectMs) },
+      { cls:'ongoing',w:fixW,    label:'Fixing (ongoing)', dur:durLabel(ongoingMs)+' so far' },
+    ];
+  } else if (C && !F && !R) {
+    /* Only correction start known */
+    segments = [
+      { cls:'ongoing', w:100, label:'Fix started – ongoing', dur:durLabel(NOW - C)+' so far' },
+    ];
+  } else if (F && !C && !R) {
+    /* Only failure known */
+    segments = [
+      { cls:'ongoing', w:100, label:'Unresponded – no fix started', dur:durLabel(NOW - F) },
+    ];
+  }
+
+  if (!segments.length) return '<div class="itl"><div class="itl-nodata">No timestamp data available for this issue.</div></div>';
+
+  /* Build bar */
+  var barHtml = segments.map(function(s) {
+    return '<div class="itl-seg '+s.cls+'" style="flex:'+s.w+'" title="'+s.label+'">'+
+      (s.w >= 15 ? s.dur : '') +
+    '</div>';
+  }).join('');
+
+  /* Build milestone row */
+  var milestones = [];
+  if (F) milestones.push({ label:'⬤ Failure detected', val: d.FailureOccurs });
+  if (C) milestones.push({ label:'⬤ Fix started',      val: d.CorrectionBegins });
+  if (R) milestones.push({ label:'⬤ Resolved',         val: d.FailureResolved });
+  else   milestones.push({ label:'⬤ Ongoing',          val: '<span style="color:var(--down)">not yet resolved</span>' });
+
+  var colW = Math.floor(100 / milestones.length);
+  var markHtml = '<div class="itl-marks" style="grid-template-columns:repeat('+milestones.length+',1fr)">' +
+    milestones.map(function(m) {
+      return '<div class="itl-mark"><div class="itl-mark-label">'+m.label+'</div>'+
+             '<div class="itl-mark-val">'+m.val+'</div></div>';
+    }).join('') + '</div>';
+
+  /* Duration badges */
+  var durBadges = '';
+  if (detectMs) durBadges += '<span class="itl-dur d-detect">⏱ Response: '+durLabel(detectMs)+'</span>';
+  if (fixMs)    durBadges += '<span class="itl-dur d-fix">🔧 Fix time: '+durLabel(fixMs)+'</span>';
+  if (totalMs)  durBadges += '<span class="itl-dur d-total">✓ MTTR: '+durLabel(totalMs)+'</span>';
+  if (ongoingMs)durBadges += '<span class="itl-dur d-ongoing">● Ongoing: '+durLabel(ongoingMs)+'</span>';
+
+  return '<div class="itl">'+
+    '<div class="itl-title">Incident timeline</div>'+
+    '<div class="itl-bar-wrap">'+
+      '<div class="itl-bar-track">'+barHtml+'</div>'+
+    '</div>'+
+    markHtml+
+    (durBadges ? '<div class="itl-durations">'+durBadges+'</div>' : '')+
+  '</div>';
+}
+
+/* ── Init ───────────────────────────────────────────────── */
+function init(){
+  document.getElementById('last-updated').textContent=
+    'Last updated: '+new Date().toLocaleString('en-GB',{day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  buildStrip(RAW_ISSUES);
+  buildCards(getFiltered());
+  buildInitSection(RAW_ISSUES);
+}
+init();
+
 </script>
 </body>
 </html>

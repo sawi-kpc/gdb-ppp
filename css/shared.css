@@ -31,28 +31,35 @@
 }
 
 [data-theme="light"] {
-  --bg:        #ffffff;
-  --surface:   #f6f8fa;
-  --surface2:  #eaeef2;
-  --border:    #d0d7de;
-  --text:      #1f2328;
-  --text2:     #656d76;
-  --text3:     #9198a1;
-  --up:        #1a7f37;
-  --down:      #cf222e;
-  --accent:    #0969da;
-  --accent2:   #1a7f37;
-  --purple:    #8250df;
-  --amber:     #9a6700;
-  --teal:      #0d7377;
-  --chart-blue:   #0969da;
-  --chart-green:  #1a7f37;
-  --chart-orange: #bc4c00;
-  --chart-purple: #8250df;
-  --chart-teal:   #0d7377;
-  --chart-red:    #cf222e;
-  --chart-amber:  #9a6700;
-  --chart-dim:    #9198a1;
+  /* ── Eye Comfort — warm tone, reduced blue light ─────────
+     Inspired by Solarized / paper reading modes.
+     bg/surface use warm parchment instead of cold white.
+     Text uses warm dark brown instead of near-black.
+     Accent shifted to amber-brown, away from cold blue.
+  ────────────────────────────────────────────────────────── */
+  --bg:        #fdf6e3;
+  --surface:   #f5efe0;
+  --surface2:  #ede7d3;
+  --border:    #d5c9b0;
+  --text:      #3a2e1e;
+  --text2:     #7a6a55;
+  --text3:     #a8967e;
+  --up:        #2d6a3f;
+  --down:      #a63228;
+  --accent:    #7c5c1e;
+  --accent2:   #2d6a3f;
+  --purple:    #6b4fa0;
+  --amber:     #8a6200;
+  --teal:      #1a6b62;
+  /* Chart palette — warmer, softer versions */
+  --chart-blue:   #4a7eb5;
+  --chart-green:  #2d6a3f;
+  --chart-orange: #b05a00;
+  --chart-purple: #6b4fa0;
+  --chart-teal:   #1a6b62;
+  --chart-red:    #a63228;
+  --chart-amber:  #8a6200;
+  --chart-dim:    #a8967e;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }

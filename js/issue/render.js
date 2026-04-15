@@ -55,8 +55,18 @@ function _tag(text, color, bg) {
 }
 function _statusTag(s) {
   var ns = _normaliseStatus(s);
-  var cfg = STATUSES.find(function(x){ return x.key === ns; }) || STATUSES[0];
-  return _tag(s || 'Open', cfg.color, cfg.color.replace(')', ',.12)').replace('var(','rgba(').replace(/--\w+/,''));
+  var STYLE = {
+    'Open':          {color:'var(--down)',   bg:'rgba(248,81,73,.1)',  border:'rgba(248,81,73,.3)'},
+    'Investigating': {color:'var(--amber)',  bg:'rgba(245,158,11,.1)', border:'rgba(245,158,11,.3)'},
+    'In Progress':   {color:'var(--accent)', bg:'rgba(88,166,255,.1)', border:'rgba(88,166,255,.25)'},
+    'Resolved':      {color:'var(--teal)',   bg:'rgba(34,211,164,.1)', border:'rgba(34,211,164,.3)'},
+    'Done':          {color:'var(--up)',     bg:'rgba(63,185,80,.1)',  border:'rgba(63,185,80,.28)'},
+  };
+  var st  = STYLE[ns] || STYLE['Open'];
+  var lbl = s || 'Open';
+  return '<span style="display:inline-flex;align-items:center;font-size:10px;font-weight:600;'+
+    'padding:3px 10px;border-radius:20px;white-space:nowrap;'+
+    'color:'+st.color+';background:'+st.bg+';border:1px solid '+st.border+'">'+lbl+'</span>';
 }
 
 /* ── Components display (truncated) ─────────────────────── */
@@ -196,22 +206,37 @@ function _sc(label, cls, num, sub) {
 
 /* ── Build dropdown filters ──────────────────────────────── */
 function buildDropdownFilters(data) {
-  var priorities = [...new Set(data.map(function(d){return d.Priority;}).filter(Boolean))];
-  var severities = [...new Set(data.map(function(d){return d.Severity;}).filter(Boolean))];
-  var comps      = [...new Set(
-    data.flatMap(function(d){ return (d.Components||'').split(';').map(function(c){return c.trim();}); })
-        .filter(Boolean)
-  )].sort();
+  /* Priority: fixed order from Jira */
+  var PRIORITIES = ['Highest', 'High', 'Medium', 'Low', 'Lowest'];
+  var SEVERITIES = ['Critical', 'Major', 'Moderate', 'Low'];
 
   document.getElementById('filter-priority').innerHTML =
-    '<option value="all">All priorities</option>'+
-    priorities.map(function(p){ return '<option value="'+p+'">'+p+'</option>'; }).join('');
+    '<option value="all">All priorities</option>' +
+    PRIORITIES.map(function(p) {
+      return '<option value="' + p + '">' + p + '</option>';
+    }).join('');
+
   document.getElementById('filter-severity').innerHTML =
-    '<option value="all">All severity</option>'+
-    severities.map(function(s){ return '<option value="'+s+'">'+s+'</option>'; }).join('');
+    '<option value="all">All severity levels</option>' +
+    SEVERITIES.map(function(s) {
+      return '<option value="' + s + '">' + s + '</option>';
+    }).join('');
+
+  /* Components: dynamic from data */
+  var comps = [];
+  var seen  = {};
+  data.forEach(function(d) {
+    (d.Components || '').split(';').forEach(function(c) {
+      c = c.trim();
+      if (c && !seen[c]) { seen[c] = true; comps.push(c); }
+    });
+  });
+  comps.sort();
   document.getElementById('filter-component').innerHTML =
-    '<option value="all">All components</option>'+
-    comps.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join('');
+    '<option value="all">All components</option>' +
+    comps.map(function(c) {
+      return '<option value="' + c + '">' + c + '</option>';
+    }).join('');
 }
 
 /* ── BOARD VIEW (5-column kanban by status) ───────────────── */
@@ -276,7 +301,7 @@ function buildTable(data) {
       +'<td><a href="'+ISSUE_JIRA_BASE+d.Key+'" target="_blank" '+
         'style="color:var(--accent);font-weight:700;text-decoration:none;white-space:nowrap">'+
         d.Key+' ↗</a></td>'
-      +'<td style="min-width:220px;max-width:320px">'+d.Summary+'</td>'
+      +'<td style="min-width:220px;max-width:360px">'+d.Summary+'</td>'
       +'<td>'+_statusTag(d.Status)+'</td>'
       +'<td>'+(d.Priority
         ?'<span style="font-size:11px;font-weight:600;color:'+_pColor(d.Priority)+'">'+d.Priority+'</span>'
@@ -284,12 +309,10 @@ function buildTable(data) {
       +'<td>'+(d.Severity
         ?'<span style="font-size:11px;font-weight:600;color:'+_sColor(d.Severity)+'">'+d.Severity+'</span>'
         :'—')+'</td>'
-      +'<td><div style="display:flex;flex-wrap:wrap;gap:3px">'+_compsHtml(d.Components, 2)+'</div></td>'
       +'<td style="font-size:11px;white-space:nowrap">'+(d.Assignee||'<span style="color:var(--down)">—</span>')+'</td>'
       +'<td style="font-size:11px;white-space:nowrap">'
         +(d.Due ? '<span style="color:'+(overdue?'var(--down)':'var(--text2)')+'">'+d.Due+'</span>' : '—')
       +'</td>'
-      +'<td style="font-size:10px;color:var(--text2);max-width:160px">'+(d.RootCause||'—')+'</td>'
       +'<td>'+(d.FailureOccurs||d.CorrectionBegins
         ?'<span style="font-size:9px;color:var(--amber)">Has timeline</span>'
         :'—')+'</td>'

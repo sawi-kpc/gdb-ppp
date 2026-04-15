@@ -102,6 +102,10 @@
 .itl-dur.d-total   { background:rgba(63,185,80,.1);color:var(--up) }
 .itl-dur.d-ongoing { background:rgba(248,81,73,.12);color:var(--down) }
 
+/* Issue page: ensure no initiative subnav shows */
+.gdb-init-subnav { display: none !important; }
+body.has-init-subnav { padding-top: calc(var(--header-h) + var(--nav-h)) !important; }
+
 @media(max-width:1100px){ #issue-strip{grid-template-columns:repeat(3,1fr)} }
 @media(max-width:900px) { #issue-strip{grid-template-columns:repeat(2,1fr)}.iboard{grid-template-columns:1fr} }
 </style>
@@ -191,10 +195,8 @@
               <th onclick="sortIssueBy('Status')">Status</th>
               <th onclick="sortIssueBy('Priority')">Priority</th>
               <th onclick="sortIssueBy('Severity')">Severity</th>
-              <th>Components</th>
               <th onclick="sortIssueBy('Assignee')">Assignee</th>
               <th onclick="sortIssueBy('Due')">Due date</th>
-              <th>Root cause</th>
               <th>Timeline</th>
             </tr></thead>
             <tbody id="issue-tbody"></tbody>
@@ -228,7 +230,7 @@
 <script>
 window.addEventListener('DOMContentLoaded', function() {
   buildGdbHeader({ showRefresh: true });
-  buildGdbInitiativeSubNav && buildGdbInitiativeSubNav();
+  /* Issue page — initiative subnav hidden intentionally */
   gdbAuthGuard(function() {
     loadIssueData(
       function(data) {

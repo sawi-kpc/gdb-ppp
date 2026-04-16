@@ -166,7 +166,7 @@ function getSupports() {
         Summary:      _s(_get(raw, ['Summary'])),
         Status:       _s(_get(raw, ['Status'])),
         Components:   _s(_get(raw, ['Components', 'Component/s'])),
-        Group:        _s(_get(raw, ['Fix versions', 'Fix Versions', 'Group'])),
+        Group:        _s(_get(raw, ['Group of Issue/Support Case', 'Group of Issue/S', 'Fix versions', 'Fix Versions', 'Group'])),
         Labels:       _s(_get(raw, ['Labels'])),
         Due:          _s(_get(raw, ['Due date', 'Due'])),
         Assignee:     _s(_get(raw, ['Assignee'])),

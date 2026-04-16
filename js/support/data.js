@@ -76,7 +76,7 @@ function loadSupportData(onSuccess, onError) {
     try { delete window[cbName]; } catch(e) {}
     if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('hide');
     if (typeof onError === 'function')
-      onError('Request timed out — check SUPPORT_APPS_SCRIPT_URL in js/support/config.js');
+      onError('Request timed out. Please check your network connection or try again later.');
   }, 15000);
 
   window[cbName] = function(json) {
@@ -107,7 +107,7 @@ function loadSupportData(onSuccess, onError) {
     try { delete window[cbName]; } catch(e) {}
     if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('hide');
     if (typeof onError === 'function')
-      onError('Failed to load Apps Script — check SUPPORT_APPS_SCRIPT_URL in js/support/config.js');
+      onError('Data source is currently unavailable. Please try again later or contact the dashboard administrator.');
   };
 
   script.src = SUPPORT_APPS_SCRIPT_URL + '?sheet=supports&callback=' + cbName;

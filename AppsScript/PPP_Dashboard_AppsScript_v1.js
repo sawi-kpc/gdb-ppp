@@ -14,6 +14,15 @@ var GID_PPP        = 660147076;  /* initiatives — original GID */
 var GID_ISSUES     = 894050881;  /* issues sheet */
 var GID_SUPPORTS   = 660147076;  /* supports sheet — update if separate tab */
 
+/* ── DEBUG — lists all sheets (for troubleshooting only) ─── */
+function getDebugInfo() {
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheets = ss.getSheets().map(function(sh) {
+    return { name: sh.getName(), gid: sh.getSheetId(), rows: sh.getLastRow() };
+  });
+  return { debug: true, sheets: sheets };
+}
+
 function doGet(e) {
   var params   = e.parameter || {};
   var sheet    = (params.sheet    || 'initiatives').toLowerCase();
@@ -21,6 +30,7 @@ function doGet(e) {
   try {
     var result = sheet === 'issues'   ? getIssues()
                : sheet === 'supports' ? getSupports()
+               : sheet === 'debug'    ? getDebugInfo()
                :                        getInitiatives();
     return _respond(result, callback);
   } catch(err) {
@@ -77,8 +87,15 @@ function getInitiatives() {
 /* ── ISSUES ──────────────────────────────────────────────── */
 function getIssues() {
   var ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
-  var sheet = _sheetByGid(ss, GID_ISSUES);
-  if (!sheet) throw new Error('Issues sheet (GID ' + GID_ISSUES + ') not found');
+  var sheet = ss.getSheetByName('issues') ||
+              ss.getSheetByName('Issues') ||
+              _sheetByGid(ss, GID_ISSUES);
+  if (!sheet) {
+    var allSheets = ss.getSheets().map(function(s) {
+      return s.getName() + ' (GID:' + s.getSheetId() + ')';
+    }).join(', ');
+    throw new Error('Issues sheet not found. Available sheets: ' + allSheets);
+  }
   var data    = sheet.getDataRange().getValues();
   var headers = data[0].map(function(h) { return _s(h); });
   var rows    = data.slice(1);
@@ -118,8 +135,18 @@ function getIssues() {
 /* ── SUPPORTS ────────────────────────────────────────────── */
 function getSupports() {
   var ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
-  var sheet = _sheetByGid(ss, GID_SUPPORTS);
-  if (!sheet) throw new Error('Supports sheet (GID ' + GID_SUPPORTS + ') not found');
+  /* Try by name first (most reliable), then fall back to GID */
+  var sheet = ss.getSheetByName('supports') ||
+              ss.getSheetByName('Supports') ||
+              ss.getSheetByName('Support') ||
+              _sheetByGid(ss, GID_SUPPORTS);
+  if (!sheet) {
+    /* Debug: list all available sheets */
+    var allSheets = ss.getSheets().map(function(s) {
+      return s.getName() + ' (GID:' + s.getSheetId() + ')';
+    }).join(', ');
+    throw new Error('Supports sheet not found. Available sheets: ' + allSheets);
+  }
   var data    = sheet.getDataRange().getValues();
   var headers = data[0].map(function(h) { return _s(h); });
   var rows    = data.slice(1);

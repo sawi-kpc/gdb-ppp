@@ -17,7 +17,7 @@
 .ph-title{font-size:18px;font-weight:700}
 .ph-sub{font-size:12px;color:var(--text2);margin-top:3px}
 /* Summary strip */
-.strip{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}
+.strip{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px}
 .sc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
   padding:14px 16px;position:relative;overflow:hidden}
 .sc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
@@ -43,6 +43,7 @@
 .fb.active{background:var(--accent);border-color:var(--accent);color:#fff}
 .fb:hover:not(.active){color:var(--text)}
 .fsep{width:1px;height:20px;background:var(--border);margin:0 4px}
+.ctrl-select{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:5px 10px;font-size:12px;outline:none;cursor:pointer}
 /* Bar chart */
 .brow{display:flex;align-items:center;gap:8px;margin-bottom:7px}
 .blabel{font-size:11px;color:var(--text2);width:200px;flex-shrink:0;
@@ -168,13 +169,25 @@
   </div>
   <div class="pb">
     <div class="fbar" id="status-filter">
-      <button class="fb active" onclick="setFilter('status','all',this)">All status</button>
-      <button class="fb" onclick="setFilter('status','To do',this)">⚠ Pending</button>
-      <button class="fb" onclick="setFilter('status','In Progress',this)">In Progress</button>
-      <button class="fb" onclick="setFilter('status','Done',this)">Done</button>
-      <div class="fsep"></div>
+      <div style="font-size:10px;color:var(--text3);align-self:center;margin-right:2px">STATUS</div>
+      <button class="fb active" data-val="all" onclick="setFilter('status','all',this)">All</button>
+      <button class="fb" data-val="To do" onclick="setFilter('status','To do',this)">⚠ Pending</button>
+      <button class="fb" data-val="In Progress" onclick="setFilter('status','In Progress',this)">In Progress</button>
+      <button class="fb" data-val="Done" onclick="setFilter('status','Done',this)">Done</button>
+      <div style="font-size:10px;color:var(--text3);margin-left:4px;align-self:center">(multi-select)</div>
     </div>
-    <div class="fbar" id="group-filter" style="margin-top:-8px"></div>
+    <div class="fbar" id="group-filter" style="margin-top:-4px">
+      <div style="font-size:10px;color:var(--text3);align-self:center;margin-right:2px">GROUP</div>
+    </div>
+    <div class="fbar" id="label-filter" style="margin-top:-4px">
+      <div style="font-size:10px;color:var(--text3);align-self:center;margin-right:2px">LABELS</div>
+    </div>
+    <div class="fbar" style="margin-top:-4px;align-items:center">
+      <div style="font-size:10px;color:var(--text3);margin-right:6px">PRIORITY</div>
+      <select class="ctrl-select" id="filter-priority" onchange="onDropdownChange()">
+        <option value="all">All priorities</option>
+      </select>
+    </div>
     <div class="tbl-scroll">
       <table class="ttbl">
         <thead><tr>
@@ -193,6 +206,20 @@
   </div>
 </div>
 
+<div class="panel" style="margin-bottom:14px">
+  <div class="ph2">
+    <div><div class="pt">Task Volume Trend — Created vs Done</div>
+    <div class="ps">Tasks assigned and completed over time</div></div>
+    <div style="display:flex;gap:4px">
+      <button class="sup-trend-btn vbtn active" onclick="setSupportTrendPeriod('month',this)">Monthly</button>
+      <button class="sup-trend-btn vbtn" onclick="setSupportTrendPeriod('week',this)">Weekly</button>
+    </div>
+  </div>
+  <div class="pb" id="support-trend-chart" style="height:220px;position:relative">
+    <canvas id="support-trend-canvas" style="display:none"></canvas>
+  </div>
+</div>
+
 <div class="panel">
   <div class="ph2">
     <div><div class="pt">◆ Recurring Patterns — Initiative Candidates</div>
@@ -203,6 +230,7 @@
 
 </div><!-- /support-content -->
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="../js/support/config.js"></script>

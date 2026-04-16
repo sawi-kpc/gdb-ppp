@@ -1,3 +1,12 @@
+/* ── Date formatter ─────────────────────────────────────── */
+var _MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function _fmtDate(raw) {
+  if (!raw) return '—';
+  var d = new Date(String(raw).trim());
+  if (isNaN(d.getTime())) return raw;
+  return _MONTHS[d.getMonth()] + ' ' + d.getDate() + ' ' + d.getFullYear();
+}
+
 /* ══════════════════════════════════════════════════════════════
    SUPPORT RENDER — js/support/render.js
    Depends on: js/support/config.js, js/support/data.js (loaded first)
@@ -40,7 +49,10 @@ function buildStrip(data){
 /* ── Build group bar chart ───────────────────────────────── */
 function buildGroupChart(data){
   var counts={};
-  data.forEach(function(d){ counts[d.Group]=(counts[d.Group]||0)+1; });
+  data.forEach(function(d){
+    var g = (d.Group && d.Group.trim()) ? d.Group.trim() : 'other';
+    counts[g] = (counts[g]||0) + 1;
+  });
   var sorted=Object.entries(counts).sort(function(a,b){return b[1]-a[1];});
   var max=sorted[0]?sorted[0][1]:1;
   var colors={'marketing_automation':'#a78bfa','firster_tiktok_report':'#58a6ff',
@@ -67,16 +79,16 @@ function buildAssigneeTable(data){
   });
   var rows=Object.entries(agg).sort(function(a,b){return b[1].tasks-a[1].tasks;});
   var maxH=Math.max.apply(null,rows.map(function(r){return r[1].sec;}));
-  var html='<thead><tr><th>Assignee</th><th style="text-align:right">Tasks</th>'+
-    '<th style="text-align:right">Hours</th><th style="text-align:right">Load</th>'+
-    '<th style="text-align:right">Pending</th></tr></thead><tbody>'+
+  var html='<thead><tr><th>Assignee</th><th>Tasks</th>'+
+    '<th>Hours</th><th>Load</th>'+
+    '<th>Pending</th></tr></thead><tbody>'+
     rows.map(function(r){
       var n=r[0],v=r[1];
       var barW=maxH>0?Math.round(v.sec/maxH*80):4;
       return '<tr><td style="font-weight:600">'+n+'</td>'+
         '<td>'+v.tasks+'</td>'+
         '<td style="color:var(--teal)">'+secToHours(v.sec)+'</td>'+
-        '<td><div class="hbar-wrap"><div class="hbar" style="width:'+barW+'px"></div></div></td>'+
+        '<td><div style="display:flex;align-items:center;gap:6px"><div class="hbar" style="width:'+barW+'px"></div></div></td>'+
         '<td>'+(v.pending>0?'<span class="tag todo">'+v.pending+'</span>':'—')+'</td></tr>';
     }).join('')+'</tbody>';
   document.getElementById('assignee-tbl').innerHTML=html;
@@ -84,7 +96,9 @@ function buildAssigneeTable(data){
 
 /* ── Build group filter pills ─────────────────────────────── */
 function buildGroupFilter(data){
-  var groups=[...new Set(data.map(function(d){return d.Group;}).filter(Boolean))].sort();
+  var groups=[...new Set(data.map(function(d){
+    return (d.Group && d.Group.trim()) ? d.Group.trim() : 'other';
+  }))].sort();
   var el=document.getElementById('group-filter');
   el.innerHTML='<button class="fb active" onclick="setFilter(\'group\',\'all\',this)">All groups</button>'+
     groups.map(function(g){
@@ -104,7 +118,7 @@ function buildTaskTable(data){
   var html=data.map(function(d){
     var overdue=isOverdue(d.Due,d.Status);
     var dueHtml=d.Due
-      ?(overdue?'<span style="color:var(--down);font-weight:600">'+d.Due+'</span>':d.Due)
+      ?(overdue?'<span style="color:var(--down);font-weight:600">'+_fmtDate(d.Due)+'</span>':_fmtDate(d.Due))
       :'—';
     var timeHtml=d.TimeSpentSec>0?'<span style="color:var(--teal)">'+secToHours(d.TimeSpentSec)+'</span>':'—';
     return '<tr>'+
@@ -115,7 +129,7 @@ function buildTaskTable(data){
       '<td><span style="font-size:10px;color:var(--text3)">'+((d.Components||'').split(';')[0]||'—')+'</span></td>'+
       '<td style="font-size:11px;white-space:nowrap">'+(d.Assignee||'<span style="color:var(--down)">unassigned</span>')+'</td>'+
       '<td style="font-size:11px;white-space:nowrap">'+dueHtml+'</td>'+
-      '<td style="text-align:right">'+timeHtml+'</td>'+
+      '<td>'+timeHtml+'</td>'+
       '</tr>';
   }).join('');
   document.getElementById('task-tbody').innerHTML=html;
@@ -169,7 +183,8 @@ function buildPatterns(data){
 function getFiltered(){
   return supportData.filter(function(d){
     var okStatus = activeStatus==='all'||d.Status===activeStatus;
-    var okGroup  = activeGroup==='all'||d.Group===activeGroup;
+    var _g = (d.Group && d.Group.trim()) ? d.Group.trim() : 'other';
+    var okGroup  = activeGroup==='all' || _g===activeGroup;
     var q=searchQ.toLowerCase();
     var okSearch = !q||d.Key.toLowerCase().includes(q)||d.Summary.toLowerCase().includes(q)||
                    (d.Assignee||'').toLowerCase().includes(q);

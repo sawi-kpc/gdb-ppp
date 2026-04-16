@@ -1,10 +1,11 @@
 /* ── Date formatter ─────────────────────────────────────── */
-var _MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+var _MONTHS      = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+var _FULL_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 function _fmtDate(raw) {
   if (!raw) return '—';
   var d = new Date(String(raw).trim());
   if (isNaN(d.getTime())) return raw;
-  return _MONTHS[d.getMonth()] + ' ' + d.getDate() + ' ' + d.getFullYear();
+  return d.getDate() + ' ' + _FULL_MONTHS[d.getMonth()] + ' ' + d.getFullYear();
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -16,7 +17,23 @@ function _fmtDate(raw) {
 
 /* ── Helpers ─────────────────────────────────────────────── */
 var JIRA_BASE = 'https://kingpower.atlassian.net/browse/';
-function secToHours(s){ return s>0?(s/3600).toFixed(1)+'h':'—'; }
+function secToHours(s) {
+  if (!s || s <= 0) return '—';
+  var totalH = s / 3600;
+  var totalD = totalH / 8;   /* 8h = 1d */
+  var totalW = totalD / 5;   /* 5d = 1w */
+  if (totalW >= 1) {
+    var w = Math.floor(totalW);
+    var remD = Math.round(totalD - w * 5);
+    return remD > 0 ? w + 'w ' + remD + 'd' : w + 'w';
+  }
+  if (totalD >= 1) {
+    var d = Math.floor(totalD);
+    var remH = Math.round(totalH - d * 8);
+    return remH > 0 ? d + 'd ' + remH + 'h' : d + 'd';
+  }
+  return totalH.toFixed(1) + 'h';
+}
 function fmtGroup(g){ return g.replace(/_/g,' '); }
 function statusTag(s){
   var cls = s==='Done'?'done':s==='In Progress'?'in-progress':'todo';
@@ -28,22 +45,37 @@ function isOverdue(due,status){
 }
 
 /* ── State ───────────────────────────────────────────────── */
-var activeStatus='all', activeGroup='all', searchQ='', sortCol='Key', sortAsc=true;
+var activeStatuses=['all'];  /* multi-select */
+var activeGroups  =['all'];  /* multi-select */
+var activePriority='all';
+var activeLabels  =['all'];  /* multi-select */
+var searchQ='', sortCol='Key', sortAsc=true;
 
 /* ── Build summary strip ─────────────────────────────────── */
+function _ssc(label,cls,num,sub){
+  var colors={accent:'var(--accent)',green:'var(--up)',amber:'var(--amber)',teal:'var(--teal)',purple:'var(--purple)'};
+  var c=colors[cls]||'var(--accent)';
+  return '<div style="background:var(--surface);border:1px solid var(--border);border-top:2px solid '+c+
+    ';border-radius:8px;padding:12px 16px"><div style="font-size:10px;font-weight:600;color:var(--text2);'+
+    'text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">'+label+'</div>'+
+    '<div style="font-size:24px;font-weight:700;color:'+c+';line-height:1;margin-bottom:2px">'+num+'</div>'+
+    '<div style="font-size:11px;color:var(--text2)">'+sub+'</div></div>';
+}
 function buildStrip(data){
   var total=data.length;
-  var todo=data.filter(d=>d.Status==='To do').length;
-  var inprog=data.filter(d=>d.Status==='In Progress').length;
+  var todo=data.filter(function(d){return d.Status==='To do';}).length;
+  var inprog=data.filter(function(d){return d.Status==='In Progress';}).length;
+  var done=data.filter(function(d){return d.Status==='Done';}).length;
   var totalSec=data.reduce(function(a,d){return a+d.TimeSpentSec;},0);
-  var recurring=data.filter(d=>d.Group==='marketing_automation'||d.Group==='firster_tiktok_report').length;
-  var overdue=data.filter(d=>isOverdue(d.Due,d.Status)).length;
+  var recurring=data.filter(function(d){return d.Group==='marketing_automation'||d.Group==='firster_tiktok_report';}).length;
+  var overdue=data.filter(function(d){return isOverdue(d.Due,d.Status);}).length;
   document.getElementById('strip').innerHTML=
-    '<div class="sc blue"><div class="sc-label">Total Tasks</div><div class="sc-num">'+total+'</div><div class="sc-sub">Jan–Apr 2026</div></div>'+
-    '<div class="sc amber"><div class="sc-label">Pending / To do</div><div class="sc-num">'+todo+'</div><div class="sc-sub">'+(overdue>0?'<span style="color:var(--down)">'+overdue+' overdue</span>':'all on track')+'</div></div>'+
-    '<div class="sc blue"><div class="sc-label">In Progress</div><div class="sc-num">'+inprog+'</div><div class="sc-sub">active now</div></div>'+
-    '<div class="sc teal"><div class="sc-label">Total Hours Logged</div><div class="sc-num">'+secToHours(totalSec)+'</div><div class="sc-sub">across all assignees</div></div>'+
-    '<div class="sc purple"><div class="sc-label">Recurring Tasks</div><div class="sc-num">'+recurring+'</div><div class="sc-sub">→ initiative candidates</div></div>';
+    _ssc('Total Tasks','accent',total,'all statuses')+
+    _ssc('Done','green',done,'completed')+
+    _ssc('Pending','amber',todo,(overdue>0?'<span style="color:var(--down)">'+overdue+' overdue</span>':'on track'))+
+    _ssc('In Progress','accent',inprog,'active now')+
+    _ssc('Hours Logged','teal',secToHours(totalSec),'across all assignees')+
+    _ssc('Recurring','purple',recurring,'→ initiative candidates');
 }
 
 /* ── Build group bar chart ───────────────────────────────── */
@@ -100,10 +132,31 @@ function buildGroupFilter(data){
     return (d.Group && d.Group.trim()) ? d.Group.trim() : 'other';
   }))].sort();
   var el=document.getElementById('group-filter');
-  el.innerHTML='<button class="fb active" onclick="setFilter(\'group\',\'all\',this)">All groups</button>'+
+  el.innerHTML='<button class="fb active" data-val="all" onclick="setFilter(\'group\',\'all\',this)">All groups</button>'+
     groups.map(function(g){
-      return '<button class="fb" onclick="setFilter(\'group\',\''+g+'\',this)">'+fmtGroup(g)+'</button>';
+      return '<button class="fb" data-val="'+g+'" onclick="setFilter(\'group\',\''+g+'\',this)">'+fmtGroup(g)+'</button>';
     }).join('');
+}
+
+function buildLabelFilter(data){
+  var labels=[...new Set(
+    data.flatMap(function(d){ return (d.Labels||'').split(';').map(function(l){return l.trim();}); })
+        .filter(Boolean)
+  )].sort();
+  var el=document.getElementById('label-filter');
+  if(!el) return;
+  el.innerHTML='<button class="fb active" data-val="all" onclick="setFilter(\'label\',\'all\',this)">All labels</button>'+
+    labels.map(function(l){
+      return '<button class="fb" data-val="'+l+'" onclick="setFilter(\'label\',\''+l+'\',this)">'+l+'</button>';
+    }).join('');
+}
+
+function buildPriorityDropdown(data){
+  var el=document.getElementById('filter-priority');
+  if(!el) return;
+  var PRIORITIES=['Highest','High','Medium','Low','Lowest'];
+  el.innerHTML='<option value="all">All priorities</option>'+
+    PRIORITIES.map(function(p){return '<option value="'+p+'">'+p+'</option>';}).join('');
 }
 
 /* ── Build task table ────────────────────────────────────── */
@@ -182,13 +235,17 @@ function buildPatterns(data){
 /* ── Filter + sort pipeline ──────────────────────────────── */
 function getFiltered(){
   return supportData.filter(function(d){
-    var okStatus = activeStatus==='all'||d.Status===activeStatus;
     var _g = (d.Group && d.Group.trim()) ? d.Group.trim() : 'other';
-    var okGroup  = activeGroup==='all' || _g===activeGroup;
+    var okStatus  = activeStatuses.indexOf('all')!=-1 || activeStatuses.indexOf(d.Status)!=-1;
+    var okGroup   = activeGroups.indexOf('all')!=-1   || activeGroups.indexOf(_g)!=-1;
+    var okPriority= activePriority==='all'            || d.Priority===activePriority;
+    var okLabels  = activeLabels.indexOf('all')!=-1   || activeLabels.some(function(l){
+                      return (d.Labels||'').split(';').map(function(x){return x.trim();}).indexOf(l)!=-1;
+                    });
     var q=searchQ.toLowerCase();
     var okSearch = !q||d.Key.toLowerCase().includes(q)||d.Summary.toLowerCase().includes(q)||
                    (d.Assignee||'').toLowerCase().includes(q);
-    return okStatus&&okGroup&&okSearch;
+    return okStatus&&okGroup&&okPriority&&okLabels&&okSearch;
   }).sort(function(a,b){
     var va=a[sortCol]||'', vb=b[sortCol]||'';
     if(sortCol==='Hours'){ va=a.TimeSpentSec; vb=b.TimeSpentSec; }
@@ -197,21 +254,147 @@ function getFiltered(){
     return 0;
   });
 }
-function applyFilters(){ buildTaskTable(getFiltered()); }
-function setFilter(type,val,btn){
-  if(type==='status'){
-    activeStatus=val;
-    document.querySelectorAll('#status-filter .fb').forEach(function(b){b.classList.remove('active');});
-  } else {
-    activeGroup=val;
-    document.querySelectorAll('#group-filter .fb').forEach(function(b){b.classList.remove('active');});
+function applyFilters(){
+  var filtered = getFiltered();
+  buildTaskTable(filtered);
+  buildSupportTrendChart(filtered);
+}
+function _toggleMulti(arr, val, filterId) {
+  if (val === 'all') {
+    /* reset to all */
+    document.querySelectorAll('#'+filterId+' .fb').forEach(function(b){b.classList.remove('active');});
+    document.querySelector('#'+filterId+' .fb[data-val="all"]').classList.add('active');
+    return ['all'];
   }
-  btn.classList.add('active');
+  var idx = arr.indexOf('all');
+  if (idx !== -1) arr.splice(idx, 1);
+  var vi = arr.indexOf(val);
+  if (vi !== -1) { arr.splice(vi, 1); }
+  else           { arr.push(val); }
+  if (arr.length === 0) {
+    document.querySelectorAll('#'+filterId+' .fb').forEach(function(b){b.classList.remove('active');});
+    document.querySelector('#'+filterId+' .fb[data-val="all"]').classList.add('active');
+    return ['all'];
+  }
+  return arr;
+}
+function setFilter(type, val, btn) {
+  if (type === 'status') {
+    if (val === 'all') { activeStatuses = ['all']; document.querySelectorAll('#status-filter .fb').forEach(function(b){b.classList.remove('active');}); btn.classList.add('active'); }
+    else {
+      activeStatuses = _toggleMulti(activeStatuses, val, 'status-filter');
+      if (activeStatuses.indexOf(val) !== -1) btn.classList.add('active');
+      else btn.classList.remove('active');
+    }
+  } else if (type === 'group') {
+    if (val === 'all') { activeGroups = ['all']; document.querySelectorAll('#group-filter .fb').forEach(function(b){b.classList.remove('active');}); btn.classList.add('active'); }
+    else {
+      activeGroups = _toggleMulti(activeGroups, val, 'group-filter');
+      if (activeGroups.indexOf(val) !== -1) btn.classList.add('active');
+      else btn.classList.remove('active');
+    }
+  } else if (type === 'label') {
+    if (val === 'all') { activeLabels = ['all']; document.querySelectorAll('#label-filter .fb').forEach(function(b){b.classList.remove('active');}); btn.classList.add('active'); }
+    else {
+      activeLabels = _toggleMulti(activeLabels, val, 'label-filter');
+      if (activeLabels.indexOf(val) !== -1) btn.classList.add('active');
+      else btn.classList.remove('active');
+    }
+  }
   applyFilters();
 }
 function sortBy(col){
   if(sortCol===col) sortAsc=!sortAsc; else { sortCol=col; sortAsc=true; }
   applyFilters();
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SUPPORT TREND CHART — Task volume by Week / Month
+   Stacked: To do + In Progress + Done
+══════════════════════════════════════════════════════════════ */
+var _supTrendPeriod = 'month';
+var _supTrendChart  = null;
+
+function buildSupportTrendChart(data) {
+  var el = document.getElementById('support-trend-chart');
+  if (!el) return;
+
+  function _key(raw) {
+    if (!raw) return null;
+    var d = new Date(String(raw).trim());
+    if (isNaN(d.getTime())) return null;
+    if (_supTrendPeriod === 'week') {
+      var jan4 = new Date(d.getFullYear(), 0, 4);
+      var w = Math.ceil(((d - jan4) / 86400000 + jan4.getDay() + 1) / 7);
+      return d.getFullYear() + '-W' + String(w).padStart(2,'0');
+    }
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+  }
+
+  var created = {}, done = {};
+  data.forEach(function(d) {
+    var dateRaw = d.Due || d.Labels;  /* use Due as proxy for created date */
+    var ck = _key(dateRaw);
+    if (ck) created[ck] = (created[ck]||0) + 1;
+    if (d.Status === 'Done') {
+      var dk = _key(dateRaw);
+      if (dk) done[dk] = (done[dk]||0) + 1;
+    }
+  });
+
+  var allKeys = [...new Set([...Object.keys(created),...Object.keys(done)])].sort();
+  if (!allKeys.length) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">No date data available</div>';
+    return;
+  }
+
+  function _label(k) {
+    if (_supTrendPeriod === 'week') return k;
+    var p = k.split('-');
+    return _MONTHS[parseInt(p[1])-1]+' '+p[0];
+  }
+
+  if (_supTrendChart) { _supTrendChart.destroy(); _supTrendChart = null; }
+  var canvas = document.getElementById('support-trend-canvas');
+  if (!canvas) return;
+  canvas.style.display = 'block';
+
+  var cCreated = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#58a6ff';
+  var cDone    = getComputedStyle(document.documentElement).getPropertyValue('--up').trim()||'#3fb950';
+  var cText    = getComputedStyle(document.documentElement).getPropertyValue('--text2').trim()||'#8b949e';
+  var cGrid    = getComputedStyle(document.documentElement).getPropertyValue('--border').trim()||'#30363d';
+
+  _supTrendChart = new Chart(canvas.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: allKeys.map(_label),
+      datasets: [
+        { label: 'Created / Assigned', data: allKeys.map(function(k){return created[k]||0;}),
+          backgroundColor: cCreated+'99', borderColor: cCreated, borderWidth:1, borderRadius:3 },
+        { label: 'Done', data: allKeys.map(function(k){return done[k]||0;}),
+          backgroundColor: cDone+'99', borderColor: cDone, borderWidth:1, borderRadius:3 },
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins: {
+        legend: { labels: { color:cText, font:{size:11} } },
+        tooltip: { mode:'index', intersect:false }
+      },
+      scales: {
+        x: { ticks:{color:cText,font:{size:10},maxRotation:45}, grid:{color:cGrid+'44'} },
+        y: { ticks:{color:cText,font:{size:11},stepSize:1}, grid:{color:cGrid+'44'},
+             beginAtZero:true, title:{display:true,text:'Tasks',color:cText,font:{size:11}} }
+      }
+    }
+  });
+}
+
+function setSupportTrendPeriod(period, btn) {
+  _supTrendPeriod = period;
+  document.querySelectorAll('.sup-trend-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  buildSupportTrendChart(getFiltered());
 }
 
 /* ── Init ───────────────────────────────────────────────── */
@@ -224,4 +407,8 @@ function init(){
   buildGroupFilter(supportData);
   buildTaskTable(getFiltered());
   buildPatterns(supportData);
+}
+function onDropdownChange() {
+  activePriority = document.getElementById('filter-priority') ? document.getElementById('filter-priority').value : 'all';
+  applyFilters();
 }

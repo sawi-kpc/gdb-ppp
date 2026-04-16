@@ -9,6 +9,7 @@ let listYearFilter=['ROADMAP_2026'];
 let listAssigneeFilter='all';
 
 const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const FULL_MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const STAGES=['Parking Lot','Budget Approval','Discovery','Ready for Delivery','Delivery','Done'];
 const SC={'Parking Lot':'#B4B2A9','Budget Approval':'#F09595','Discovery':'#EF9F27','Ready for Delivery':'#AFA9EC','Delivery':'#85B7EB','Done':'#5DCAA5'};
 const RC={'New':'#B5D4F4','Next':'#EF9F27','Now':'#85B7EB','Completed':'#9FE1CB','Completed With':'#5DCAA5'};
@@ -34,11 +35,10 @@ function getStart(r){const p=getJ(r);return p?(p.start||null):(r&&/\d{4}-\d{2}-\
 function getEnd(r){const p=getJ(r);return p?(p.end||null):(r&&/\d{4}-\d{2}-\d{2}/.test(r)?r.match(/(\d{4}-\d{2}-\d{2})/)[1]:null)}
 function fmtDate(d){
   if(!d)return'—';
-  // Handle JSON date objects {"start":"2026-03-01","end":"..."}
   if(d.startsWith('{'))try{var o=JSON.parse(d);d=o.start||d;}catch(e){}
   var dt=new Date(d);
-  if(isNaN(dt.getTime())){var p=d.split('-');return p.length>=3?MONTHS[+p[1]-1]+' '+parseInt(p[2])+' '+p[0]:'—';}
-  return MONTHS[dt.getMonth()]+' '+dt.getDate()+' '+dt.getFullYear();
+  if(isNaN(dt.getTime())){var p=d.split('-');return p.length>=3?parseInt(p[2])+' '+FULL_MONTHS[+p[1]-1]+' '+p[0]:'—';}
+  return dt.getDate()+' '+FULL_MONTHS[dt.getMonth()]+' '+dt.getFullYear();
 }
 function cl(v){return String(v||'').replace(/^"|"$/g,'').trim()}
 function jiraLink(k){return`<a class="jira-link" href="${CONFIG.JIRA_BASE}${k}" target="_blank">${k} ↗</a>`}
@@ -365,6 +365,7 @@ function renderList(){
 
   /* Render rows */
   const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const FULL_MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
   function fd(raw){
     const p=raw?(()=>{try{return JSON.parse(raw)}catch(e){return null}})():null;
     const d=p?p.start:(raw&&/\d{4}-\d{2}-\d{2}/.test(raw)?raw.match(/(\d{4}-\d{2}-\d{2})/)[1]:null);

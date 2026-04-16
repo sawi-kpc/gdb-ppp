@@ -1,3 +1,21 @@
+/* ── Date formatters ────────────────────────────────────── */
+var _MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function _fmtDate(raw) {
+  if (!raw) return '—';
+  var d = new Date(String(raw).trim());
+  if (isNaN(d.getTime())) return raw;
+  return _MONTHS[d.getMonth()] + ' ' + d.getDate() + ' ' + d.getFullYear();
+}
+function _fmtDateTime(raw) {
+  if (!raw) return '—';
+  var d = new Date(String(raw).trim());
+  if (isNaN(d.getTime())) return raw;
+  var h = d.getHours(), m = d.getMinutes(), s = d.getSeconds();
+  return _MONTHS[d.getMonth()] + ' ' + d.getDate() + ' ' + d.getFullYear() +
+    ' ' + String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') +
+    ':' + String(s).padStart(2,'0');
+}
+
 /* ══════════════════════════════════════════════════════════════
    ISSUE RENDER — js/issue/render.js
    Depends on: js/issue/config.js, js/issue/data.js (loaded first)
@@ -5,7 +23,7 @@
 ══════════════════════════════════════════════════════════════ */
 
 /* ── State ───────────────────────────────────────────────── */
-var _filterStatus   = 'all';
+var _filterStatuses = ['all']; /* array — 'all' means no filter */
 var _filterPriority = 'all';
 var _filterSeverity = 'all';
 var _filterComp     = 'all';
@@ -126,9 +144,9 @@ function buildIncidentTimeline(d) {
       (s.w>=15 ? s.dur : '') +'</div>';
   }).join('');
   var mils = [];
-  if (F) mils.push({l:'⬤ Detected',v:d.FailureOccurs});
-  if (C) mils.push({l:'⬤ Fix started',v:d.CorrectionBegins});
-  if (R) mils.push({l:'⬤ Resolved',v:d.FailureResolved});
+  if (F) mils.push({l:'⬤ Detected',v:_fmtDateTime(d.FailureOccurs)});
+  if (C) mils.push({l:'⬤ Fix started',v:_fmtDateTime(d.CorrectionBegins)});
+  if (R) mils.push({l:'⬤ Resolved',v:_fmtDateTime(d.FailureResolved)});
   else   mils.push({l:'⬤ Ongoing',v:'<span style="color:var(--down)">pending</span>'});
   var markHtml = '<div class="itl-marks" style="grid-template-columns:repeat('+mils.length+',1fr)">'+
     mils.map(function(m){
@@ -149,10 +167,10 @@ function buildIncidentTimeline(d) {
 /* ── Filter pipeline ─────────────────────────────────────── */
 function _getFiltered() {
   return issueData.filter(function(d) {
-    var s  = _normaliseStatus(d.Status);
-    var okS  = _filterStatus === 'all' || s === _filterStatus ||
-               /* Closed matches Done column */
-               (_filterStatus === 'Done' && d.Status === 'Closed');
+    var s   = _normaliseStatus(d.Status);
+    var okS = _filterStatuses.indexOf('all') !== -1 ||
+              _filterStatuses.indexOf(s) !== -1 ||
+              (_filterStatuses.indexOf('Done') !== -1 && d.Status === 'Closed');
     var okP  = _filterPriority === 'all' || d.Priority === _filterPriority;
     var okSv = _filterSeverity === 'all' || d.Severity === _filterSeverity;
     var okC  = _filterComp === 'all' ||
@@ -254,7 +272,7 @@ function buildBoard(data) {
     var colCards = cards.map(function(d) {
       var hasTimeline = d.FailureOccurs || d.CorrectionBegins || d.FailureResolved;
       var multiCh = (d.Components||'').split(';').length >= 3;
-      return '<div class="iboard-card">'
+      return '<div class="iboard-card" style="'+(d.Severity==='Critical'?'border-color:rgba(248,81,73,.5);background:rgba(248,81,73,.06);':'')+'">
         +'<div class="ibc-top">'
           +'<a href="'+ISSUE_JIRA_BASE+d.Key+'" target="_blank" class="ibc-key">'+d.Key+' ↗</a>'
           +(d.Priority?'<span style="font-size:9px;font-weight:700;color:'+_pColor(d.Priority)+'">'+d.Priority+'</span>':'')
@@ -311,7 +329,7 @@ function buildTable(data) {
         :'—')+'</td>'
       +'<td style="font-size:11px;white-space:nowrap">'+(d.Assignee||'<span style="color:var(--down)">—</span>')+'</td>'
       +'<td style="font-size:11px;white-space:nowrap">'
-        +(d.Due ? '<span style="color:'+(overdue?'var(--down)':'var(--text2)')+'">'+d.Due+'</span>' : '—')
+        +(d.Due ? '<span style="color:'+(overdue?'var(--down)':'var(--text2)')+'">'+ _fmtDate(d.Due)+'</span>' : '—')
       +'</td>'
       +'<td>'+(d.FailureOccurs||d.CorrectionBegins
         ?'<span style="font-size:9px;color:var(--amber)">Has timeline</span>'
@@ -374,9 +392,29 @@ function applyFilters() {
   else buildTable(data);
 }
 function setStatusFilter(val, btn) {
-  _filterStatus = val;
-  document.querySelectorAll('#issue-status-filter .fb').forEach(function(b){ b.classList.remove('active'); });
-  btn.classList.add('active');
+  if (val === 'all') {
+    _filterStatuses = ['all'];
+    document.querySelectorAll('#issue-status-filter .fb').forEach(function(b){ b.classList.remove('active'); });
+    document.querySelector('#issue-status-filter .fb[data-val="all"]').classList.add('active');
+  } else {
+    /* Remove 'all' if specific selected */
+    var idx = _filterStatuses.indexOf('all');
+    if (idx !== -1) _filterStatuses.splice(idx, 1);
+    /* Toggle this value */
+    var vi = _filterStatuses.indexOf(val);
+    if (vi !== -1) {
+      _filterStatuses.splice(vi, 1);
+      btn.classList.remove('active');
+    } else {
+      _filterStatuses.push(val);
+      btn.classList.add('active');
+    }
+    /* If nothing selected, reset to all */
+    if (_filterStatuses.length === 0) {
+      _filterStatuses = ['all'];
+      document.querySelector('#issue-status-filter .fb[data-val="all"]').classList.add('active');
+    }
+  }
   applyFilters();
 }
 function onDropdownChange() {
@@ -399,10 +437,123 @@ function sortIssueBy(col) {
   applyFilters();
 }
 
+/* ══════════════════════════════════════════════════════════════
+   ISSUE TREND CHART — Created vs Done by Week / Month
+   Uses Chart.js (already loaded via CDN in issue/index.html)
+══════════════════════════════════════════════════════════════ */
+
+var _trendPeriod = 'month';  /* 'week' | 'month' */
+var _trendChart  = null;
+
+function buildTrendChart(data) {
+  var el = document.getElementById('issue-trend-chart');
+  if (!el) return;
+
+  /* ── Group issues by period ─────────────────────────── */
+  function _periodKey(raw) {
+    if (!raw) return null;
+    var d = new Date(String(raw).trim());
+    if (isNaN(d.getTime())) return null;
+    if (_trendPeriod === 'week') {
+      /* ISO week: year-Www */
+      var jan4 = new Date(d.getFullYear(), 0, 4);
+      var week = Math.ceil(((d - jan4) / 86400000 + jan4.getDay() + 1) / 7);
+      return d.getFullYear() + '-W' + String(week).padStart(2, '0');
+    }
+    /* month: YYYY-MM */
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  }
+
+  /* ── Use FailureOccurs as "created date", FailureResolved as "done date" ─ */
+  /* If no FailureOccurs, use CorrectionBegins. If still none, skip for Created. */
+  /* Issues with Status Done/Resolved/Closed count in Done. */
+  var created = {}, done = {};
+
+  data.forEach(function(d) {
+    var createdDate = d.FailureOccurs || d.CorrectionBegins || d.Due;
+    var ck = _periodKey(createdDate);
+    if (ck) created[ck] = (created[ck] || 0) + 1;
+
+    var ns = _normaliseStatus(d.Status);
+    if (ns === 'Done' || d.Status === 'Resolved') {
+      var doneDate = d.FailureResolved || d.CorrectionBegins || d.Due;
+      var dk = _periodKey(doneDate);
+      if (dk) done[dk] = (done[dk] || 0) + 1;
+    }
+  });
+
+  /* ── Build sorted labels ────────────────────────────── */
+  var allKeys = [...new Set([...Object.keys(created), ...Object.keys(done)])].sort();
+  if (!allKeys.length) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">No date data available for chart</div>';
+    return;
+  }
+
+  /* ── Format label ───────────────────────────────────── */
+  function _label(k) {
+    if (_trendPeriod === 'week') return k;
+    var p = k.split('-');
+    return _MONTHS[parseInt(p[1]) - 1] + ' ' + p[0];
+  }
+
+  var labels    = allKeys.map(_label);
+  var createdVals = allKeys.map(function(k) { return created[k] || 0; });
+  var doneVals    = allKeys.map(function(k) { return done[k]    || 0; });
+
+  /* ── Destroy previous chart ─────────────────────────── */
+  if (_trendChart) { _trendChart.destroy(); _trendChart = null; }
+
+  var canvas = document.getElementById('issue-trend-canvas');
+  if (!canvas) return;
+  canvas.style.display = 'block';
+
+  /* ── Colors from CSS vars ───────────────────────────── */
+  var cCreated = getComputedStyle(document.documentElement).getPropertyValue('--down').trim()   || '#f85149';
+  var cDone    = getComputedStyle(document.documentElement).getPropertyValue('--up').trim()     || '#3fb950';
+  var cText    = getComputedStyle(document.documentElement).getPropertyValue('--text2').trim()  || '#8b949e';
+  var cGrid    = getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#30363d';
+
+  _trendChart = new Chart(canvas.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        { label: 'Created / Detected', data: createdVals,
+          backgroundColor: cCreated + '99', borderColor: cCreated, borderWidth: 1, borderRadius: 3 },
+        { label: 'Resolved / Done',    data: doneVals,
+          backgroundColor: cDone + '99',    borderColor: cDone,    borderWidth: 1, borderRadius: 3 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: cText, font: { size: 11 } } },
+        tooltip: { mode: 'index', intersect: false }
+      },
+      scales: {
+        x: { ticks: { color: cText, font: { size: 10 }, maxRotation: 45 },
+             grid:  { color: cGrid + '44' } },
+        y: { ticks: { color: cText, font: { size: 11 }, stepSize: 1 },
+             grid:  { color: cGrid + '44' }, beginAtZero: true,
+             title: { display: true, text: 'Issues', color: cText, font: { size: 11 } } }
+      }
+    }
+  });
+}
+
+function setTrendPeriod(period, btn) {
+  _trendPeriod = period;
+  document.querySelectorAll('.trend-period-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  buildTrendChart(issueData);
+}
+
+
 /* ── Main init ───────────────────────────────────────────── */
 function init(data) {
   buildStrip(data);
   buildDropdownFilters(data);
   buildBoard(_getFiltered());
+  buildTrendChart(data);
   buildInitSection(data);
 }

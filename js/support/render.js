@@ -46,6 +46,8 @@ function isOverdue(due,status){
 
 /* ── State ───────────────────────────────────────────────── */
 var activeStatuses=['all'];  /* multi-select */
+var _taskPage = 1;
+var _taskPageSize = 20;
 var activeGroups  =['all'];  /* multi-select */
 var activePriority='all';
 var activeLabels  =['all'];  /* multi-select */
@@ -166,9 +168,13 @@ function buildTaskTable(data){
     document.getElementById('task-count-label').textContent='0 tasks';
     return;
   }
-  document.getElementById('task-count-label').textContent='Showing '+data.length+' tasks';
+  var totalPages = Math.max(1, Math.ceil(data.length / _taskPageSize));
+  _taskPage = Math.min(_taskPage, totalPages);
+  var pageData = data.slice((_taskPage-1)*_taskPageSize, _taskPage*_taskPageSize);
+  document.getElementById('task-count-label').textContent=
+    'Showing '+pageData.length+' of '+data.length+' tasks (page '+_taskPage+'/'+totalPages+')';
   var today=new Date();
-  var html=data.map(function(d){
+  var html=pageData.map(function(d){
     var overdue=isOverdue(d.Due,d.Status);
     var dueHtml=d.Due
       ?(overdue?'<span style="color:var(--down);font-weight:600">'+_fmtDate(d.Due)+'</span>':_fmtDate(d.Due))
@@ -186,6 +192,24 @@ function buildTaskTable(data){
       '</tr>';
   }).join('');
   document.getElementById('task-tbody').innerHTML=html;
+
+  /* Pagination controls */
+  var pgEl = document.getElementById('task-pagination');
+  if (pgEl) {
+    if (totalPages <= 1) { pgEl.innerHTML = ''; }
+    else {
+      var btns = '';
+      btns += '<button class="pg-btn" onclick="_goPage(1)" '+((_taskPage===1)?'disabled':'')+'>«</button>';
+      btns += '<button class="pg-btn" onclick="_goPage('+(_taskPage-1)+')" '+((_taskPage===1)?'disabled':'')+'>‹</button>';
+      var start = Math.max(1, _taskPage-2), end = Math.min(totalPages, _taskPage+2);
+      for (var pi=start;pi<=end;pi++) {
+        btns += '<button class="pg-btn'+(pi===_taskPage?' active':'')+'" onclick="_goPage('+pi+')">'+pi+'</button>';
+      }
+      btns += '<button class="pg-btn" onclick="_goPage('+(_taskPage+1)+')" '+((_taskPage===totalPages)?'disabled':'')+'>›</button>';
+      btns += '<button class="pg-btn" onclick="_goPage('+totalPages+')" '+((_taskPage===totalPages)?'disabled':'')+'>»</button>';
+      pgEl.innerHTML = btns;
+    }
+  }
 }
 
 /* ── Patterns analysis (dynamic) ───────────────────────────── */
@@ -255,6 +279,7 @@ function getFiltered(){
   });
 }
 function applyFilters(){
+  _taskPage = 1; /* reset to page 1 on filter change */
   var filtered = getFiltered();
   buildTaskTable(filtered);
   buildSupportTrendChart(filtered);
@@ -319,25 +344,24 @@ function buildSupportTrendChart(data) {
   var el = document.getElementById('support-trend-chart');
   if (!el) return;
 
-  function _key(raw) {
+  /* Parse GDB_SUPPORT_yyyyMM label → period key */
+  function _labelToKey(raw) {
     if (!raw) return null;
-    var d = new Date(String(raw).trim());
-    if (isNaN(d.getTime())) return null;
-    if (_supTrendPeriod === 'week') {
-      var jan4 = new Date(d.getFullYear(), 0, 4);
-      var w = Math.ceil(((d - jan4) / 86400000 + jan4.getDay() + 1) / 7);
-      return d.getFullYear() + '-W' + String(w).padStart(2,'0');
+    var parts = String(raw).split(';');
+    /* Use first label that matches GDB_SUPPORT_yyyyMM pattern */
+    for (var i=0;i<parts.length;i++) {
+      var m = parts[i].trim().match(/GDB_SUPPORT_(\d{4})(\d{2})/);
+      if (m) return m[1] + '-' + m[2]; /* "2026-01" */
     }
-    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    return null;
   }
 
   var created = {}, done = {};
   data.forEach(function(d) {
-    var dateRaw = d.Due || d.Labels;  /* use Due as proxy for created date */
-    var ck = _key(dateRaw);
+    var ck = _labelToKey(d.Labels);
     if (ck) created[ck] = (created[ck]||0) + 1;
     if (d.Status === 'Done') {
-      var dk = _key(dateRaw);
+      var dk = ck || _labelToKey(d.Labels);
       if (dk) done[dk] = (done[dk]||0) + 1;
     }
   });
@@ -369,10 +393,12 @@ function buildSupportTrendChart(data) {
     data: {
       labels: allKeys.map(_label),
       datasets: [
-        { label: 'Created / Assigned', data: allKeys.map(function(k){return created[k]||0;}),
-          backgroundColor: cCreated+'99', borderColor: cCreated, borderWidth:1, borderRadius:3 },
         { label: 'Done', data: allKeys.map(function(k){return done[k]||0;}),
-          backgroundColor: cDone+'99', borderColor: cDone, borderWidth:1, borderRadius:3 },
+          backgroundColor: cDone+'cc', borderColor: cDone, borderWidth:1, borderRadius:0,
+          stack: 'stack0' },
+        { label: 'Open / Pending', data: allKeys.map(function(k){return Math.max(0,(created[k]||0)-(done[k]||0));}),
+          backgroundColor: cCreated+'cc', borderColor: cCreated, borderWidth:1, borderRadius:3,
+          stack: 'stack0' },
       ]
     },
     options: {
@@ -382,9 +408,11 @@ function buildSupportTrendChart(data) {
         tooltip: { mode:'index', intersect:false }
       },
       scales: {
-        x: { ticks:{color:cText,font:{size:10},maxRotation:45}, grid:{color:cGrid+'44'} },
+        x: { ticks:{color:cText,font:{size:10},maxRotation:45}, grid:{color:cGrid+'44'},
+             stacked:true },
         y: { ticks:{color:cText,font:{size:11},stepSize:1}, grid:{color:cGrid+'44'},
-             beginAtZero:true, title:{display:true,text:'Tasks',color:cText,font:{size:11}} }
+             beginAtZero:true, stacked:true,
+             title:{display:true,text:'Tasks',color:cText,font:{size:11}} }
       }
     }
   });
@@ -411,4 +439,9 @@ function init(){
 function onDropdownChange() {
   activePriority = document.getElementById('filter-priority') ? document.getElementById('filter-priority').value : 'all';
   applyFilters();
+}
+
+function _goPage(n) {
+  _taskPage = n;
+  buildTaskTable(getFiltered());
 }

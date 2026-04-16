@@ -32,7 +32,14 @@ function switchTab(i){
 function getJ(r){try{return JSON.parse(r)}catch(e){return null}}
 function getStart(r){const p=getJ(r);return p?(p.start||null):(r&&/\d{4}-\d{2}-\d{2}/.test(r)?r.match(/(\d{4}-\d{2}-\d{2})/)[1]:null)}
 function getEnd(r){const p=getJ(r);return p?(p.end||null):(r&&/\d{4}-\d{2}-\d{2}/.test(r)?r.match(/(\d{4}-\d{2}-\d{2})/)[1]:null)}
-function fmtDate(d){if(!d)return'—';const[y,m]=d.split('-');return MONTHS[+m-1]+' '+y}
+function fmtDate(d){
+  if(!d)return'—';
+  // Handle JSON date objects {"start":"2026-03-01","end":"..."}
+  if(d.startsWith('{'))try{var o=JSON.parse(d);d=o.start||d;}catch(e){}
+  var dt=new Date(d);
+  if(isNaN(dt.getTime())){var p=d.split('-');return p.length>=3?MONTHS[+p[1]-1]+' '+parseInt(p[2])+' '+p[0]:'—';}
+  return MONTHS[dt.getMonth()]+' '+dt.getDate()+' '+dt.getFullYear();
+}
 function cl(v){return String(v||'').replace(/^"|"$/g,'').trim()}
 function jiraLink(k){return`<a class="jira-link" href="${CONFIG.JIRA_BASE}${k}" target="_blank">${k} ↗</a>`}
 function monBadge(v){if(!v)return'<span style="color:var(--text3);font-size:10px">—</span>';const d=v.toLowerCase();if(d.includes('track'))return`<span class="mon-badge mon-ontrack">✅ On track</span>`;if(d.includes('risk'))return`<span class="mon-badge mon-atrisk">⚠️ At risk</span>`;if(d.includes('delay'))return`<span class="mon-badge mon-delayed">🆘 Delayed</span>`;return`<span style="font-size:10px;color:var(--text2)">${v}</span>`;}

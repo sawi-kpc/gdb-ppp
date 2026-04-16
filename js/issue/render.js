@@ -272,7 +272,7 @@ function buildBoard(data) {
     var colCards = cards.map(function(d) {
       var hasTimeline = d.FailureOccurs || d.CorrectionBegins || d.FailureResolved;
       var multiCh = (d.Components||'').split(';').length >= 3;
-      return '<div class="iboard-card" style="'+(d.Severity==='Critical'?'border-color:rgba(248,81,73,.5);background:rgba(248,81,73,.06);':'')+'">
+      return '<div class="iboard-card" style="'+(d.Severity==='Critical'?'border-color:rgba(248,81,73,.5);background:rgba(248,81,73,.06);':'')+'">'
         +'<div class="ibc-top">'
           +'<a href="'+ISSUE_JIRA_BASE+d.Key+'" target="_blank" class="ibc-key">'+d.Key+' ↗</a>'
           +(d.Priority?'<span style="font-size:9px;font-weight:700;color:'+_pColor(d.Priority)+'">'+d.Priority+'</span>':'')

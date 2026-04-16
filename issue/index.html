@@ -125,6 +125,20 @@ body.has-init-subnav { padding-top: calc(var(--header-h) + var(--nav-h)) !import
 
 <!-- Main -->
 <div id="issue-content" style="display:none">
+
+<!-- Error state — shown when Apps Script unreachable -->
+<div id="issue-error-state" style="display:none;flex-direction:column;align-items:center;
+  justify-content:center;min-height:55vh;gap:16px;padding:40px 24px;text-align:center">
+  <div style="font-size:40px;opacity:.6">⚠</div>
+  <div style="font-size:16px;font-weight:700;color:var(--down)">Unable to load issue data</div>
+  <div id="issue-error-msg" style="font-size:13px;color:var(--text2);max-width:420px;line-height:1.6"></div>
+  <div style="margin-top:8px">
+    <button onclick="location.reload()" style="padding:8px 20px;background:var(--surface2);
+      border:1px solid var(--border);border-radius:6px;color:var(--text);
+      font-size:12px;cursor:pointer;margin-right:8px">↺ Retry</button>
+  </div>
+</div>
+
 <div class="issue-page">
 
   <!-- Page header -->
@@ -245,11 +259,9 @@ window.addEventListener('DOMContentLoaded', function() {
       },
       function(err) {
         document.getElementById('gdb-loading').style.display = 'none';
-        document.getElementById('gdb-loading').innerHTML =
-          '<div style="font-size:32px;margin-bottom:12px">⚠</div>'+
-          '<div style="font-size:14px;font-weight:600;color:var(--down);margin-bottom:8px">Unable to load issue data</div>'+
-          '<div style="font-size:12px;color:var(--text2);max-width:400px;text-align:center">'+err+'</div>';
-        document.getElementById('gdb-loading').style.display = 'flex';
+        document.getElementById('issue-content').style.display = 'block';
+        document.getElementById('issue-error-state').style.display = 'flex';
+        document.getElementById('issue-error-msg').textContent = err;
       }
     );
   });

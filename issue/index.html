@@ -169,12 +169,14 @@ body.has-init-subnav { padding-top: calc(var(--header-h) + var(--nav-h)) !import
 
       <!-- Status filter (pill buttons) -->
       <div class="ctrl-bar" id="issue-status-filter" style="margin-bottom:10px">
-        <button class="fb active" onclick="setStatusFilter('all',this)">All</button>
-        <button class="fb" onclick="setStatusFilter('Open',this)">⚠ Open</button>
-        <button class="fb" onclick="setStatusFilter('Investigating',this)">Investigating</button>
-        <button class="fb" onclick="setStatusFilter('In Progress',this)">In Progress</button>
-        <button class="fb" onclick="setStatusFilter('Resolved',this)">Resolved</button>
-        <button class="fb" onclick="setStatusFilter('Done',this)">Done / Closed</button>
+        <div style="font-size:10px;color:var(--text3);margin-right:2px;align-self:center">STATUS</div>
+        <button class="fb active" data-val="all" onclick="setStatusFilter('all',this)">All</button>
+        <button class="fb" data-val="Open" onclick="setStatusFilter('Open',this)">⚠ Open</button>
+        <button class="fb" data-val="Investigating" onclick="setStatusFilter('Investigating',this)">Investigating</button>
+        <button class="fb" data-val="In Progress" onclick="setStatusFilter('In Progress',this)">In Progress</button>
+        <button class="fb" data-val="Resolved" onclick="setStatusFilter('Resolved',this)">Resolved</button>
+        <button class="fb" data-val="Done" onclick="setStatusFilter('Done',this)">Done / Closed</button>
+        <div style="font-size:10px;color:var(--text3);margin-left:4px;align-self:center">(multi-select)</div>
       </div>
 
       <!-- Dropdown filters -->
@@ -221,6 +223,23 @@ body.has-init-subnav { padding-top: calc(var(--header-h) + var(--nav-h)) !import
     </div>
   </div><!-- /panel -->
 
+  <!-- Trend chart panel -->
+  <div class="panel" style="margin-bottom:14px">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">Issue Trend — Created vs Resolved</div>
+        <div class="panel-sub">Incidents detected and resolved over time</div>
+      </div>
+      <div style="display:flex;gap:4px">
+        <button class="trend-period-btn vbtn active" onclick="setTrendPeriod('month',this)">Monthly</button>
+        <button class="trend-period-btn vbtn" onclick="setTrendPeriod('week',this)">Weekly</button>
+      </div>
+    </div>
+    <div class="panel-body" id="issue-trend-chart" style="height:220px;position:relative">
+      <canvas id="issue-trend-canvas" style="display:none"></canvas>
+    </div>
+  </div>
+
   <!-- Initiative candidates -->
   <div class="panel">
     <div class="panel-head">
@@ -235,6 +254,7 @@ body.has-init-subnav { padding-top: calc(var(--header-h) + var(--nav-h)) !import
 </div><!-- /issue-page -->
 </div><!-- /issue-content -->
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="../js/issue/config.js"></script>

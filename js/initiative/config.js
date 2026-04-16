@@ -2,7 +2,7 @@
 const CONFIG = {
   APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwfxYfSy9zdtX8XxPgoeBUtkrDhPoGak7WsYp6zp8HTbIXHro5JBKWNROc2Lt7o4tTb/exec',
   SHEET_URL: 'https://docs.google.com/spreadsheets/d/1dEBSAcmkT5tQmzaQDQEieex3WMCyPBi1JjQdOpVH8Nc/gviz/tq?tqx=out:csv&gid=660147076',
-  JIRA_BASE: 'https://kingpower.atlassian.net/browse/',
+  JIRA_BASE: 'https://kingpowerclick.atlassian.net/browse/',
   TIMELINE_RANGE_OPTIONS: [
     {val:'2025-01',label:'Jan 2025'},{val:'2025-03',label:'Mar 2025'},
     {val:'2025-06',label:'Jun 2025'},{val:'2025-09',label:'Sep 2025'},

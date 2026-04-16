@@ -1,7 +1,7 @@
 /* ══════════════════════════════════════════════════════════════
-   ISSUE DATA — fetch + cache + badge
-   Depends on: js/issue/config.js (load first)
-   Pattern mirrors js/initiative/data.js
+   ISSUE DATA — fetch + cache
+   Depends on: js/issue/config.js
+   No embedded fallback — live or cache data only.
 ══════════════════════════════════════════════════════════════ */
 
 var issueData = [];
@@ -50,7 +50,7 @@ function getIssueCacheAge() {
 
 /* ── JSONP fetch ────────────────────────────────────────────── */
 function loadIssueData(onSuccess, onError) {
-  /* Check cache first */
+  /* 1. Serve from cache if still fresh */
   var cached = _issueCacheGet();
   if (cached) {
     issueData = cached.data;
@@ -61,7 +61,7 @@ function loadIssueData(onSuccess, onError) {
     return;
   }
 
-  /* No cache — fetch live */
+  /* 2. Fetch live from Apps Script */
   if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('loading', 'Loading…');
 
   var cbName = '_gdbIssueCb_' + Date.now();
@@ -75,11 +75,8 @@ function loadIssueData(onSuccess, onError) {
     if (script.parentNode) script.parentNode.removeChild(script);
     try { delete window[cbName]; } catch(e) {}
     if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('hide');
-    /* Fallback to embedded sample data */
-    issueData = getEmbeddedIssues();
-    _issueCacheSet(issueData);
-    if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('live', '● Live data');
-    if (typeof onSuccess === 'function') onSuccess(issueData);
+    if (typeof onError === 'function')
+      onError('Request timed out — check ISSUE_APPS_SCRIPT_URL in js/issue/config.js');
   }, 15000);
 
   window[cbName] = function(json) {
@@ -97,6 +94,7 @@ function loadIssueData(onSuccess, onError) {
         setGdbUpdateTime(json._meta.generated);
       if (typeof onSuccess === 'function') onSuccess(issueData);
     } catch(e) {
+      if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('hide');
       if (typeof onError === 'function') onError(e.message);
     }
   };
@@ -107,74 +105,11 @@ function loadIssueData(onSuccess, onError) {
     clearTimeout(timer);
     if (script.parentNode) script.parentNode.removeChild(script);
     try { delete window[cbName]; } catch(e) {}
-    issueData = getEmbeddedIssues();
-    _issueCacheSet(issueData);
-    if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('live', '● Embedded data');
-    if (typeof onSuccess === 'function') onSuccess(issueData);
+    if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('hide');
+    if (typeof onError === 'function')
+      onError('Failed to load Apps Script — check ISSUE_APPS_SCRIPT_URL in js/issue/config.js');
   };
 
   script.src = ISSUE_APPS_SCRIPT_URL + '?sheet=issues&callback=' + cbName;
   document.head.appendChild(script);
-}
-
-/* ── Embedded sample data (fallback when Apps Script unreachable) ─ */
-function getEmbeddedIssues() {
-  /* ── Embedded fallback — mirrors actual sheet data ── */
-  return [
-    {Key:"GIT-42",
-     IssueType:"Issue",
-     Summary:"[OMISE] เงินไม่พอคืนให้ลูกค้าผ่าน Omise (เกิดจากไม่มีเงินหมุนเวียนช่วงข้ามเดือน)",
-     Status:"In Progress",
-     Components:"firster-commerce",
-     Group:"",Labels:"",Due:"",
-     Assignee:"Somrythi Pipat",
-     Priority:"Medium",
-     Severity:"Moderate",
-     RootCause:"Insufficient float at month-end cycle",
-     FailureOccurs:"",CorrectionBegins:"4/7/2026 12:00",FailureResolved:""},
-    {Key:"GIT-41",
-     IssueType:"Issue",
-     Summary:"[K2] System Down - ไม่สามารถทำ process Refund ผ่าน K2 ได้",
-     Status:"Closed",
-     Components:"k2",
-     Group:"",Labels:"",Due:"",
-     Assignee:"",
-     Priority:"Medium",
-     Severity:"Moderate",
-     RootCause:"",
-     FailureOccurs:"",CorrectionBegins:"",FailureResolved:""},
-    {Key:"GIT-9",
-     IssueType:"Issue",
-     Summary:"[ALL] System Down",
-     Status:"Resolved",
-     Components:"firster-commerce;firster-tiktok-social-commerce;jd-phamacy-marketplace-cn;kingpower-commerce-cn;kingpower-commerce-th;kingpower-douyin-social-commerce;taihaitao-commerce-cn",
-     Group:"",Labels:"",Due:"",
-     Assignee:"Chawanop Witthayaphirak",
-     Priority:"Highest",
-     Severity:"Critical",
-     RootCause:"",
-     FailureOccurs:"",CorrectionBegins:"3/25/2026 8:00",FailureResolved:""},
-    {Key:"GIT-4",
-     IssueType:"Issue",
-     Summary:"[SAP] System Down",
-     Status:"Investigating",
-     Components:"firster-commerce;firster-tiktok-social-commerce;jd-phamacy-marketplace-cn;kingpower-commerce-cn;kingpower-commerce-th;kingpower-douyin-social-commerce;taihaitao-commerce-cn",
-     Group:"",Labels:"",Due:"",
-     Assignee:"Chawanop Witthayaphirak",
-     Priority:"Highest",
-     Severity:"Critical",
-     RootCause:"SAP system outage — multi-channel impact",
-     FailureOccurs:"3/23/2026 22:30",CorrectionBegins:"3/24/2026 10:00",FailureResolved:""},
-    {Key:"GIT-1",
-     IssueType:"Issue",
-     Summary:"[F1] ใบเสร็จ ABB ไม่แสดงค่า Delivery fee ซึ่งเคยแสดงได้มาก่อน",
-     Status:"Open",
-     Components:"firster-commerce",
-     Group:"",Labels:"",Due:"3/31/2026",
-     Assignee:"Somrythi Pipat",
-     Priority:"Medium",
-     Severity:"Moderate",
-     RootCause:"",
-     FailureOccurs:"",CorrectionBegins:"",FailureResolved:""},
-  ];
 }

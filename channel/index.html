@@ -63,6 +63,38 @@ var LOADED = 0;
 var TOTAL  = CHANNELS_ORDER.length;
 var HAS_ERROR = false;
 
+/* ── Summary cache (localStorage, TTL 60 min) ─── */
+var _SUM_CACHE_KEY = 'gdb_sum_allChannels';
+var _SUM_CACHE_TTL = 60; /* minutes */
+
+function _sumCacheGet() {
+  try {
+    var raw = localStorage.getItem(_SUM_CACHE_KEY);
+    if (!raw) return null;
+    var obj = JSON.parse(raw);
+    if ((Date.now() - obj.ts) / 60000 > _SUM_CACHE_TTL) return null;
+    return obj;
+  } catch(e) { return null; }
+}
+function _sumCacheSet(data) {
+  try {
+    localStorage.setItem(_SUM_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: data }));
+  } catch(e) {}
+}
+function _sumCacheAge() {
+  try {
+    var raw = localStorage.getItem(_SUM_CACHE_KEY);
+    if (!raw) return null;
+    var obj = JSON.parse(raw);
+    var m = (Date.now() - obj.ts) / 60000;
+    if (m > _SUM_CACHE_TTL) return null;
+    return m < 1 ? 'just now' : m < 60 ? Math.floor(m) + 'm ago' : Math.floor(m/60) + 'h ago';
+  } catch(e) { return null; }
+}
+function clearSumCache() {
+  try { localStorage.removeItem(_SUM_CACHE_KEY); } catch(e) {}
+}
+
 /* ── KPI definitions for compare table ─────── */
 var KPI_ROWS = [
   { key:'Gross_Sales', label:'Gross Sales',    ft:'thb',  lowerGood:false },
@@ -124,6 +156,9 @@ function loadChannel(key) {
 
 function checkAllLoaded() {
   if (LOADED < TOTAL) return;
+  /* Save live data to cache */
+  _sumCacheSet(ALL_DATA);
+  if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('live', '● Live data');
   document.getElementById('gdb-loading').style.display = 'none';
   document.getElementById('gdb-main').style.display = 'block';
   buildPage();
@@ -290,7 +325,32 @@ function setYear(yr, btn) {
 window.addEventListener('DOMContentLoaded', function() {
   buildGdbHeader({ showRefresh: true });
   gdbAuthGuard(function(user) {
+
+    /* ── Check summary cache first ────────────── */
+    var cached = _sumCacheGet();
+    if (cached) {
+      ALL_DATA = cached.data;
+      LOADED   = TOTAL;
+      var age  = _sumCacheAge();
+      if (typeof gdbSetCacheBadge === 'function')
+        gdbSetCacheBadge('cached', age ? '⚡ Cached · ' + age : '⚡ Cached');
+      document.getElementById('gdb-loading').style.display = 'none';
+      document.getElementById('gdb-main').style.display    = 'block';
+      buildPage();
+      if (typeof setGdbUpdateTime === 'function') setGdbUpdateTime(new Date().toISOString());
+      return;
+    }
+
+    /* ── No cache — fetch all channels live ────── */
+    if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('loading', 'Loading…');
     CHANNELS_ORDER.forEach(function(key) { loadChannel(key); });
+  });
+
+  /* Refresh button — clear summary cache + reload */
+  var rbtn = document.getElementById('gdb-refresh-btn');
+  if (rbtn) rbtn.addEventListener('click', function() {
+    clearSumCache();
+    location.reload();
   });
 });
 </script>

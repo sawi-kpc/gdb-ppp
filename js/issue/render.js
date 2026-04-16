@@ -1,17 +1,18 @@
 /* ── Date formatters ────────────────────────────────────── */
-var _MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+var _MONTHS      = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+var _FULL_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 function _fmtDate(raw) {
   if (!raw) return '—';
   var d = new Date(String(raw).trim());
   if (isNaN(d.getTime())) return raw;
-  return _MONTHS[d.getMonth()] + ' ' + d.getDate() + ' ' + d.getFullYear();
+  return d.getDate() + ' ' + _FULL_MONTHS[d.getMonth()] + ' ' + d.getFullYear();
 }
 function _fmtDateTime(raw) {
   if (!raw) return '—';
   var d = new Date(String(raw).trim());
   if (isNaN(d.getTime())) return raw;
   var h = d.getHours(), m = d.getMinutes(), s = d.getSeconds();
-  return _MONTHS[d.getMonth()] + ' ' + d.getDate() + ' ' + d.getFullYear() +
+  return d.getDate() + ' ' + _MONTHS[d.getMonth()] + ' ' + d.getFullYear() +
     ' ' + String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') +
     ':' + String(s).padStart(2,'0');
 }
@@ -390,6 +391,7 @@ function applyFilters() {
   var data = _getFiltered();
   if (_activeView === 'board') buildBoard(data);
   else buildTable(data);
+  buildTrendChart(data); /* update chart with same filtered data */
 }
 function setStatusFilter(val, btn) {
   if (val === 'all') {
@@ -545,7 +547,7 @@ function setTrendPeriod(period, btn) {
   _trendPeriod = period;
   document.querySelectorAll('.trend-period-btn').forEach(function(b) { b.classList.remove('active'); });
   btn.classList.add('active');
-  buildTrendChart(issueData);
+  buildTrendChart(_getFiltered()); /* apply current filters */
 }
 
 

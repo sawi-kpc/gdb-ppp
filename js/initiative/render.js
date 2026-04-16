@@ -40,6 +40,14 @@ function fmtDate(d){
   if(isNaN(dt.getTime())){var p=d.split('-');return p.length>=3?parseInt(p[2])+' '+FULL_MONTHS[+p[1]-1]+' '+p[0]:'—';}
   return dt.getDate()+' '+FULL_MONTHS[dt.getMonth()]+' '+dt.getFullYear();
 }
+/* fmtMonYear: short format "Oct 2025" — for timeline target/actual dates */
+function fmtMonYear(d){
+  if(!d)return'—';
+  if(d.startsWith('{'))try{var o=JSON.parse(d);d=o.start||d;}catch(e){}
+  var dt=new Date(d);
+  if(isNaN(dt.getTime())){var p=d.split('-');return p.length>=2?MONTHS[+p[1]-1]+' '+p[0]:'—';}
+  return MONTHS[dt.getMonth()]+' '+dt.getFullYear();
+}
 function cl(v){return String(v||'').replace(/^"|"$/g,'').trim()}
 function jiraLink(k){return`<a class="jira-link" href="${CONFIG.JIRA_BASE}${k}" target="_blank">${k} ↗</a>`}
 function monBadge(v){if(!v)return'<span style="color:var(--text3);font-size:10px">—</span>';const d=v.toLowerCase();if(d.includes('track'))return`<span class="mon-badge mon-ontrack">✅ On track</span>`;if(d.includes('risk'))return`<span class="mon-badge mon-atrisk">⚠️ At risk</span>`;if(d.includes('delay'))return`<span class="mon-badge mon-delayed">🆘 Delayed</span>`;return`<span style="font-size:10px;color:var(--text2)">${v}</span>`;}
@@ -124,8 +132,8 @@ function renderTimeline(data){
     const hasPlan=tS&&tE,hasActual=!!aS;
     const planBar=hasPlan?`<div class="tl-bar tl-bar-plan" style="left:${pct(tS).toFixed(2)}%;width:${wPct(tS,tE).toFixed(2)}%"></div>`:'';
     const actBar=hasActual?`<div class="tl-bar ${isD?'tl-bar-actual-del':'tl-bar-actual-ok'}" style="left:${pct(aS).toFixed(2)}%;width:${aE?wPct(aS,aE).toFixed(2):Math.max(.5,((Math.min(today,END)-new Date(aS))/totalMs*100)).toFixed(2)}%"></div>`:'';
-    const tLine=(tS||tE)?`<span><span style="color:var(--accent);font-weight:600;min-width:40px;display:inline-block">Target</span>${fmtDate(tS)} \u2192 ${fmtDate(tE)}</span>`:'';
-    const aLine=(aS||aE)?`<span><span style="color:${isD?'#E24B4A':'#1D9E75'};font-weight:600;min-width:40px;display:inline-block">Actual</span>${fmtDate(aS)} \u2192 ${aE?fmtDate(aE):'In progress'}</span>`:'';
+    const tLine=(tS||tE)?`<span><span style="color:var(--accent);font-weight:600;min-width:40px;display:inline-block">Target</span>${fmtMonYear(tS)} \u2192 ${fmtMonYear(tE)}</span>`:'';
+    const aLine=(aS||aE)?`<span><span style="color:${isD?'#E24B4A':'#1D9E75'};font-weight:600;min-width:40px;display:inline-block">Actual</span>${fmtMonYear(aS)} \u2192 ${aE?fmtMonYear(aE):'In progress'}</span>`:'';
     const dLine=(tLine||aLine)?`<div class="tl-date-line">${[tLine,aLine].filter(Boolean).join('<br>')}</div>`:'';
     const emoji=mon?(isD?'🆘 ':isR?'⚠️ ':isT?'✅ ':''):'';
     return`<div class="tl-row ${rowCls}"><div class="tl-label"><div class="tl-key-line">${jiraLink(d.Key)}</div><div class="tl-name" title="${d.Summary}">${emoji}${d.Summary}</div>${dLine}</div><div class="tl-track">${todayColBg}${todayP!==null?`<div class="tl-today-v" style="left:${todayP.toFixed(2)}%"><div class="tl-today-dot-v"></div></div>`:''} ${hasPlan||hasActual?planBar+actBar:`<div class="tl-no-date">No date set</div>`}</div><div class="tl-status-col">${mon?monBadge(mon):sPill(d.Status)}</div></div>`;

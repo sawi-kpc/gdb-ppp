@@ -4,7 +4,7 @@
    Spreadsheet: 1dEBSAcmkT5tQmzaQDQEieex3WMCyPBi1JjQdOpVH8Nc
 ══════════════════════════════════════════════════════════════ */
 
-var SUPPORT_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyD260xK8Gnf2whf71l6JROXQhXf0SEtDIaA3_ineTbilY5tmzd8thIWJ5mktlYd_jN/exec';
+var SUPPORT_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwfxYfSy9zdtX8XxPgoeBUtkrDhPoGak7WsYp6zp8HTbIXHro5JBKWNROc2Lt7o4tTb/exec';
 var SUPPORT_JIRA_BASE       = 'https://kingpower.atlassian.net/browse/';
 
 var SUPPORT_CACHE_CONFIG = {

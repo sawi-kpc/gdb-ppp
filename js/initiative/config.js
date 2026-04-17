@@ -20,7 +20,7 @@ const CONFIG = {
    clearing.
 ────────────────────────────────────────────────────────────── */
 var CACHE_CONFIG = {
-  ttlMinutes:  120,         /* initiative data changes less often  */
+  ttlMinutes:  180,         /* initiative data changes less often  */
   prefix:      'gdb_ini_',  /* localStorage key prefix             */
   enabled:     true,
 };

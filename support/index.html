@@ -155,7 +155,7 @@
 
 <div class="strip" id="strip"></div>
 
-<div class="two" style="margin-bottom:14px">
+<div style="display:grid;grid-template-columns:1fr 1fr 2fr;gap:14px;margin-bottom:14px">
   <div class="panel">
     <div class="ph2"><div><div class="pt">Volume by group</div></div></div>
     <div class="pb" id="group-chart"></div>
@@ -163,6 +163,19 @@
   <div class="panel">
     <div class="ph2"><div><div class="pt">Workload by assignee</div></div></div>
     <div class="pb"><div class="tbl-scroll"><table class="atbl" id="assignee-tbl"></table></div></div>
+  </div>
+  <div class="panel">
+    <div class="ph2">
+      <div><div class="pt">Task Volume Trend — Created vs Done</div>
+      <div class="ps">Tasks assigned and completed over time</div></div>
+      <div style="display:flex;gap:4px">
+        <button class="sup-trend-btn vbtn active" onclick="setSupportTrendPeriod('month',this)">Monthly</button>
+        <button class="sup-trend-btn vbtn" onclick="setSupportTrendPeriod('week',this)">Weekly</button>
+      </div>
+    </div>
+    <div id="support-trend-chart" style="height:160px;position:relative">
+      <canvas id="support-trend-canvas" style="display:none"></canvas>
+    </div>
   </div>
 </div>
 
@@ -214,20 +227,6 @@
       </table>
     <div id="task-pagination" style="display:flex;gap:4px;justify-content:center;padding:10px 0;flex-wrap:wrap"></div>
     </div>
-  </div>
-</div>
-
-<div class="panel" style="margin-bottom:14px">
-  <div class="ph2">
-    <div><div class="pt">Task Volume Trend — Created vs Done</div>
-    <div class="ps">Tasks assigned and completed over time</div></div>
-    <div style="display:flex;gap:4px">
-      <button class="sup-trend-btn vbtn active" onclick="setSupportTrendPeriod('month',this)">Monthly</button>
-      <button class="sup-trend-btn vbtn" onclick="setSupportTrendPeriod('week',this)">Weekly</button>
-    </div>
-  </div>
-  <div class="pb" id="support-trend-chart" style="height:220px;position:relative">
-    <canvas id="support-trend-canvas" style="display:none"></canvas>
   </div>
 </div>
 

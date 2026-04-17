@@ -338,7 +338,7 @@ function sortBy(col){
    SUPPORT TREND CHART — Task volume by Week / Month
    Stacked: To do + In Progress + Done
 ══════════════════════════════════════════════════════════════ */
-var _supTrendPeriod = 'month';
+var _supTrendPeriod = 'month'; /* fixed — toggle removed */
 var _supTrendChart  = null;
 
 function buildSupportTrendChart(data) {
@@ -398,7 +398,7 @@ function buildSupportTrendChart(data) {
           backgroundColor: '#3fb950cc', borderColor: '#3fb950', borderWidth:1, borderRadius:0,
           stack: 'stack0' },
         { label: 'Open / Pending', data: allKeys.map(function(k){return Math.max(0,(created[k]||0)-(done[k]||0));}),
-          backgroundColor: '#f85149cc', borderColor: '#f85149', borderWidth:1, borderRadius:3,
+          backgroundColor: '#f85149cc', borderColor: '#f85149', borderWidth:1, borderRadius:0,
           stack: 'stack0' },
       ]
     },
@@ -419,12 +419,7 @@ function buildSupportTrendChart(data) {
   });
 }
 
-function setSupportTrendPeriod(period, btn) {
-  _supTrendPeriod = period;
-  document.querySelectorAll('.sup-trend-btn').forEach(function(b){b.classList.remove('active');});
-  btn.classList.add('active');
-  buildSupportTrendChart(supportData);
-}
+/* setSupportTrendPeriod removed — monthly only */
 
 /* ── Init ───────────────────────────────────────────────── */
 function init(){

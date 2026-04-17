@@ -12,7 +12,7 @@
 var SPREADSHEET_ID = '1dEBSAcmkT5tQmzaQDQEieex3WMCyPBi1JjQdOpVH8Nc';
 var GID_PPP        = 660147076;  /* initiatives — original GID */
 var GID_ISSUES     = 894050881;  /* issues sheet */
-var GID_SUPPORTS   = 660147076;  /* supports sheet — update if separate tab */
+var GID_SUPPORTS   = 791347021;  /* supports sheet — confirmed from ?sheet=debug */
 
 /* ── DEBUG — lists all sheets (for troubleshooting only) ─── */
 function getDebugInfo() {
@@ -54,9 +54,21 @@ function _sheetByGid(ss, gid) {
 }
 function _s(v)  { return (v !== undefined && v !== null) ? String(v).trim() : ''; }
 function _get(raw, aliases) {
+  /* 1. Exact match */
   for (var i = 0; i < aliases.length; i++) {
     if (raw[aliases[i]] !== undefined && String(raw[aliases[i]]).trim() !== '') {
       return String(raw[aliases[i]]).trim();
+    }
+  }
+  /* 2. Case-insensitive + trim match */
+  var keys = Object.keys(raw);
+  for (var i = 0; i < aliases.length; i++) {
+    var al = aliases[i].toLowerCase().trim();
+    for (var j = 0; j < keys.length; j++) {
+      if (keys[j].toLowerCase().trim() === al) {
+        var v = String(raw[keys[j]]).trim();
+        if (v) return v;
+      }
     }
   }
   return '';
@@ -157,25 +169,42 @@ function getSupports() {
       return k.startsWith('GIT') || !k.startsWith('PPP');
     })
     .map(function(r) {
+      /* Build raw object by header name (trimmed) */
       var raw = {};
       headers.forEach(function(h, i) { raw[h] = r[i]; });
+
+      /* Also build index map for fallback — col order:
+         0=Key,1=Issue Type,2=Summary,3=Status,4=Components,
+         5=Group of Issue/S,6=Labels,7=Due date,8=Assignee.displayName,
+         9=Σ Time Spent,10=Priority */
       var tRaw = raw['Σ Time Spent'] !== undefined ? raw['Σ Time Spent']
-               : raw['Time Spent']   !== undefined ? raw['Time Spent'] : 0;
+               : raw['Time Spent']   !== undefined ? raw['Time Spent']
+               : (r[9] !== undefined ? r[9] : 0);
+
+      /* Assignee: try header lookup first, then positional fallback (col 8) */
+      var assignee = _s(_get(raw, ['Assignee.displayName', 'Assignee.display', 'Assignee', 'assignee']))
+                  || _s(r[8]);  /* positional fallback */
+
       return {
-        Key:          _s(_get(raw, ['Key', 'Issue key'])),
-        Summary:      _s(_get(raw, ['Summary'])),
-        Status:       _s(_get(raw, ['Status'])),
-        Components:   _s(_get(raw, ['Components', 'Component/s'])),
-        Group:        _s(_get(raw, ['Group of Issue/Support Case', 'Group of Issue/S', 'Fix versions', 'Fix Versions', 'Group'])),
-        Labels:       _s(_get(raw, ['Labels'])),
-        Due:          _s(_get(raw, ['Due date', 'Due'])),
-        Assignee:     _s(_get(raw, ['Assignee'])),
-        Priority:     _s(_get(raw, ['Priority'])),
+        Key:          _s(_get(raw, ['Key', 'Issue key'])) || _s(r[0]),
+        Summary:      _s(_get(raw, ['Summary']))           || _s(r[2]),
+        Status:       _s(_get(raw, ['Status']))            || _s(r[3]),
+        Components:   _s(_get(raw, ['Components', 'Component/s'])) || _s(r[4]),
+        Group:        _s(_get(raw, ['Group of Issue/Support Case', 'Group of Issue/S', 'Group'])) || _s(r[5]),
+        Labels:       _s(_get(raw, ['Labels']))            || _s(r[6]),
+        Due:          _s(_get(raw, ['Due date', 'Due']))   || _s(r[7]),
+        Assignee:     assignee,
+        Priority:     _s(_get(raw, ['Priority']))          || _s(r[10]),
         TimeSpentSec: _parseSec(tRaw),
       };
     });
   return {
     supports: supports,
-    _meta: { generated: new Date().toISOString(), count: supports.length, sheet: 'supports' }
+    _meta: {
+      generated:  new Date().toISOString(),
+      count:      supports.length,
+      sheet:      'supports',
+      headers:    headers,  /* debug: actual column names from sheet */
+    }
   };
 }

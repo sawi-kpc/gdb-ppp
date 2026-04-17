@@ -282,7 +282,8 @@ function applyFilters(){
   _taskPage = 1; /* reset to page 1 on filter change */
   var filtered = getFiltered();
   buildTaskTable(filtered);
-  buildSupportTrendChart(filtered);
+  /* Chart always shows full dataset — not filtered */
+  buildSupportTrendChart(supportData);
 }
 function _toggleMulti(arr, val, filterId) {
   if (val === 'all') {
@@ -394,10 +395,10 @@ function buildSupportTrendChart(data) {
       labels: allKeys.map(_label),
       datasets: [
         { label: 'Done', data: allKeys.map(function(k){return done[k]||0;}),
-          backgroundColor: cDone+'cc', borderColor: cDone, borderWidth:1, borderRadius:0,
+          backgroundColor: '#3fb950cc', borderColor: '#3fb950', borderWidth:1, borderRadius:0,
           stack: 'stack0' },
         { label: 'Open / Pending', data: allKeys.map(function(k){return Math.max(0,(created[k]||0)-(done[k]||0));}),
-          backgroundColor: cCreated+'cc', borderColor: cCreated, borderWidth:1, borderRadius:3,
+          backgroundColor: '#f85149cc', borderColor: '#f85149', borderWidth:1, borderRadius:3,
           stack: 'stack0' },
       ]
     },
@@ -422,7 +423,7 @@ function setSupportTrendPeriod(period, btn) {
   _supTrendPeriod = period;
   document.querySelectorAll('.sup-trend-btn').forEach(function(b){b.classList.remove('active');});
   btn.classList.add('active');
-  buildSupportTrendChart(getFiltered());
+  buildSupportTrendChart(supportData);
 }
 
 /* ── Init ───────────────────────────────────────────────── */

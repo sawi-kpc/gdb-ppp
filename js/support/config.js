@@ -8,7 +8,7 @@ var SUPPORT_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby3I5fyIW
 var SUPPORT_JIRA_BASE       = 'https://kingpowerclick.atlassian.net/browse/';
 
 var SUPPORT_CACHE_CONFIG = {
-  ttlMinutes: 60,
+  ttlMinutes: 180,
   prefix:     'gdb_sup_',
   enabled:    true,
 };

@@ -8,7 +8,7 @@ var ISSUE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby3I5fyIWzK
 var ISSUE_JIRA_BASE       = 'https://kingpowerclick.atlassian.net/browse/';
 
 var ISSUE_CACHE_CONFIG = {
-  ttlMinutes: 60,
+  ttlMinutes: 180,
   prefix:     'gdb_issue_',
   enabled:    true,
 };

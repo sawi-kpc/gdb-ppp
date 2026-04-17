@@ -101,7 +101,7 @@ var CHANNEL_REGISTRY = {
    other apps using the same localStorage.
 ────────────────────────────────────────────────────────────── */
 var CACHE_CONFIG = {
-  ttlMinutes:  60,          /* cache lifetime in minutes */
+  ttlMinutes:  180,          /* cache lifetime in minutes */
   prefix:      'gdb_ch_',   /* localStorage key prefix   */
   enabled:     true,        /* set false to disable       */
 };

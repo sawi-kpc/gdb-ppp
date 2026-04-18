@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Online Business: Recovery Plan</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+[data-theme="dark"] {
+  --accent: #2dd4a0; --accent-dim: #1a9e78; --warn: #f59e0b;
+  --text: #dde8f4; --text-muted: #8aabcc; --text-dim: #4a6e8a;
+  --bg: #0b1f36; --bg-card: #0f2744; --bg-hover: #162f4a;
+  --bg-header: #091c30; --section-hdr: #122848;
+  --border: rgba(45,212,160,0.18); --border-sub: rgba(255,255,255,0.07); --border-mid: rgba(255,255,255,0.14);
+  --shadow: rgba(0,0,0,0.35); --on-accent: #061420;
+  --check-bd: #3d6e90; --sub-check-bd: #2e5570;
+}
+[data-theme="day"] {
+  --accent: #0d9968; --accent-dim: #0b7d55; --warn: #b86e00;
+  --text: #142232; --text-muted: #3a5870; --text-dim: #7698b0;
+  --bg: #eef2f7; --bg-card: #ffffff; --bg-hover: #f0f5fb;
+  --bg-header: #ffffff; --section-hdr: #f4f8ff;
+  --border: rgba(13,153,104,0.22); --border-sub: rgba(0,0,0,0.07); --border-mid: rgba(0,0,0,0.14);
+  --shadow: rgba(0,0,0,0.08); --on-accent: #ffffff;
+  --check-bd: #6fa8c8; --sub-check-bd: #92bdd4;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'IBM Plex Sans Thai',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:80px;transition:background .25s,color .25s}
+
+/* HEADER */
+.hd{background:var(--bg-header);border-bottom:1px solid var(--border);padding:18px 28px 16px;position:sticky;top:0;z-index:100;box-shadow:0 2px 10px var(--shadow)}
+.hd-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.hd h1{font-size:19px;font-weight:600;letter-spacing:-.3px}
+.hd h1 span{color:var(--accent)}
+.hd-meta{font-size:11px;color:var(--text-dim);margin-top:3px;font-family:'IBM Plex Mono',monospace}
+.hd-acts{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+
+/* THEME TOGGLE */
+.thm-btn{display:flex;align-items:center;gap:5px;background:var(--bg-card);border:1px solid var(--border-sub);border-radius:16px;padding:4px 10px 4px 7px;cursor:pointer;font-size:12px;color:var(--text-muted);font-family:'IBM Plex Sans Thai',sans-serif;font-weight:500;transition:all .15s}
+.thm-btn:hover{border-color:var(--border-mid);color:var(--text)}
+.thm-icon{font-size:14px;line-height:1}
+
+/* BUTTONS */
+.btn{font-family:'IBM Plex Sans Thai',sans-serif;font-size:12px;font-weight:500;padding:5px 11px;border-radius:5px;border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:5px}
+.btn-p{background:var(--accent);color:var(--on-accent)}
+.btn-p:hover{opacity:.85}
+.btn-g{background:transparent;color:var(--text-muted);border:1px solid var(--border-sub)}
+.btn-g:hover{background:var(--bg-hover);color:var(--text);border-color:var(--border-mid)}
+
+/* LAYOUT */
+.wrap{max-width:960px;margin:0 auto;padding:24px 18px}
+
+/* PROGRESS */
+.prog-wrap{background:var(--bg-card);border:1px solid var(--border-sub);border-radius:8px;padding:11px 16px;margin-bottom:20px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 4px var(--shadow)}
+.prog-lbl{font-size:11px;color:var(--text-muted);font-family:'IBM Plex Mono',monospace;white-space:nowrap}
+.prog-track{flex:1;height:4px;background:var(--border-sub);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s}
+.prog-pct{font-size:12px;font-weight:600;color:var(--accent);font-family:'IBM Plex Mono',monospace;white-space:nowrap}
+
+/* SECTION */
+.sec{background:var(--bg-card);border:1px solid var(--border-sub);border-radius:10px;margin-bottom:12px;overflow:hidden;transition:border-color .2s;box-shadow:0 1px 5px var(--shadow)}
+.sec:hover{border-color:var(--border-mid)}
+.sec-hdr{display:flex;align-items:center;background:var(--section-hdr);border-bottom:1px solid var(--border-sub);cursor:pointer;user-select:none;min-height:50px}
+.sec-tog{padding:14px 11px 14px 15px;color:var(--accent);font-size:10px;transition:transform .2s;flex-shrink:0}
+.sec-tog.open{transform:rotate(90deg)}
+.sec-tw{flex:1;padding:11px 0;display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden}
+
+/* SECTION TITLE */
+.sec-title{font-size:13px;font-weight:600;color:var(--text);outline:none;background:transparent;border:none;font-family:'IBM Plex Sans Thai',sans-serif;cursor:text;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:360px;flex-shrink:1}
+.sec-title:focus{color:var(--accent);outline:none}
+
+/* TIMEFRAME BADGE */
+.sec-tf{font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--on-accent);background:var(--accent-dim);padding:2px 8px;border-radius:10px;white-space:nowrap;flex-shrink:0;outline:none;border:none;cursor:text;font-weight:500}
+.sec-tf:focus{opacity:.8;outline:none}
+.sec-tf:empty:before{content:attr(data-placeholder);opacity:.6;font-style:italic}
+
+.sec-stats{font-size:11px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;padding:0 6px 0 4px;white-space:nowrap;flex-shrink:0}
+.sec-acts{padding:0 10px;display:flex;gap:4px;opacity:0;transition:opacity .15s;flex-shrink:0}
+.sec:hover .sec-acts{opacity:1}
+.sec-body{padding:0 0 6px}
+
+/* DAY GROUP */
+.day-lbl{display:flex;align-items:center;gap:8px;padding:8px 15px 6px;border-top:1px solid var(--border-sub)}
+.day-tag{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;color:var(--on-accent);background:var(--accent-dim);padding:2px 7px;border-radius:4px;flex-shrink:0;outline:none;border:none;cursor:text}
+.day-tag:focus{opacity:.8;outline:none}
+.day-tag.go{background:#16a34a}
+.day-tag.fin{background:#7c3aed}
+.day-phase{font-size:11px;color:var(--text-dim);font-style:italic;outline:none;border:none;background:transparent;cursor:text;font-family:'IBM Plex Sans Thai',sans-serif}
+.day-phase:focus{color:var(--text-muted);outline:none}
+
+/* TASK */
+.task{border-top:1px solid var(--border-sub);transition:background .1s}
+.task:hover{background:var(--bg-hover)}
+.task-main{display:flex;align-items:flex-start}
+
+/* BIG CHECKBOX */
+.t-chk-w{padding:11px 7px 11px 16px;flex-shrink:0;cursor:pointer}
+.t-chk{width:16px;height:16px;border:1.5px solid var(--check-bd);border-radius:4px;display:flex;align-items:center;justify-content:center;transition:all .15s;background:transparent;flex-shrink:0}
+.t-chk.on{background:var(--accent);border-color:var(--accent)}
+.t-chk.on::after{content:'';width:8px;height:5px;border-left:2px solid var(--on-accent);border-bottom:2px solid var(--on-accent);transform:rotate(-45deg) translate(1px,-1px);display:block}
+
+.t-cnt{flex:1;padding:9px 5px 9px 3px;min-width:0}
+.t-title-row{display:flex;align-items:center;gap:6px}
+.t-title{font-size:13px;font-weight:500;color:var(--text);outline:none;border:none;background:transparent;font-family:'IBM Plex Sans Thai',sans-serif;flex:1;min-width:0;cursor:text;line-height:1.4}
+.t-title:focus{color:var(--accent);outline:none}
+.t-title.done{color:var(--text-dim);text-decoration:line-through}
+.t-exp{font-size:10px;color:var(--text-dim);cursor:pointer;padding:2px 5px;border-radius:4px;background:transparent;border:1px solid var(--border-sub);transition:all .15s;flex-shrink:0;font-family:'IBM Plex Mono',monospace}
+.t-exp:hover{border-color:var(--border-mid);color:var(--text-muted);background:var(--bg-hover)}
+
+.t-meta{display:flex;align-items:center;gap:7px;margin-top:3px;flex-wrap:wrap}
+.t-pic{font-size:11px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;outline:none;border:none;background:transparent;cursor:text;min-width:10px}
+.t-pic:focus{color:var(--accent);outline:none}
+.t-sep{font-size:11px;color:var(--border-mid)}
+.t-due{font-size:11px;color:var(--warn);font-family:'IBM Plex Mono',monospace;outline:none;border:none;background:transparent;cursor:text;min-width:10px}
+.t-due:focus{opacity:.7;outline:none}
+
+/* SUBS */
+.t-subs{margin-top:5px;padding-left:1px;display:none}
+.t-subs.open{display:block}
+
+.sub{display:flex;align-items:flex-start;gap:5px;padding:2px 0}
+
+/* SMALL CHECKBOX for subs */
+.s-chk-w{flex-shrink:0;margin-top:3px;cursor:pointer;padding:1px}
+.s-chk{width:11px;height:11px;border:1.5px solid var(--sub-check-bd);border-radius:2px;display:flex;align-items:center;justify-content:center;transition:all .15s;background:transparent;flex-shrink:0}
+.s-chk.on{background:var(--accent);border-color:var(--accent)}
+.s-chk.on::after{content:'';width:5px;height:3px;border-left:1.5px solid var(--on-accent);border-bottom:1.5px solid var(--on-accent);transform:rotate(-45deg) translate(.5px,-.5px);display:block}
+
+.s-txt{font-size:12px;color:var(--text-muted);outline:none;border:none;background:transparent;font-family:'IBM Plex Sans Thai',sans-serif;flex:1;cursor:text;line-height:1.5}
+.s-txt:focus{color:var(--text);outline:none}
+.s-txt.done{color:var(--text-dim);text-decoration:line-through}
+.s-del{font-size:10px;color:var(--text-dim);cursor:pointer;padding:1px 4px;border-radius:3px;background:transparent;border:none;opacity:0;transition:opacity .1s;margin-top:2px}
+.sub:hover .s-del{opacity:1}
+.s-del:hover{background:rgba(239,68,68,.12);color:#f87171}
+
+.add-sub{font-size:11px;color:var(--text-dim);cursor:pointer;padding:3px 7px;border-radius:4px;background:transparent;border:1px dashed var(--border-sub);margin-top:5px;transition:all .15s;display:inline-flex;align-items:center;gap:4px;font-family:'IBM Plex Sans Thai',sans-serif}
+.add-sub:hover{border-color:var(--accent);color:var(--accent)}
+
+.t-right{padding:9px 13px 9px 5px;display:flex;gap:3px;opacity:0;transition:opacity .15s;flex-shrink:0;align-items:flex-start}
+.task:hover .t-right{opacity:1}
+.ico-btn{background:transparent;border:none;cursor:pointer;color:var(--text-dim);padding:3px;border-radius:4px;font-size:12px;transition:all .15s;display:flex;align-items:center}
+.ico-btn:hover{background:rgba(239,68,68,.1);color:#f87171}
+
+.add-task-row{padding:6px 15px 10px;border-top:1px dashed var(--border-sub)}
+.add-task{font-size:12px;color:var(--text-dim);cursor:pointer;padding:6px;border-radius:5px;background:transparent;border:1px dashed var(--border-sub);transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px;font-family:'IBM Plex Sans Thai',sans-serif;width:100%}
+.add-task:hover{border-color:var(--accent);color:var(--accent);background:rgba(45,212,160,.04)}
+
+.add-sec-wrap{margin-top:8px;text-align:center}
+.add-sec{font-size:13px;color:var(--text-dim);cursor:pointer;padding:10px 20px;border-radius:8px;background:var(--bg-card);border:1px dashed var(--border);transition:all .2s;display:inline-flex;align-items:center;gap:8px;font-family:'IBM Plex Sans Thai',sans-serif;font-weight:500}
+.add-sec:hover{border-color:var(--accent);color:var(--accent);background:rgba(45,212,160,.04)}
+
+.toast{position:fixed;bottom:22px;right:22px;background:var(--accent);color:var(--on-accent);font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;padding:8px 14px;border-radius:6px;opacity:0;transform:translateY(8px);transition:all .2s;pointer-events:none;z-index:999}
+.toast.show{opacity:1;transform:translateY(0)}
+
+.notes{background:var(--bg-card);border:1px solid rgba(245,158,11,.25);border-radius:8px;padding:13px 16px;margin-top:18px;box-shadow:0 1px 4px var(--shadow)}
+.notes-ttl{font-size:11px;font-weight:600;color:var(--warn);margin-bottom:7px;font-family:'IBM Plex Mono',monospace}
+.note{font-size:12px;color:var(--warn);margin-bottom:4px;line-height:1.6;opacity:.8}
+
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-thumb{background:var(--border-sub);border-radius:3px}
+
+[contenteditable]:empty:before{content:attr(data-placeholder);color:var(--text-dim);font-style:italic;pointer-events:none}
+[contenteditable]:focus{outline:none}
+</style>
+</head>
+<body>
+
+<div class="hd">
+  <div class="hd-top">
+    <div>
+      <h1>Online Business: <span>Recovery Plan</span></h1>
+      <div class="hd-meta">Tentative Go-live: 24 Apr 2026 &nbsp;·&nbsp; Updated from MOM 17 Apr 2026</div>
+    </div>
+    <div class="hd-acts">
+      <div id="syncStatus" style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;padding:4px 8px;background:var(--bg-card);border:1px solid var(--border-sub);border-radius:12px">
+        <span id="syncDot" style="width:7px;height:7px;border-radius:50%;background:#888;flex-shrink:0;transition:background .3s"></span>
+        <span id="syncLbl">—</span>
+      </div>
+      <button class="thm-btn" onclick="toggleTheme()" id="thmBtn">
+        <span class="thm-icon" id="thmIcon">☀️</span>
+        <span id="thmLbl">Day mode</span>
+      </button>
+      <button class="btn btn-g" onclick="expandAll()">↕ Expand</button>
+      <button class="btn btn-g" onclick="collapseAll()">↕ Collapse</button>
+      <button class="btn btn-p" onclick="saveData()">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="prog-wrap">
+    <span class="prog-lbl">Overall Progress</span>
+    <div class="prog-track"><div class="prog-fill" id="pFill" style="width:0%"></div></div>
+    <span class="prog-pct" id="pPct">0 / 0</span>
+  </div>
+  <div id="secWrap"></div>
+  <div class="add-sec-wrap">
+    <button class="add-sec" onclick="addSection()">＋ Add Section</button>
+  </div>
+  <div class="notes">
+    <div class="notes-ttl">⚠ หมายเหตุ</div>
+    <div class="note">• PVT ต้องปรับเป็นการซื้อมากกว่า 24 ชม. เพื่อเป็น Stock ของ Warehouse (เดิม 2–24 ชม. ใช้ stock สนามบินเชียงใหม่)</div>
+    <div class="note">• Article ที่ใช้ใน Test ให้ PO คุยเพิ่มเติมกับแต่ละ Channel อีกครั้ง</div>
+    <div class="note">• KPD Online ไม่รวมในรอบ Manual STO — ใช้ Auto-gen STO ตามปกติสำหรับ Flight date ตั้งแต่ 25 Apr</div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Saved ✓</div>
+
+<script>
+// ── GitHub Config ──────────────────────────────────────────────────────────
+const GH = {
+  owner: 'sawi-kpc',
+  repo:  'gdb-ppp',
+  file:  'plan-data.json',
+  token: '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',  // replace after regenerating
+  branch: 'main',
+};
+const GH_API = `https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.file}`;
+
+let ghSha = null; // tracks current file SHA for updates
+
+async function ghLoad() {
+  setStatus('loading');
+  try {
+    const r = await fetch(GH_API + `?ref=${GH.branch}&t=${Date.now()}`, {
+      headers: { Authorization: `token ${GH.token}`, Accept: 'application/vnd.github.v3+json' }
+    });
+    if (r.status === 404) { setStatus('ready'); return null; } // file not yet created
+    if (!r.ok) throw new Error(`GitHub GET ${r.status}`);
+    const j = await r.json();
+    ghSha = j.sha;
+    const content = JSON.parse(atob(j.content.replace(/\n/g,'')));
+    setStatus('ready');
+    return content;
+  } catch(e) {
+    setStatus('error', e.message);
+    return null;
+  }
+}
+
+async function ghSave(data) {
+  setStatus('saving');
+  const body = {
+    message: `update plan-data ${new Date().toISOString()}`,
+    content: btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2)))),
+    branch: GH.branch,
+  };
+  if (ghSha) body.sha = ghSha;
+  try {
+    const r = await fetch(GH_API, {
+      method: 'PUT',
+      headers: {
+        Authorization: `token ${GH.token}`,
+        Accept: 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+    if (!r.ok) {
+      const err = await r.json();
+      throw new Error(err.message || `GitHub PUT ${r.status}`);
+    }
+    const j = await r.json();
+    ghSha = j.content.sha;
+    setStatus('saved');
+    toast('Saved to GitHub ✓');
+  } catch(e) {
+    setStatus('error', e.message);
+    toast('Save failed: ' + e.message);
+  }
+}
+
+function setStatus(state, msg) {
+  const el = document.getElementById('syncStatus');
+  const dot = document.getElementById('syncDot');
+  const lbl = document.getElementById('syncLbl');
+  const map = {
+    loading: ['#f59e0b', 'Loading...'],
+    saving:  ['#f59e0b', 'Saving...'],
+    saved:   ['#2dd4a0', 'Synced'],
+    ready:   ['#2dd4a0', 'Ready'],
+    error:   ['#ef4444', msg || 'Error'],
+  };
+  const [color, text] = map[state] || ['#888', state];
+  dot.style.background = color;
+  lbl.textContent = text;
+  if (state === 'saving' || state === 'loading') {
+    dot.style.animation = 'pulse 1s infinite';
+  } else {
+    dot.style.animation = 'none';
+  }
+}
+
+// Auto-refresh every 30s to pick up other people's changes
+let lastSaveTime = 0;
+setInterval(async () => {
+  if (Date.now() - lastSaveTime < 5000) return; // skip if just saved
+  const fresh = await ghLoad();
+  if (fresh && fresh.sections) {
+    S = fresh;
+    render();
+  }
+}, 30000);
+
+const KEY = 'rp_v4_cache'; // local cache only as fallback
+
+const DEF = { sections: [
+  { id:'s1', title:'1. eCommerce System Preparation', tf:'18–19 Apr', open:true, groups:[
+    { day:'18–19 Apr', phase:'System Readiness', tasks:[
+      { id:'t1', done:false, open:true, title:'Config STO Matrix (ecom-th) & SAP Reporting', pic:'EIO-SAP (Jakarut)', due:'18 Apr',
+        subs:[{t:'Confirm ความพร้อมกลับมาภายใน 18 Apr',d:false},{t:'POS STO & RSV Tracking Report พร้อมสำหรับ PVT แล้ว',d:false}]},
+      { id:'t2', done:false, open:true, title:'Checker & MP Report (ecom-th / ecom-cn)', pic:'CLE', due:'18 Apr',
+        subs:[{t:'Config posting date เป็นวันปัจจุบัน — พร้อม PVT',d:false},{t:'MP Report ทั้ง 2 ระบบ confirm พร้อมแล้ว',d:false}]},
+      { id:'t3', done:false, open:true, title:'Picking/Packing Process & Interface Packed Status', pic:'CLE / Operation', due:'18 Apr',
+        subs:[{t:'Picking/Packing ทุก Site พร้อมให้ WH/Logistics ทำ PVT วันที่ 20 Apr',d:false},{t:'เพิ่มการตรวจสอบ Interface Packed Status กลับไปยัง Platforms',d:false}]},
+      { id:'t4', done:false, open:false, title:'POS Online (Collection Point) ที่สนามบิน', pic:'CLE / Operation', due:'18 Apr',
+        subs:[{t:'Confirm พร้อมสำหรับ PVT แล้ว',d:false}]},
+    ]}
+  ]},
+  { id:'s2', title:'2. Test Plan eCommerce', tf:'17–20 Apr', open:true, groups:[
+    { day:'17–19 Apr', phase:'Prepare Test Scenarios', tasks:[
+      { id:'t5', done:false, open:true, title:'จัดทำ Test Scenarios เพิ่มเติม', pic:'PO (The Able) · GDB', due:'19 Apr',
+        subs:[{t:'Scenario 1: Full loop การซื้อขายจริง (ยกเว้นฝั่งจีน)',d:false},{t:'Scenario 2: Void ภายในวัน — ก่อนแพค (ทุก Platform) / หลังแพค (Firster, KP-CN)',d:false},{t:'Scenario 3: ซื้อแบบ GWP ของ KP.com และ Firster',d:false}]},
+      { id:'t6', done:false, open:false, title:'ประสาน PM อัพเดทความคืบหน้าช่วง Weekend', pic:'PO · PM', due:'19 Apr',
+        subs:[{t:'คุยเพิ่มเติมเรื่อง Article ที่ใช้ใน Test กับแต่ละ Channel',d:false}]},
+    ]},
+    { day:'20 Apr', phase:'PVT บน Production', tasks:[
+      { id:'t7', done:false, open:true, title:'PVT end-to-end บน Production — ทุก Scenario', pic:'PO / GDB / Logistics / Accounting / CLE / Operation', due:'20 Apr',
+        subs:[{t:'ทีมครบทุก function ร่วม PVT พร้อมกัน',d:false},{t:'PVT ต้องปรับเป็นการซื้อมากกว่า 24 ชม. เพื่อให้เป็น Stock ของ Warehouse',d:false}]},
+      { id:'t8', done:false, open:false, title:'Confirm next steps กับ EOI จากผล PVT', pic:'The Able · EOI · GDB', due:'20 Apr',
+        subs:[{t:'อัพเดท PM ความคืบหน้าและ issue ที่พบ',d:false}]},
+    ]}
+  ]},
+  { id:'s3', title:'3. Reconcile Order & Stock', tf:'18–20 Apr', open:true, groups:[
+    { day:'18–20 Apr', phase:'Sales Order Reconciliation', tasks:[
+      { id:'t9', done:false, open:true, title:'All Platform — Clear Sales Error & ยอดขาย Diff', pic:"P'Nan (SAP) · P'Aoy (Accounting)", due:'18 Apr',
+        subs:[{t:'ตรวจ Order ที่ไม่เข้า OMS (F1, Tiktok, THT, Home delivery)',d:false},{t:'Update Diff รายการ DMALL/JD (Non-Freezone) ก่อนนำเข้า SAP',d:false}]},
+      { id:'t10', done:false, open:true, title:"KPD Online — ส่งข้อมูล Resales Offline (Flight 24 Mar–24 Apr)", pic:"K'Jin (Shop) · K'Earth (GDB)", due:'18–19 Apr',
+        subs:[{t:'ส่งข้อมูลทุก Website / สนามบิน ให้ GDB Recheck',d:false},{t:"หลัง Recheck ส่งต่อให้ K'Peung, P'Ly, K'Nang ดำเนินการต่อ",d:false}]},
+      { id:'t11', done:false, open:true, title:'F1 / Tiktok / THT — Map SKU & Consolidate Order', pic:"K'Plug (PO) · P'Tai (GDB) · K'May (Logistics)", due:'18–19 Apr',
+        subs:[{t:'ส่งข้อมูล Order & Sales Amount ให้ GDB Map SKU',d:false},{t:'Consolidate แล้วส่งให้ Logistics ตรวจสอบ Record',d:false}]},
+      { id:'t12', done:false, open:true, title:'JD / Dmall — Map SKU & Reconcile Amount', pic:"N'Aom (PO CN) · P'Boy/P'Tai (GDB)", due:'18–19 Apr',
+        subs:[{t:'Dmall Freezone: reconcile กับ OMS ก่อน → Recheck order ที่ Amount Diff ~5,000 THB',d:false},{t:'JD: ดึง SKU & Quantity จาก item ใน Order แล้ว consolidate',d:false}]},
+      { id:'t13', done:false, open:false, title:'MJet — Resend ยอดขายที่ค้างใน OMS', pic:'Team SAP', due:'18 Apr',
+        subs:[{t:'OMS ส่งข้อมูลกลับ SAP ด้วย invoice no. ใหม่ → Clear รายการออก',d:false}]},
+    ]},
+    { day:'18–20 Apr', phase:'Stock Reconciliation', tasks:[
+      { id:'t14', done:false, open:false, title:'SAP Break Auto-gen STO → Manual Create STO ทุก Platform', pic:"P'Oat (SAP)", due:'18 Apr',
+        subs:[{t:'ทำก่อนเพื่อให้ทุก platform ใช้ Manual STO สำหรับ clear order เก่า',d:false}]},
+      { id:'t15', done:false, open:true, title:'Home Delivery — Manual gen STO & GI/GR', pic:"K'May (Logistics) · K'Mac (SAP)", due:'18–20 Apr',
+        subs:[{t:'ส่ง Excel record → Manual gen STO by order (confirm storage location ก่อน)',d:false},{t:'ทำ GI, GR WH/Shop บน SAP และ Pack บน POS',d:false}]},
+      { id:'t16', done:false, open:true, title:'F1 / Tiktok / THT — Manual gen STO & GI/GR', pic:"K'Mac (SAP) · K'May (Logistics)", due:'19–20 Apr',
+        subs:[{t:'Manual gen STO by order (STO ของ THT แยก import ก่อน Rekey)',d:false},{t:'ทำ GI, GR WH/Shop บน SAP และ Pack บน POS',d:false}]},
+      { id:'t17', done:false, open:true, title:'JD / Dmall — Manual gen STO & GI/GR', pic:"K'Mac (SAP) · K'May (Logistics)", due:'19–20 Apr',
+        subs:[{t:'Manual gen STO by order (confirm storage location ก่อน)',d:false},{t:'ทำ GI, GR WH/Shop บน SAP และ Pack บน POS',d:false}]},
+      { id:'t18', done:false, open:false, title:'KPD Online — ไม่ต้อง Gen STO ในรอบนี้', pic:'–', due:'25 Apr+',
+        subs:[{t:'Flight date ตั้งแต่ 25 Apr กลับมาใช้ Auto-gen STO ตามปกติ',d:false}]},
+      { id:'t19', done:false, open:true, title:'MJet — Manual gen STO + Backdate POS', pic:"K'Mac (SAP) · K'Jeab (Hub) · P'Keng (POS)", due:'19–21 Apr',
+        subs:[{t:'Manual gen STO → GI, GR WH/Hub บน SAP + Pack บน POS',d:false},{t:'Backdate POS สำหรับ Order ที่ไม่ได้ Pack ภายใน 4 เดือน (4/4/26)',d:false}]},
+    ]}
+  ]},
+  { id:'s4', title:'4. Final Check & Go-live', tf:'21–24 Apr', open:true, groups:[
+    { day:'21–22 Apr', phase:'Clear STO & Rekey', tasks:[
+      { id:'t20', done:false, open:true, title:'Clear STO ที่ค้างอยู่ทั้งหมด และ Rekey orders เข้าระบบ', pic:'The Able · Logistics · Shop · GDB · SAP', due:'22 Apr',
+        subs:[{t:'SAP Manual Create STO เพื่อ clear order เก่าทุกรายการ',d:false},{t:'Rekey = นำ Order ที่ Pack เรียบร้อยแล้วมาตัด Stock สินค้าบนระบบ',d:false}]},
+    ]},
+    { day:'23 Apr', phase:'System Readiness Final Check', tasks:[
+      { id:'t21', done:false, open:true, title:'Verify stock sync & price sync — ทุก Channel', pic:'The Able · GDB · Logistics', due:'23 Apr',
+        subs:[{t:'ตรวจ KP.com / Firster / KP-CN (Wechat, JD, Dmall) ครบทุก channel',d:false},{t:'Channel ใดพร้อมก่อน สามารถ go-live ได้ทันทีโดยไม่ต้องรอ 24 Apr',d:false}]},
+    ]},
+    { day:'24 Apr', phase:'Tentative Go-live', tasks:[
+      { id:'t22', done:false, open:false, title:'🟢 Online Channels Reopen — Tentative', pic:'All Teams', due:'24 Apr',
+        subs:[{t:'Channel ที่ confirm พร้อมจากการตรวจวันที่ 23 Apr proceed to go-live',d:false}]},
+    ]}
+  ]}
+]};
+
+// State — start with cache, then overwrite from GitHub
+let S;
+function migrateState(raw) {
+  raw.sections.forEach(sec => {
+    if (!sec.tf) sec.tf = '';
+    sec.groups.forEach(g => g.tasks.forEach(t => {
+      t.subs = (t.subs||[]).map(s => typeof s==='string' ? {t:s,d:false} : (s.text!==undefined ? {t:s.text,d:s.done||false} : s));
+    }));
+  });
+  return raw;
+}
+try {
+  const sv = localStorage.getItem(KEY);
+  S = sv ? migrateState(JSON.parse(sv)) : JSON.parse(JSON.stringify(DEF));
+} catch(e) { S = JSON.parse(JSON.stringify(DEF)); }
+
+let ic = 1000;
+const uid = () => 'u'+(++ic)+'_'+Date.now();
+
+// Theme
+let theme = localStorage.getItem('rp_theme')||'dark';
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  document.getElementById('thmIcon').textContent = t==='dark' ? '☀️' : '🌙';
+  document.getElementById('thmLbl').textContent = t==='dark' ? 'Day mode' : 'Dark mode';
+  localStorage.setItem('rp_theme', t);
+  theme = t;
+}
+applyTheme(theme);
+function toggleTheme() { applyTheme(theme==='dark'?'day':'dark'); }
+
+// Save
+function saveData() {
+  syncDOM();
+  try { localStorage.setItem(KEY, JSON.stringify(S)); toast('Saved ✓'); }
+  catch(e) { toast('Save failed'); }
+}
+
+function syncDOM() {
+  document.querySelectorAll('.sec').forEach(el => {
+    const sid = el.dataset.sid;
+    const sec = S.sections.find(s=>s.id===sid); if (!sec) return;
+    const te = el.querySelector('.sec-title'); if (te) sec.title = te.textContent.trim();
+    const tfe = el.querySelector('.sec-tf'); if (tfe) sec.tf = tfe.textContent.trim();
+    el.querySelectorAll('.task').forEach(te2 => {
+      const tid = te2.dataset.tid;
+      const task = findT(tid); if (!task) return;
+      const ttl = te2.querySelector('.t-title'); if (ttl) task.title = ttl.textContent.trim();
+      const pic = te2.querySelector('.t-pic'); if (pic) task.pic = pic.textContent.trim();
+      const due = te2.querySelector('.t-due'); if (due) task.due = due.textContent.trim();
+      const ns = [];
+      te2.querySelectorAll('.sub').forEach(si => {
+        const st = si.querySelector('.s-txt');
+        const sc = si.querySelector('.s-chk');
+        ns.push({ t: st ? st.textContent.trim() : '', d: sc ? sc.classList.contains('on') : false });
+      });
+      task.subs = ns;
+    });
+  });
+}
+
+function findT(tid) { for (const s of S.sections) for (const g of s.groups) { const t=g.tasks.find(t=>t.id===tid); if(t) return t; } return null; }
+function findTG(tid) { for (const s of S.sections) for (const g of s.groups) { const t=g.tasks.find(t=>t.id===tid); if(t) return {s,g,t}; } return null; }
+
+function updProg() {
+  let tot=0,dn=0;
+  for (const s of S.sections) for (const g of s.groups) { tot+=g.tasks.length; dn+=g.tasks.filter(t=>t.done).length; }
+  const pct = tot ? Math.round(dn/tot*100) : 0;
+  document.getElementById('pFill').style.width = pct+'%';
+  document.getElementById('pPct').textContent = `${dn} / ${tot} tasks`;
+}
+
+// Render
+function render() {
+  const w = document.getElementById('secWrap'); w.innerHTML='';
+  S.sections.forEach(s => w.appendChild(mkSec(s)));
+  updProg();
+}
+
+function mkSec(sec) {
+  const el = document.createElement('div');
+  el.className='sec'; el.dataset.sid=sec.id;
+
+  // Header
+  const hdr = document.createElement('div'); hdr.className='sec-hdr';
+
+  const tog = document.createElement('div');
+  tog.className='sec-tog'+(sec.open?' open':''); tog.textContent='▶';
+  tog.onclick = e => { e.stopPropagation(); toggleSec(sec.id); };
+
+  const tw = document.createElement('div'); tw.className='sec-tw';
+  tw.onclick = e => { if(e.target===tw) toggleSec(sec.id); };
+
+  const ttl = document.createElement('span'); ttl.className='sec-title';
+  ttl.contentEditable='true'; ttl.textContent=sec.title;
+  ttl.setAttribute('data-placeholder','Section title...');
+  ttl.onclick=e=>e.stopPropagation();
+  ttl.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();ttl.blur();}};
+
+  const tf = document.createElement('span'); tf.className='sec-tf';
+  tf.contentEditable='true'; tf.textContent=sec.tf||'';
+  tf.setAttribute('data-placeholder','Timeframe...');
+  tf.onclick=e=>e.stopPropagation();
+  tf.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();tf.blur();}};
+
+  tw.appendChild(ttl); tw.appendChild(tf);
+
+  let tot=0,dn=0;
+  sec.groups.forEach(g=>{tot+=g.tasks.length;dn+=g.tasks.filter(t=>t.done).length;});
+  const st = document.createElement('span'); st.className='sec-stats'; st.textContent=`${dn}/${tot}`;
+
+  const acts = document.createElement('div'); acts.className='sec-acts';
+  const db = document.createElement('button'); db.className='btn btn-g'; db.style.fontSize='11px'; db.style.padding='3px 8px';
+  db.textContent='✕ Remove';
+  db.onclick=e=>{e.stopPropagation();if(confirm('Remove section?')){S.sections=S.sections.filter(s=>s.id!==sec.id);render();}};
+  acts.appendChild(db);
+
+  hdr.appendChild(tog); hdr.appendChild(tw); hdr.appendChild(st); hdr.appendChild(acts);
+  el.appendChild(hdr);
+
+  const body = document.createElement('div'); body.className='sec-body';
+  if (!sec.open) body.style.display='none';
+  sec.groups.forEach(g => body.appendChild(mkGrp(g)));
+
+  const ar = document.createElement('div'); ar.className='add-task-row';
+  const ab = document.createElement('button'); ab.className='add-task'; ab.textContent='＋ Add task';
+  ab.onclick=()=>{
+    const g=sec.groups[sec.groups.length-1]||(()=>{const ng={day:'New Day',phase:'Phase',tasks:[]};sec.groups.push(ng);return ng;})();
+    g.tasks.push({id:uid(),done:false,open:true,title:'New task',pic:'PIC',due:'',subs:[]});
+    render();
+  };
+  ar.appendChild(ab); body.appendChild(ar);
+  el.appendChild(body);
+  return el;
+}
+
+function mkGrp(grp) {
+  const el = document.createElement('div'); el.className='day-grp';
+  const lbl = document.createElement('div'); lbl.className='day-lbl';
+
+  const dt = document.createElement('span');
+  dt.className='day-tag'+(grp.day.includes('24 Apr')?' go':grp.day.includes('23')?' fin':'');
+  dt.contentEditable='true'; dt.textContent=grp.day;
+  dt.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();dt.blur();}};
+
+  const ph = document.createElement('span'); ph.className='day-phase';
+  ph.contentEditable='true'; ph.textContent=grp.phase;
+  ph.setAttribute('data-placeholder','Phase...');
+  ph.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();ph.blur();}};
+
+  lbl.appendChild(dt); lbl.appendChild(ph); el.appendChild(lbl);
+  grp.tasks.forEach(t => el.appendChild(mkTask(t)));
+  return el;
+}
+
+function mkTask(task) {
+  const el = document.createElement('div'); el.className='task'; el.dataset.tid=task.id;
+  const mn = document.createElement('div'); mn.className='task-main';
+
+  // Big checkbox
+  const cw = document.createElement('div'); cw.className='t-chk-w';
+  const ck = document.createElement('div'); ck.className='t-chk'+(task.done?' on':'');
+  cw.onclick=()=>{ task.done=!task.done; ck.classList.toggle('on',task.done); ttl.classList.toggle('done',task.done); updProg(); };
+  cw.appendChild(ck);
+
+  const cnt = document.createElement('div'); cnt.className='t-cnt';
+  const trow = document.createElement('div'); trow.className='t-title-row';
+
+  const ttl = document.createElement('span'); ttl.className='t-title'+(task.done?' done':'');
+  ttl.contentEditable='true'; ttl.textContent=task.title;
+  ttl.setAttribute('data-placeholder','Task...');
+  ttl.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();ttl.blur();}};
+
+  const exp = document.createElement('button'); exp.className='t-exp';
+  exp.textContent=task.open?'▲ hide':'▼ detail';
+  exp.onclick=()=>{ task.open=!task.open; exp.textContent=task.open?'▲ hide':'▼ detail'; subs.classList.toggle('open',task.open); };
+
+  trow.appendChild(ttl);
+  if (task.subs&&task.subs.length>0) trow.appendChild(exp);
+
+  const meta = document.createElement('div'); meta.className='t-meta';
+  const pic = document.createElement('span'); pic.className='t-pic'; pic.contentEditable='true';
+  pic.textContent=task.pic||''; pic.setAttribute('data-placeholder','PIC...');
+  pic.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();pic.blur();}};
+  const sep = document.createElement('span'); sep.className='t-sep'; sep.textContent='·';
+  const due = document.createElement('span'); due.className='t-due'; due.contentEditable='true';
+  due.textContent=task.due||''; due.setAttribute('data-placeholder','Due...');
+  due.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();due.blur();}};
+  meta.appendChild(pic); meta.appendChild(sep); meta.appendChild(due);
+
+  // Subs
+  const subs = document.createElement('div'); subs.className='t-subs'+(task.open?' open':'');
+  (task.subs||[]).forEach((s,i) => subs.appendChild(mkSub(s,i,task,subs,trow,exp)));
+
+  const asb = document.createElement('button'); asb.className='add-sub'; asb.textContent='＋ add note';
+  asb.onclick=()=>{
+    task.subs=task.subs||[];
+    const ns={t:'',d:false}; task.subs.push(ns);
+    task.open=true; subs.classList.add('open'); exp.textContent='▲ hide';
+    if(!trow.contains(exp)) trow.appendChild(exp);
+    const nr=mkSub(ns,task.subs.length-1,task,subs,trow,exp);
+    subs.insertBefore(nr,asb);
+    nr.querySelector('.s-txt').focus();
+  };
+  subs.appendChild(asb);
+
+  cnt.appendChild(trow); cnt.appendChild(meta); cnt.appendChild(subs);
+
+  const rt = document.createElement('div'); rt.className='t-right';
+  const db = document.createElement('button'); db.className='ico-btn'; db.textContent='✕';
+  db.onclick=()=>{ const f=findTG(task.id); if(f){f.g.tasks=f.g.tasks.filter(t=>t.id!==task.id);el.remove();updProg();} };
+  rt.appendChild(db);
+
+  mn.appendChild(cw); mn.appendChild(cnt); mn.appendChild(rt);
+  el.appendChild(mn);
+  return el;
+}
+
+function mkSub(sub, idx, task, subsEl, trow, exp) {
+  const row = document.createElement('div'); row.className='sub';
+
+  // Small checkbox
+  const scw = document.createElement('div'); scw.className='s-chk-w';
+  const sc = document.createElement('div'); sc.className='s-chk'+(sub.d?' on':'');
+  scw.onclick=()=>{ sub.d=!sub.d; sc.classList.toggle('on',sub.d); stxt.classList.toggle('done',sub.d); };
+  scw.appendChild(sc);
+
+  const stxt = document.createElement('span'); stxt.className='s-txt'+(sub.d?' done':'');
+  stxt.contentEditable='true'; stxt.textContent=sub.t;
+  stxt.setAttribute('data-placeholder','Note...');
+  stxt.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();stxt.blur();}};
+  stxt.oninput=()=>{ sub.t=stxt.textContent; };
+
+  const db = document.createElement('button'); db.className='s-del'; db.textContent='✕';
+  db.onclick=()=>{
+    const items=Array.from(subsEl.querySelectorAll('.sub'));
+    const i=items.indexOf(row); if(i>=0) task.subs.splice(i,1);
+    row.remove();
+    if(task.subs.length===0&&trow.contains(exp)) exp.remove();
+  };
+
+  row.appendChild(scw); row.appendChild(stxt); row.appendChild(db);
+  return row;
+}
+
+function toggleSec(sid) {
+  const sec=S.sections.find(s=>s.id===sid); if(!sec) return;
+  sec.open=!sec.open;
+  const el=document.querySelector(`.sec[data-sid="${sid}"]`); if(!el) return;
+  el.querySelector('.sec-tog').classList.toggle('open',sec.open);
+  el.querySelector('.sec-body').style.display=sec.open?'':'none';
+}
+
+function expandAll() { S.sections.forEach(s=>{s.open=true;s.groups.forEach(g=>g.tasks.forEach(t=>{t.open=true;}));}); render(); }
+function collapseAll() { S.sections.forEach(s=>{s.open=false;s.groups.forEach(g=>g.tasks.forEach(t=>{t.open=false;}));}); render(); }
+
+function addSection() {
+  syncDOM();
+  const n=S.sections.length+1;
+  S.sections.push({id:uid(),title:`${n}. New Section`,tf:'Date range',open:true,
+    groups:[{day:'Date',phase:'Phase',tasks:[{id:uid(),done:false,open:true,title:'New task',pic:'PIC',due:'',subs:[]}]}]});
+  render();
+  setTimeout(()=>window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'}),50);
+}
+
+function toast(msg) {
+  const t=document.getElementById('toast'); t.textContent=msg;
+  t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+async function saveData() {
+  syncDOM();
+  localStorage.setItem(KEY, JSON.stringify(S));
+  lastSaveTime = Date.now();
+  await ghSave(S);
+}
+
+// Debounced auto-save
+document.addEventListener('input',()=>{ clearTimeout(window._st); window._st=setTimeout(saveData,2000); });
+
+// Init: show cached data immediately, then load fresh from GitHub
+render();
+setStatus('loading');
+ghLoad().then(fresh => {
+  if (fresh && fresh.sections) {
+    S = migrateState(fresh);
+    render();
+  } else {
+    setStatus('ready');
+  }
+});
+</script>
+</body>
+</html>

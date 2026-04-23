@@ -113,57 +113,55 @@ function _durLabel(ms) {
   return (h/24).toFixed(1)+'d';
 }
 function buildIncidentTimeline(d) {
-  var F   = d.FailureOccurs     ? new Date(d.FailureOccurs)     : null;
-  var C   = d.CorrectionBegins  ? new Date(d.CorrectionBegins)  : null;
-  var R   = d.FailureResolved   ? new Date(d.FailureResolved)   : null;
+  var F   = d.FailureOccurs    ? new Date(d.FailureOccurs)    : null;
+  var C   = d.CorrectionBegins ? new Date(d.CorrectionBegins) : null;
+  var R   = d.FailureResolved  ? new Date(d.FailureResolved)  : null;
   var NOW = new Date();
+
   var detectMs  = (F && C) ? C - F : null;
   var fixMs     = (C && R) ? R - C : null;
   var totalMs   = (F && R) ? R - F : null;
   var ongoingMs = (C && !R) ? NOW - C : null;
-  var segments  = [];
+
+  /* ── Progress bar segments ── */
+  var segments = [];
   if (F && C && R) {
     var tot = R - F;
     var w1  = Math.max(Math.round((C-F)/tot*100), 8);
-    segments = [
-      {cls:'detect',  w:w1,     dur:_durLabel(detectMs)},
-      {cls:'resolved',w:100-w1, dur:_durLabel(fixMs)},
-    ];
+    segments = [{cls:'detect',w:w1,dur:_durLabel(detectMs)},{cls:'resolved',w:100-w1,dur:_durLabel(fixMs)}];
   } else if (F && C && !R) {
     var dw = Math.max(Math.round((C-F)/((NOW-F)||1)*100), 15);
-    segments = [
-      {cls:'detect', w:dw,     dur:_durLabel(detectMs)},
-      {cls:'ongoing',w:100-dw, dur:(_durLabel(ongoingMs)||'0m')+' so far'},
-    ];
+    segments = [{cls:'detect',w:dw,dur:_durLabel(detectMs)},{cls:'ongoing',w:100-dw,dur:(_durLabel(ongoingMs)||'0m')+' so far'}];
   } else if (C) {
     segments = [{cls:'ongoing',w:100,dur:(_durLabel(NOW-C)||'0m')+' so far'}];
   } else if (F) {
     segments = [{cls:'ongoing',w:100,dur:_durLabel(NOW-F)}];
   }
   if (!segments.length) return '';
+
+  /* ── Bar (6px) ── */
   var barHtml = segments.map(function(s){
-    return '<div class="itl-seg '+s.cls+'" style="flex:'+s.w+'" title="'+s.dur+'">'+
-      (s.w>=15 ? s.dur : '') +'</div>';
+    return '<div class="itl-seg '+s.cls+'" style="flex:'+s.w+'" title="'+s.dur+'">'+(s.w>=18?s.dur:'')+'</div>';
   }).join('');
-  var mils = [];
-  if (F) mils.push({l:'⬤ Detected',v:_fmtDateTime(d.FailureOccurs)});
-  if (C) mils.push({l:'⬤ Fix started',v:_fmtDateTime(d.CorrectionBegins)});
-  if (R) mils.push({l:'⬤ Resolved',v:_fmtDateTime(d.FailureResolved)});
-  else   mils.push({l:'⬤ Ongoing',v:'<span style="color:var(--down)">pending</span>'});
-  var markHtml = '<div class="itl-marks" style="grid-template-columns:repeat('+mils.length+',1fr)">'+
-    mils.map(function(m){
-      return '<div class="itl-mark"><div class="itl-mark-label">'+m.l+'</div>'+
-             '<div class="itl-mark-val">'+m.v+'</div></div>';
-    }).join('')+'</div>';
-  var durs = '';
-  if (detectMs)  durs += '<span class="itl-dur d-detect">⏱ Response: '+_durLabel(detectMs)+'</span>';
-  if (fixMs)     durs += '<span class="itl-dur d-fix">🔧 Fix time: '+_durLabel(fixMs)+'</span>';
-  if (totalMs)   durs += '<span class="itl-dur d-total">✓ MTTR: '+_durLabel(totalMs)+'</span>';
-  if (ongoingMs) durs += '<span class="itl-dur d-ongoing">● Ongoing: '+_durLabel(ongoingMs)+'</span>';
-  return '<div class="itl"><div class="itl-title">Incident timeline</div>'+
-    '<div class="itl-bar-wrap"><div class="itl-bar-track">'+barHtml+'</div></div>'+
-    markHtml+(durs?'<div class="itl-durations">'+durs+'</div>':'')+
-  '</div>';
+
+  /* ── Single line: dots + datetimes + pipe + metrics ── */
+  var pts = [];
+  if (F) pts.push('<span class="itl-dot dtc"></span><span class="itl-ts">'+_fmtDateTime(d.FailureOccurs)+'</span>');
+  if (C) pts.push('<span class="itl-dot fix"></span><span class="itl-ts">'+_fmtDateTime(d.CorrectionBegins)+'</span>');
+  if (R) pts.push('<span class="itl-dot res"></span><span class="itl-ts">'+_fmtDateTime(d.FailureResolved)+'</span>');
+  else   pts.push('<span class="itl-dot ong"></span><span style="color:var(--down);font-size:10px">pending</span>');
+
+  pts.push('<span class="itl-pipe"></span>');
+
+  if (detectMs)  pts.push('<span class="itl-met">Response: '+_durLabel(detectMs)+'</span>');
+  if (fixMs)     pts.push('<span class="itl-met itl-fix">Fix: '+_durLabel(fixMs)+'</span>');
+  if (totalMs)   pts.push('<span class="itl-met itl-ok">MTTR: '+_durLabel(totalMs)+'</span>');
+  if (ongoingMs) pts.push('<span class="itl-met itl-ong">Ongoing: '+_durLabel(ongoingMs)+'</span>');
+
+  return '<div class="itl">'
+    + '<div class="itl-bar-track">'+barHtml+'</div>'
+    + '<div class="itl-row">'+pts.join('')+'</div>'
+    + '</div>';
 }
 
 /* ── Filter pipeline ─────────────────────────────────────── */

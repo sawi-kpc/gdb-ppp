@@ -211,14 +211,12 @@ body.has-init-subnav { padding-top: calc(var(--header-h) + var(--nav-h)) !import
         <div class="tbl-scroll">
           <table class="itbl">
             <thead><tr>
-              <th onclick="sortIssueBy('Key')">Key</th>
-              <th onclick="sortIssueBy('Summary')">Summary</th>
+              <th onclick="sortIssueBy('Key')" style="white-space:nowrap">Key</th>
+              <th onclick="sortIssueBy('Summary')">Summary &amp; Details</th>
               <th onclick="sortIssueBy('Status')">Status</th>
-              <th onclick="sortIssueBy('Priority')">Priority</th>
-              <th onclick="sortIssueBy('Severity')">Severity</th>
-              <th onclick="sortIssueBy('Assignee')">Assignee</th>
-              <th onclick="sortIssueBy('Due')">Due date</th>
-              <th>Timeline</th>
+              <th onclick="sortIssueBy('Priority')" style="white-space:nowrap">Priority</th>
+              <th onclick="sortIssueBy('Severity')" style="white-space:nowrap">Severity</th>
+              <th onclick="sortIssueBy('Due')" style="white-space:nowrap">Due date</th>
             </tr></thead>
             <tbody id="issue-tbody"></tbody>
           </table>

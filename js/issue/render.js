@@ -485,7 +485,7 @@ function buildTrendChart(data) {
   });
 
   /* ── Build sorted labels ────────────────────────────── */
-  var allKeys = [...new Set([...Object.keys(created), ...Object.keys(done)])].sort();
+  var allKeys = Array.from(new Set([...Object.keys(created), ...Object.keys(done)])).sort();
   if (!allKeys.length) {
     el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">No date data available for chart</div>';
     return;

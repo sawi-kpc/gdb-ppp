@@ -492,81 +492,70 @@ function buildTrendChart(data) {
   var el = document.getElementById('issue-trend-chart');
   if (!el) return;
 
-  /* ── Group issues by period ─────────────────────────── */
   function _periodKey(raw) {
     if (!raw) return null;
     var d = new Date(String(raw).trim());
     if (isNaN(d.getTime())) return null;
     if (_trendPeriod === 'week') {
-      /* ISO week: year-Www */
       var jan4 = new Date(d.getFullYear(), 0, 4);
-      var week = Math.ceil(((d - jan4) / 86400000 + jan4.getDay() + 1) / 7);
-      return d.getFullYear() + '-W' + String(week).padStart(2, '0');
+      var w = Math.ceil(((d - jan4) / 86400000 + jan4.getDay() + 1) / 7);
+      return d.getFullYear() + '-W' + String(w).padStart(2, '0');
     }
-    /* month: YYYY-MM */
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
   }
-
-  /* ── Use FailureOccurs as "created date", FailureResolved as "done date" ─ */
-  /* If no FailureOccurs, use CorrectionBegins. If still none, skip for Created. */
-  /* Issues with Status Done/Resolved/Closed count in Done. */
-  /* FailureOccurs = when incident was detected (Created bar)
-     FailureResolved = when incident was fixed (Resolved bar)
-     Fallback: CorrectionBegins, then Due */
-  var created = {}, done = {};
-
-  data.forEach(function(d) {
-    var createdDate = d.FailureOccurs || d.CorrectionBegins || d.Due;
-    var ck = _periodKey(createdDate);
-    if (ck) created[ck] = (created[ck] || 0) + 1;
-
-    var resolvedDate = d.FailureResolved || '';
-    if (resolvedDate) {
-      var dk = _periodKey(resolvedDate);
-      if (dk) done[dk] = (done[dk] || 0) + 1;
-    }
-  });
-
-  /* ── Build sorted labels ────────────────────────────── */
-  var allKeys = Array.from(new Set([...Object.keys(created), ...Object.keys(done)])).sort();
-  if (!allKeys.length) {
-    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">No date data available for chart</div>';
-    return;
-  }
-
-  /* ── Format label ───────────────────────────────────── */
   function _label(k) {
     if (_trendPeriod === 'week') return k;
     var p = k.split('-');
     return _MONTHS[parseInt(p[1]) - 1] + ' ' + p[0];
   }
 
-  var labels    = allKeys.map(_label);
-  var createdVals = allKeys.map(function(k) { return created[k] || 0; });
-  var doneVals    = allKeys.map(function(k) { return done[k]    || 0; });
+  /* X-axis = FailureOccurs period (when the incident happened).
+     Stacked bars per period:
+       Bottom (green) = Resolved   — FailureResolved is set
+       Top    (red)   = Open/Pending — no FailureResolved yet  */
+  var resolved = {}, pending = {};
 
-  /* ── Destroy previous chart ─────────────────────────── */
+  data.forEach(function(d) {
+    var occDate = d.FailureOccurs || d.CorrectionBegins;
+    if (!occDate) return;
+    var ck = _periodKey(occDate);
+    if (!ck) return;
+    if (d.FailureResolved) {
+      resolved[ck] = (resolved[ck] || 0) + 1;
+    } else {
+      pending[ck] = (pending[ck] || 0) + 1;
+    }
+  });
+
+  var allKeys = Array.from(new Set(Object.keys(resolved).concat(Object.keys(pending)))).sort();
+  if (!allKeys.length) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">No incident date data (FailureOccurs) available</div>';
+    return;
+  }
+
+  var labels       = allKeys.map(_label);
+  var resolvedVals = allKeys.map(function(k){ return resolved[k] || 0; });
+  var pendingVals  = allKeys.map(function(k){ return pending[k]  || 0; });
+
   if (_trendChart) { _trendChart.destroy(); _trendChart = null; }
-
   var canvas = document.getElementById('issue-trend-canvas');
   if (!canvas) return;
   canvas.style.display = 'block';
 
-  /* ── Colors from CSS vars ───────────────────────────── */
-  var cCreated = getComputedStyle(document.documentElement).getPropertyValue('--down').trim()   || '#f85149';
-  var cDone    = getComputedStyle(document.documentElement).getPropertyValue('--up').trim()     || '#3fb950';
-  var cText    = getComputedStyle(document.documentElement).getPropertyValue('--text2').trim()  || '#8b949e';
-  var cGrid    = getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#30363d';
+  var cText = getComputedStyle(document.documentElement).getPropertyValue('--text2').trim() || '#8b949e';
+  var cGrid = getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#30363d';
 
   _trendChart = new Chart(canvas.getContext('2d'), {
     type: 'bar',
     data: {
       labels: labels,
       datasets: [
-        { label: 'Created / Detected', data: createdVals,
-          backgroundColor: '#f85149cc', borderColor: '#f85149', borderWidth: 1, borderRadius: 3 },
-        { label: 'Resolved / Done',    data: doneVals,
-          backgroundColor: '#3fb950cc', borderColor: '#3fb950', borderWidth: 1, borderRadius: 3 },
+        { label: 'Resolved',      data: resolvedVals,
+          backgroundColor: '#3fb950cc', borderColor: '#3fb950',
+          borderWidth: 1, borderRadius: 0, stack: 'st' },
+        { label: 'Open / Pending', data: pendingVals,
+          backgroundColor: '#f85149cc', borderColor: '#f85149',
+          borderWidth: 1, borderRadius: 3, stack: 'st' },
       ]
     },
     options: {
@@ -576,10 +565,12 @@ function buildTrendChart(data) {
         tooltip: { mode: 'index', intersect: false }
       },
       scales: {
-        x: { ticks: { color: cText, font: { size: 10 }, maxRotation: 45 },
-             grid:  { color: cGrid + '44' } },
-        y: { ticks: { color: cText, font: { size: 11 }, stepSize: 1 },
-             grid:  { color: cGrid + '44' }, beginAtZero: true,
+        x: { stacked: true,
+             ticks: { color: cText, font: { size: 10 }, maxRotation: 45 },
+             grid: { color: cGrid + '44' } },
+        y: { stacked: true, beginAtZero: true,
+             ticks: { color: cText, font: { size: 11 }, stepSize: 1 },
+             grid: { color: cGrid + '44' },
              title: { display: true, text: 'Issues', color: cText, font: { size: 11 } } }
       }
     }
@@ -598,90 +589,144 @@ function setTrendPeriod(period, btn) {
    COMPONENT × SEVERITY CHART — grouped bar chart
    X-axis = component (short name), bars grouped by severity
 ══════════════════════════════════════════════════════════════ */
-var _compSevChart = null;
+var _compSevChart = null; /* kept for compat — not used in table mode */
 
 function buildCompSevChart(data) {
   var el = document.getElementById('issue-compsev-chart');
   if (!el) return;
 
-  var SEVERITIES = ['Critical', 'Major', 'Moderate', 'Low'];
-  var SEV_COLORS = {
-    'Critical': '#f85149',
-    'Major':    '#f97316',
-    'Moderate': '#f5a524',
-    'Low':      '#3fb950',
-  };
+  /* hide canvas — we use HTML table instead */
+  var canvas = document.getElementById('issue-compsev-canvas');
+  if (canvas) canvas.style.display = 'none';
 
-  /* Collect all components */
-  var compSet = {}, seen = {};
+  var SEVERITIES = ['Critical', 'Major', 'Moderate', 'Low'];
+  var SEV_COLORS = { 'Critical':'#f85149','Major':'#f97316','Moderate':'#f5a524','Low':'#3fb950' };
+  var SEV_BG    = { 'Critical':'rgba(248,81,73,.12)','Major':'rgba(249,115,22,.10)',
+                    'Moderate':'rgba(245,165,36,.10)','Low':'rgba(63,185,80,.10)' };
+
+  /* Collect components */
+  var seen = {};
   data.forEach(function(d) {
     (d.Components||'').split(';').forEach(function(c) {
-      c = c.trim();
-      if (c) { seen[c] = true; }
+      c = c.trim(); if (c) seen[c] = true;
     });
   });
   var comps = Object.keys(seen).sort();
-  /* Shorten component names for display */
-  function _short(c) {
-    return c.replace('firster-', 'F1-')
-            .replace('kingpower-commerce-', 'KP-')
-            .replace('-marketplace-cn', '-CN')
-            .replace('-social-commerce', '')
-            .replace('-pharmacy', '');
-  }
-  var labels = comps.map(_short);
 
-  /* Count issues per component × severity */
-  var datasets = SEVERITIES.map(function(sev) {
-    var vals = comps.map(function(comp) {
-      return data.filter(function(d) {
-        return d.Severity === sev &&
-               (d.Components||'').split(';').some(function(c){ return c.trim() === comp; });
-      }).length;
+  function _short(c) {
+    return c.replace('firster-commerce','F1-Web')
+            .replace('firster-tiktok-social-commerce','F1-TikTok')
+            .replace('kingpower-commerce-th','KP-TH')
+            .replace('kingpower-commerce-cn','KP-CN')
+            .replace('kingpower-douyin-social-commerce','KP-Douyin')
+            .replace('jd-phamacy-marketplace-cn','JD-CN')
+            .replace('taihaitao-commerce-cn','THT');
+  }
+
+  /* Build 2D matrix: cell[sev][comp] = count */
+  var matrix = {};
+  var rowTotals = {}, colTotals = {};
+  var grand = 0;
+  SEVERITIES.forEach(function(s) { matrix[s] = {}; rowTotals[s] = 0; });
+  comps.forEach(function(c) { colTotals[c] = 0; });
+
+  data.forEach(function(d) {
+    var sev = d.Severity || '';
+    if (!matrix[sev]) return;
+    (d.Components||'').split(';').forEach(function(c) {
+      c = c.trim(); if (!c) return;
+      matrix[sev][c] = (matrix[sev][c] || 0) + 1;
+      rowTotals[sev]++;
+      colTotals[c] = (colTotals[c] || 0) + 1;
+      grand++;
     });
-    return {
-      label: sev,
-      data: vals,
-      backgroundColor: SEV_COLORS[sev] + 'cc',
-      borderColor:     SEV_COLORS[sev],
-      borderWidth: 1,
-      borderRadius: 3,
-    };
-  }).filter(function(ds) {
-    return ds.data.some(function(v){ return v > 0; });
   });
 
-  if (!labels.length || !datasets.length) {
-    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">No component data available</div>';
+  /* Filter out empty rows/cols */
+  var activeSevs = SEVERITIES.filter(function(s){ return rowTotals[s] > 0; });
+  var activeComps = comps.filter(function(c){ return colTotals[c] > 0; });
+
+  if (!activeSevs.length || !activeComps.length) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">No severity/component data</div>';
     return;
   }
 
-  if (_compSevChart) { _compSevChart.destroy(); _compSevChart = null; }
-  var canvas = document.getElementById('issue-compsev-canvas');
-  if (!canvas) return;
-  canvas.style.display = 'block';
+  /* Build HTML table */
+  var th = function(txt, style) {
+    return '<th style="padding:5px 8px;font-size:10px;font-weight:700;color:var(--text3);'
+         + 'text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;border-bottom:1px solid var(--border);'
+         + (style||'') + '">' + txt + '</th>';
+  };
 
-  var cText = getComputedStyle(document.documentElement).getPropertyValue('--text2').trim() || '#8b949e';
-  var cGrid = getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#30363d';
+  var html = '<div style="overflow-x:auto;padding:4px">'
+           + '<table style="width:100%;border-collapse:collapse;font-size:11px">'
+           + '<thead><tr>'
+           + th('Severity \\ Component', 'text-align:left;min-width:90px');
 
-  _compSevChart = new Chart(canvas.getContext('2d'), {
-    type: 'bar',
-    data: { labels: labels, datasets: datasets },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { labels: { color: cText, font: { size: 10 } }, position: 'top' },
-        tooltip: { mode: 'index', intersect: false }
-      },
-      scales: {
-        x: { ticks: { color: cText, font: { size: 9 }, maxRotation: 45 },
-             grid: { color: cGrid + '44' } },
-        y: { ticks: { color: cText, font: { size: 10 }, stepSize: 1 },
-             grid: { color: cGrid + '44' }, beginAtZero: true,
-             title: { display: true, text: 'Issues', color: cText, font: { size: 10 } } }
-      }
-    }
+  activeComps.forEach(function(c) {
+    html += th(_short(c), 'text-align:center;min-width:70px');
   });
+  html += th('Total', 'text-align:center;min-width:60px');
+  html += '</tr></thead><tbody>';
+
+  activeSevs.forEach(function(sev) {
+    html += '<tr>';
+    /* Severity label cell */
+    html += '<td style="padding:6px 8px;font-weight:700;color:' + SEV_COLORS[sev]
+          + ';white-space:nowrap;border-bottom:1px solid var(--border22);background:' + SEV_BG[sev] + '">'
+          + sev + '</td>';
+
+    activeComps.forEach(function(c) {
+      var count = matrix[sev][c] || 0;
+      var rowPct = rowTotals[sev] > 0 ? Math.round(count / rowTotals[sev] * 100) : 0;
+      var colPct = colTotals[c]   > 0 ? Math.round(count / colTotals[c]   * 100) : 0;
+      /* cell intensity — based on % of row total */
+      var intensity = rowTotals[sev] > 0 ? count / rowTotals[sev] : 0;
+      var alpha = count > 0 ? (0.08 + intensity * 0.5).toFixed(2) : '0';
+      var bg = count > 0
+        ? 'rgba(' + hexToRgb(SEV_COLORS[sev]) + ',' + alpha + ')'
+        : 'transparent';
+
+      html += '<td style="padding:5px 6px;text-align:center;border-bottom:1px solid var(--border22);background:' + bg + '">';
+      if (count > 0) {
+        html += '<div style="font-weight:700;font-size:13px;color:var(--text)">' + count + '</div>'
+              + '<div style="font-size:9px;color:var(--text2)">row ' + rowPct + '% · col ' + colPct + '%</div>';
+      } else {
+        html += '<span style="color:var(--text3)">—</span>';
+      }
+      html += '</td>';
+    });
+
+    /* Row total */
+    var rowPct = grand > 0 ? Math.round(rowTotals[sev] / grand * 100) : 0;
+    html += '<td style="padding:5px 8px;text-align:center;font-weight:700;border-bottom:1px solid var(--border22);background:var(--surface2)">'
+          + rowTotals[sev]
+          + '<div style="font-size:9px;color:var(--text2)">' + rowPct + '%</div>'
+          + '</td>';
+    html += '</tr>';
+  });
+
+  /* Column totals row */
+  html += '<tr style="background:var(--surface2)">';
+  html += '<td style="padding:6px 8px;font-weight:700;color:var(--text2);font-size:10px;text-transform:uppercase">Total</td>';
+  activeComps.forEach(function(c) {
+    var colPct = grand > 0 ? Math.round(colTotals[c] / grand * 100) : 0;
+    html += '<td style="padding:5px 6px;text-align:center;font-weight:700">'
+          + colTotals[c]
+          + '<div style="font-size:9px;color:var(--text2)">' + colPct + '%</div>'
+          + '</td>';
+  });
+  html += '<td style="padding:5px 8px;text-align:center;font-weight:700">' + grand + '</td>';
+  html += '</tr></tbody></table></div>';
+
+  el.innerHTML = html;
+}
+
+function hexToRgb(hex) {
+  var r = parseInt(hex.slice(1,3),16);
+  var g = parseInt(hex.slice(3,5),16);
+  var b = parseInt(hex.slice(5,7),16);
+  return r + ',' + g + ',' + b;
 }
 
 /* ── Main init ───────────────────────────────────────────── */

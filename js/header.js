@@ -63,7 +63,8 @@ function gdbSetCacheBadge(state, label) {
 function buildGdbHeader(opts) {
   /* Apply saved theme before rendering to avoid flash */
   (function() {
-    var t = localStorage.getItem('gdb_theme') || 'dark';
+    var t = 'dark';
+    try { t = localStorage.getItem('gdb_theme') || 'dark'; } catch(e) {}
     if (t !== 'dark' && t !== 'dark-warm' && t !== 'light') t = 'dark';
     document.documentElement.setAttribute('data-theme', t);
     document.documentElement.style.removeProperty('background');
@@ -183,7 +184,7 @@ function buildGdbHeader(opts) {
         try {
           Object.keys(localStorage)
             .filter(function(k) { return k.startsWith('gdb_'); })
-            .forEach(function(k) { localStorage.removeItem(k); });
+            .forEach(function(k) { try { localStorage.removeItem(k); } catch(e) {} });
         } catch(e) {}
       }
       var badge = document.getElementById('gdb-cache-badge');
@@ -217,7 +218,7 @@ function buildGdbHeader(opts) {
       var next  = cycle[cur] || 'dark';
       document.documentElement.setAttribute('data-theme', next);
       document.documentElement.style.removeProperty('background');
-      localStorage.setItem('gdb_theme', next);
+      try { localStorage.setItem('gdb_theme', next); } catch(e) {}
       _syncThemeBtn();
       if (typeof rebuildCharts === 'function') setTimeout(rebuildCharts, 40);
     });

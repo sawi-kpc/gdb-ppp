@@ -350,31 +350,74 @@ function buildTable(data) {
     data.length + ' issue' + (data.length !== 1 ? 's' : '');
   if (!data.length) {
     document.getElementById('issue-tbody').innerHTML =
-      '<tr><td colspan="10" style="padding:24px;text-align:center;color:var(--text3)">No issues match this filter.</td></tr>';
+      '<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--text3)">No issues match this filter.</td></tr>';
     return;
   }
+
   document.getElementById('issue-tbody').innerHTML = data.map(function(d) {
     var overdue = d.Due && d.Status !== 'Done' && d.Status !== 'Closed' && new Date(d.Due) < new Date();
-    return '<tr>'
-      +'<td><a href="'+ISSUE_JIRA_BASE+d.Key+'" target="_blank" '+
-        'style="color:var(--accent);font-weight:700;text-decoration:none;white-space:nowrap">'+
-        d.Key+' ↗</a></td>'
-      +'<td style="min-width:220px;max-width:360px">'+d.Summary+'</td>'
-      +'<td>'+_statusTag(d.Status)+'</td>'
-      +'<td>'+(d.Priority
-        ?'<span style="font-size:11px;font-weight:600;color:'+_pColor(d.Priority)+'">'+d.Priority+'</span>'
-        :'—')+'</td>'
-      +'<td>'+(d.Severity
-        ?'<span style="font-size:11px;font-weight:600;color:'+_sColor(d.Severity)+'">'+d.Severity+'</span>'
-        :'—')+'</td>'
-      +'<td style="font-size:11px;white-space:nowrap">'+(d.Assignee||'<span style="color:var(--down)">—</span>')+'</td>'
-      +'<td style="font-size:11px;white-space:nowrap">'
-        +(d.Due ? '<span style="color:'+(overdue?'var(--down)':'var(--text2)')+'">'+ _fmtDate(d.Due)+'</span>' : '—')
-      +'</td>'
-      +'<td>'+(d.FailureOccurs||d.CorrectionBegins
-        ?'<span style="font-size:9px;color:var(--amber)">Has timeline</span>'
-        :'—')+'</td>'
-    +'</tr>';
+    var hasTL   = d.FailureOccurs || d.CorrectionBegins || d.FailureResolved;
+
+    /* row 1 — main columns */
+    var compsHtml = (d.Components||'').split(';').filter(Boolean).map(function(c) {
+      return '<span style="font-size:9px;padding:1px 5px;border-radius:8px;'
+           + 'background:var(--surface2);border:1px solid var(--border);color:var(--text3)">'
+           + c.trim() + '</span>';
+    }).join('');
+    var assigneeHtml = d.Assignee
+      ? '<span style="font-size:10px;color:var(--text3)">&#128100; ' + d.Assignee + '</span>'
+      : '';
+
+    var row1 = '<tr>'
+      + '<td style="white-space:nowrap;vertical-align:top;padding:8px 10px ' + (hasTL?'2px':'8px') + '">'
+          + '<a href="' + ISSUE_JIRA_BASE + d.Key + '" target="_blank" '
+          + 'style="color:var(--accent);font-weight:700;text-decoration:none">' + d.Key + ' ↗</a>'
+      + '</td>'
+      + '<td style="max-width:420px;vertical-align:top;padding:8px 10px ' + (hasTL?'2px':'8px') + '">'
+          + '<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500" title="' + d.Summary + '">'
+              + d.Summary
+          + '</div>'
+          + (compsHtml || assigneeHtml
+            ? '<div style="display:flex;gap:4px;margin-top:3px;flex-wrap:wrap;align-items:center">'
+                + compsHtml + (assigneeHtml ? '<span style="margin-left:4px">' + assigneeHtml + '</span>' : '')
+              + '</div>'
+            : '')
+      + '</td>'
+      + '<td style="vertical-align:top;padding:8px 10px ' + (hasTL?'2px':'8px') + '">'
+          + _statusTag(d.Status)
+      + '</td>'
+      + '<td style="vertical-align:top;padding:8px 10px ' + (hasTL?'2px':'8px') + ';font-size:11px;white-space:nowrap">'
+          + (d.Priority ? '<span style="font-weight:600;color:' + _pColor(d.Priority) + '">' + d.Priority + '</span>' : '—')
+      + '</td>'
+      + '<td style="vertical-align:top;padding:8px 10px ' + (hasTL?'2px':'8px') + ';font-size:11px;white-space:nowrap">'
+          + (d.Severity ? '<span style="font-weight:600;color:' + _sColor(d.Severity) + '">' + d.Severity + '</span>' : '—')
+      + '</td>'
+      + '<td style="vertical-align:top;padding:8px 10px ' + (hasTL?'2px':'8px') + ';font-size:11px;white-space:nowrap">'
+          + (d.Due ? '<span style="color:' + (overdue?'var(--down)':'var(--text2)') + '">' + _fmtDate(d.Due) + '</span>' : '—')
+      + '</td>'
+      + '</tr>';
+
+    /* row 2 — incident timeline */
+    var row2 = '';
+    if (hasTL) {
+      var tlHtml = buildIncidentTimeline(d);
+      if (tlHtml) {
+        row2 = '<tr>'
+          + '<td colspan="6" style="padding:2px 10px 10px;border-bottom:1px solid var(--border)">'
+              + '<div style="background:var(--surface2);border-radius:7px;padding:10px 14px">'
+                  + tlHtml
+              + '</div>'
+          + '</td>'
+          + '</tr>';
+      } else {
+        row1 = row1.replace('</tr>', '<td style="border-bottom:1px solid var(--border)"></td></tr>');
+      }
+    } else {
+      /* add bottom border via style on last cell */
+      row1 = row1.replace(/padding:8px 10px 8px">/g, 'padding:8px 10px;border-bottom:1px solid var(--border)">');
+    }
+
+    return row1 + row2;
   }).join('');
 }
 

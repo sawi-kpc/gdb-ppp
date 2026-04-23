@@ -179,21 +179,26 @@ body.has-init-subnav { padding-top: calc(var(--header-h) + var(--nav-h)) !import
         <div style="font-size:10px;color:var(--text3);margin-left:4px;align-self:center">(multi-select)</div>
       </div>
 
-      <!-- Dropdown filters -->
-      <div class="ctrl-bar">
+      <!-- Dropdown filters: Priority + Severity + RootCause -->
+      <div class="ctrl-bar" style="margin-bottom:6px">
         <select class="ctrl-select" id="filter-priority" onchange="onDropdownChange()">
           <option value="all">All priorities</option>
         </select>
         <select class="ctrl-select" id="filter-severity" onchange="onDropdownChange()">
           <option value="all">All severity</option>
         </select>
-        <select class="ctrl-select" id="filter-component" onchange="onDropdownChange()">
-          <option value="all">All components</option>
+        <select class="ctrl-select" id="filter-rootcause" onchange="onDropdownChange()">
+          <option value="all">All root causes</option>
         </select>
         <div class="ctrl-sep"></div>
         <div class="ctrl-search">
           <input type="text" id="issue-search" placeholder="Search…" oninput="applyFilters()">
         </div>
+      </div>
+      <!-- Component multi-select pills -->
+      <div style="display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+        <span style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;padding-top:5px;white-space:nowrap;flex-shrink:0">Components</span>
+        <div id="comp-filter" style="display:flex;gap:4px;flex-wrap:wrap;flex:1"></div>
       </div>
 
       <!-- Board view -->
@@ -223,20 +228,33 @@ body.has-init-subnav { padding-top: calc(var(--header-h) + var(--nav-h)) !import
     </div>
   </div><!-- /panel -->
 
-  <!-- Trend chart panel -->
-  <div class="panel" style="margin-bottom:14px">
-    <div class="panel-head">
-      <div>
-        <div class="panel-title">Issue Trend — Created vs Resolved</div>
-        <div class="panel-sub">Incidents detected and resolved over time</div>
+  <!-- Charts row: Trend + Component×Severity -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+    <div class="panel">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">Issue Trend — Created vs Resolved</div>
+          <div class="panel-sub">Failure Occurs vs Failure Resolved over time</div>
+        </div>
+        <div style="display:flex;gap:4px">
+          <button class="trend-period-btn vbtn active" onclick="setTrendPeriod('month',this)">Monthly</button>
+          <button class="trend-period-btn vbtn" onclick="setTrendPeriod('week',this)">Weekly</button>
+        </div>
       </div>
-      <div style="display:flex;gap:4px">
-        <button class="trend-period-btn vbtn active" onclick="setTrendPeriod('month',this)">Monthly</button>
-        <button class="trend-period-btn vbtn" onclick="setTrendPeriod('week',this)">Weekly</button>
+      <div class="panel-body" id="issue-trend-chart" style="height:220px;position:relative">
+        <canvas id="issue-trend-canvas" style="display:none"></canvas>
       </div>
     </div>
-    <div class="panel-body" id="issue-trend-chart" style="height:220px;position:relative">
-      <canvas id="issue-trend-canvas" style="display:none"></canvas>
+    <div class="panel">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">Issues by Component &amp; Severity</div>
+          <div class="panel-sub">Severity breakdown per component</div>
+        </div>
+      </div>
+      <div id="issue-compsev-chart" style="height:220px;position:relative;padding:8px">
+        <canvas id="issue-compsev-canvas" style="display:none"></canvas>
+      </div>
     </div>
   </div>
 

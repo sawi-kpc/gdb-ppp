@@ -80,28 +80,35 @@
 .panel-sub   { font-size:11px;color:var(--text2);margin-top:2px }
 .panel-body  { padding:14px 16px }
 
-/* ── Incident timeline ───────────────────────────────────── */
-.itl { margin-top:4px;padding-top:4px;border-top:1px solid var(--border) }
-.itl-title { font-size:9px;font-weight:600;color:var(--text3);text-transform:uppercase;
-             letter-spacing:.06em;margin-bottom:3px }
-.itl-bar-track { display:flex;height:10px;border-radius:3px;overflow:hidden;gap:1px }
-.itl-seg { display:flex;align-items:center;justify-content:center;font-size:8px;
-           font-weight:700;color:#fff;overflow:hidden;padding:0 4px;cursor:default }
+/* ── Incident timeline — ultra compact ───────────────────── */
+.itl { margin-top:3px;padding-top:3px;border-top:1px solid rgba(48,54,61,.5) }
+.itl-bar-track { display:flex;height:6px;border-radius:3px;overflow:hidden;gap:1px;margin-bottom:3px }
+.itl-seg { display:flex;align-items:center;justify-content:center;font-size:7px;
+           font-weight:700;color:rgba(255,255,255,.9);overflow:hidden;padding:0 3px;cursor:default }
 .itl-seg.detect   { background:var(--text3) }
 .itl-seg.fixing   { background:var(--amber) }
 .itl-seg.resolved { background:var(--up) }
-.itl-seg.ongoing  { background:rgba(248,81,73,.7);animation:itl-pulse 2s ease-in-out infinite }
+.itl-seg.ongoing  { background:rgba(248,81,73,.75);animation:itl-pulse 2s ease-in-out infinite }
 @keyframes itl-pulse{0%,100%{opacity:.7}50%{opacity:1}}
-.itl-marks { display:grid;margin-top:5px;gap:4px }
-.itl-mark-label { font-size:8px;color:var(--text3) }
+/* Single info row */
+.itl-row { display:flex;align-items:center;gap:6px;flex-wrap:nowrap;
+           font-size:10px;color:var(--text2);overflow:hidden;white-space:nowrap }
+.itl-dot  { width:6px;height:6px;border-radius:50%;flex-shrink:0;display:inline-block }
+.itl-dot.dtc { background:var(--text3) }
+.itl-dot.fix { background:var(--amber) }
+.itl-dot.res { background:var(--up) }
+.itl-dot.ong { background:var(--down) }
+.itl-ts   { font-size:10px;color:var(--text2) }
+.itl-pipe { width:1px;height:10px;background:var(--border);flex-shrink:0;margin:0 2px }
+.itl-met  { font-size:10px;font-weight:600;color:var(--text3) }
+.itl-fix  { color:var(--amber) }
+.itl-ok   { color:var(--up) }
+.itl-ong  { color:var(--down) }
 .itl-mark-val   { font-size:9px;color:var(--text2);font-weight:600 }
-.itl-durations { display:flex;gap:5px;flex-wrap:wrap;margin-top:5px }
-.itl-dur { font-size:9px;padding:1px 5px;border-radius:3px;font-weight:600 }
 .itl-dur.d-detect  { background:rgba(72,79,88,.25);color:var(--text2) }
 .itl-dur.d-fix     { background:rgba(245,158,11,.15);color:var(--amber) }
 .itl-dur.d-total   { background:rgba(63,185,80,.1);color:var(--up) }
-.itl-dur.d-ongoing { background:rgba(248,81,73,.12);color:var(--down) }
-
+.itl-dur
 /* Issue page: ensure no initiative subnav shows */
 .gdb-init-subnav { display: none !important; }
 body.has-init-subnav { padding-top: calc(var(--header-h) + var(--nav-h)) !important; }

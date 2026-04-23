@@ -24,10 +24,11 @@ function _fmtDateTime(raw) {
 ══════════════════════════════════════════════════════════════ */
 
 /* ── State ───────────────────────────────────────────────── */
-var _filterStatuses = ['all']; /* array — 'all' means no filter */
-var _filterPriority = 'all';
-var _filterSeverity = 'all';
-var _filterComp     = 'all';
+var _filterStatuses  = ['all']; /* array — multi-select */
+var _filterPriority  = 'all';
+var _filterSeverity  = 'all';
+var _filterComps     = ['all']; /* array — multi-select */
+var _filterRootCause = 'all';
 var _searchQ        = '';
 var _sortCol        = 'Key';
 var _sortAsc        = true;
@@ -174,13 +175,19 @@ function _getFiltered() {
               (_filterStatuses.indexOf('Done') !== -1 && d.Status === 'Closed');
     var okP  = _filterPriority === 'all' || d.Priority === _filterPriority;
     var okSv = _filterSeverity === 'all' || d.Severity === _filterSeverity;
-    var okC  = _filterComp === 'all' ||
-               (d.Components||'').toLowerCase().includes(_filterComp.toLowerCase());
+    /* Components: multi-select — any selected comp must appear in issue's component list */
+    var okC  = _filterComps.indexOf('all') !== -1 ||
+               _filterComps.some(function(fc) {
+                 return (d.Components||'').toLowerCase().includes(fc.toLowerCase());
+               });
+    /* Root Cause filter */
+    var okRC = _filterRootCause === 'all' ||
+               (d.RootCause||'').toLowerCase().includes(_filterRootCause.toLowerCase());
     var q    = _searchQ.toLowerCase();
     var okQ  = !q || d.Key.toLowerCase().includes(q) ||
                d.Summary.toLowerCase().includes(q) ||
                (d.Assignee||'').toLowerCase().includes(q);
-    return okS && okP && okSv && okC && okQ;
+    return okS && okP && okSv && okC && okRC && okQ;
   }).sort(function(a, b) {
     var va = a[_sortCol] || '', vb = b[_sortCol] || '';
     if (va < vb) return _sortAsc ? -1 : 1;
@@ -225,37 +232,69 @@ function _sc(label, cls, num, sub) {
 
 /* ── Build dropdown filters ──────────────────────────────── */
 function buildDropdownFilters(data) {
-  /* Priority: fixed order from Jira */
   var PRIORITIES = ['Highest', 'High', 'Medium', 'Low', 'Lowest'];
   var SEVERITIES = ['Critical', 'Major', 'Moderate', 'Low'];
 
   document.getElementById('filter-priority').innerHTML =
     '<option value="all">All priorities</option>' +
-    PRIORITIES.map(function(p) {
-      return '<option value="' + p + '">' + p + '</option>';
-    }).join('');
+    PRIORITIES.map(function(p) { return '<option value="'+p+'">'+p+'</option>'; }).join('');
 
   document.getElementById('filter-severity').innerHTML =
-    '<option value="all">All severity levels</option>' +
-    SEVERITIES.map(function(s) {
-      return '<option value="' + s + '">' + s + '</option>';
-    }).join('');
+    '<option value="all">All severity</option>' +
+    SEVERITIES.map(function(s) { return '<option value="'+s+'">'+s+'</option>'; }).join('');
 
-  /* Components: dynamic from data */
-  var comps = [];
-  var seen  = {};
+  /* Components: dynamic pills (multi-select) */
+  var comps = [], seen = {};
   data.forEach(function(d) {
-    (d.Components || '').split(';').forEach(function(c) {
+    (d.Components||'').split(';').forEach(function(c) {
       c = c.trim();
       if (c && !seen[c]) { seen[c] = true; comps.push(c); }
     });
   });
   comps.sort();
-  document.getElementById('filter-component').innerHTML =
-    '<option value="all">All components</option>' +
-    comps.map(function(c) {
-      return '<option value="' + c + '">' + c + '</option>';
-    }).join('');
+  var compEl = document.getElementById('comp-filter');
+  if (compEl) {
+    var compHtml = '<button class="fb active" data-val="all" onclick="_setCompFilter(\x27all\x27,this)">All</button>';
+    comps.forEach(function(c) {
+      compHtml += '<button class="fb" data-val="' + c + '" onclick="_setCompFilter(\x27' + c + '\x27,this)">' + c + '</button>';
+    });
+    compEl.innerHTML = compHtml;
+  }
+
+  /* Root Cause: dynamic dropdown */
+  var rcs = [], rcSeen = {};
+  data.forEach(function(d) {
+    var rc = (d.RootCause||'').trim();
+    if (rc && !rcSeen[rc]) { rcSeen[rc] = true; rcs.push(rc); }
+  });
+  rcs.sort();
+  var rcEl = document.getElementById('filter-rootcause');
+  if (rcEl) {
+    rcEl.innerHTML =
+      '<option value="all">All root causes</option>' +
+      rcs.map(function(r) { return '<option value="'+r+'">'+r+'</option>'; }).join('');
+  }
+}
+
+/* Component multi-select toggle */
+function _setCompFilter(val, btn) {
+  if (val === 'all') {
+    _filterComps = ['all'];
+    document.querySelectorAll('#comp-filter .fb').forEach(function(b){b.classList.remove('active');});
+    btn.classList.add('active');
+  } else {
+    var ai = _filterComps.indexOf('all');
+    if (ai !== -1) _filterComps.splice(ai, 1);
+    var vi = _filterComps.indexOf(val);
+    if (vi !== -1) { _filterComps.splice(vi, 1); btn.classList.remove('active'); }
+    else           { _filterComps.push(val);      btn.classList.add('active'); }
+    if (_filterComps.length === 0) {
+      _filterComps = ['all'];
+      var allBtn = document.querySelector('#comp-filter .fb[data-val="all"]');
+      if (allBtn) allBtn.classList.add('active');
+    }
+  }
+  applyFilters();
 }
 
 /* ── BOARD VIEW (5-column kanban by status) ───────────────── */
@@ -391,7 +430,8 @@ function applyFilters() {
   var data = _getFiltered();
   if (_activeView === 'board') buildBoard(data);
   else buildTable(data);
-  buildTrendChart(data); /* update chart with same filtered data */
+  buildTrendChart(data);
+  buildCompSevChart(data);
 }
 function setStatusFilter(val, btn) {
   if (val === 'all') {
@@ -420,9 +460,10 @@ function setStatusFilter(val, btn) {
   applyFilters();
 }
 function onDropdownChange() {
-  _filterPriority = document.getElementById('filter-priority').value;
-  _filterSeverity = document.getElementById('filter-severity').value;
-  _filterComp     = document.getElementById('filter-component').value;
+  _filterPriority  = document.getElementById('filter-priority').value;
+  _filterSeverity  = document.getElementById('filter-severity').value;
+  var rcEl = document.getElementById('filter-rootcause');
+  _filterRootCause = rcEl ? rcEl.value : 'all';
   applyFilters();
 }
 function setIssueView(view, btn) {
@@ -469,6 +510,9 @@ function buildTrendChart(data) {
   /* ── Use FailureOccurs as "created date", FailureResolved as "done date" ─ */
   /* If no FailureOccurs, use CorrectionBegins. If still none, skip for Created. */
   /* Issues with Status Done/Resolved/Closed count in Done. */
+  /* FailureOccurs = when incident was detected (Created bar)
+     FailureResolved = when incident was fixed (Resolved bar)
+     Fallback: CorrectionBegins, then Due */
   var created = {}, done = {};
 
   data.forEach(function(d) {
@@ -476,10 +520,9 @@ function buildTrendChart(data) {
     var ck = _periodKey(createdDate);
     if (ck) created[ck] = (created[ck] || 0) + 1;
 
-    var ns = _normaliseStatus(d.Status);
-    if (ns === 'Done' || d.Status === 'Resolved') {
-      var doneDate = d.FailureResolved || d.CorrectionBegins || d.Due;
-      var dk = _periodKey(doneDate);
+    var resolvedDate = d.FailureResolved || '';
+    if (resolvedDate) {
+      var dk = _periodKey(resolvedDate);
       if (dk) done[dk] = (done[dk] || 0) + 1;
     }
   });
@@ -521,9 +564,9 @@ function buildTrendChart(data) {
       labels: labels,
       datasets: [
         { label: 'Created / Detected', data: createdVals,
-          backgroundColor: cCreated + '99', borderColor: cCreated, borderWidth: 1, borderRadius: 3 },
+          backgroundColor: '#f85149cc', borderColor: '#f85149', borderWidth: 1, borderRadius: 3 },
         { label: 'Resolved / Done',    data: doneVals,
-          backgroundColor: cDone + '99',    borderColor: cDone,    borderWidth: 1, borderRadius: 3 },
+          backgroundColor: '#3fb950cc', borderColor: '#3fb950', borderWidth: 1, borderRadius: 3 },
       ]
     },
     options: {
@@ -551,11 +594,102 @@ function setTrendPeriod(period, btn) {
 }
 
 
+/* ══════════════════════════════════════════════════════════════
+   COMPONENT × SEVERITY CHART — grouped bar chart
+   X-axis = component (short name), bars grouped by severity
+══════════════════════════════════════════════════════════════ */
+var _compSevChart = null;
+
+function buildCompSevChart(data) {
+  var el = document.getElementById('issue-compsev-chart');
+  if (!el) return;
+
+  var SEVERITIES = ['Critical', 'Major', 'Moderate', 'Low'];
+  var SEV_COLORS = {
+    'Critical': '#f85149',
+    'Major':    '#f97316',
+    'Moderate': '#f5a524',
+    'Low':      '#3fb950',
+  };
+
+  /* Collect all components */
+  var compSet = {}, seen = {};
+  data.forEach(function(d) {
+    (d.Components||'').split(';').forEach(function(c) {
+      c = c.trim();
+      if (c) { seen[c] = true; }
+    });
+  });
+  var comps = Object.keys(seen).sort();
+  /* Shorten component names for display */
+  function _short(c) {
+    return c.replace('firster-', 'F1-')
+            .replace('kingpower-commerce-', 'KP-')
+            .replace('-marketplace-cn', '-CN')
+            .replace('-social-commerce', '')
+            .replace('-pharmacy', '');
+  }
+  var labels = comps.map(_short);
+
+  /* Count issues per component × severity */
+  var datasets = SEVERITIES.map(function(sev) {
+    var vals = comps.map(function(comp) {
+      return data.filter(function(d) {
+        return d.Severity === sev &&
+               (d.Components||'').split(';').some(function(c){ return c.trim() === comp; });
+      }).length;
+    });
+    return {
+      label: sev,
+      data: vals,
+      backgroundColor: SEV_COLORS[sev] + 'cc',
+      borderColor:     SEV_COLORS[sev],
+      borderWidth: 1,
+      borderRadius: 3,
+    };
+  }).filter(function(ds) {
+    return ds.data.some(function(v){ return v > 0; });
+  });
+
+  if (!labels.length || !datasets.length) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">No component data available</div>';
+    return;
+  }
+
+  if (_compSevChart) { _compSevChart.destroy(); _compSevChart = null; }
+  var canvas = document.getElementById('issue-compsev-canvas');
+  if (!canvas) return;
+  canvas.style.display = 'block';
+
+  var cText = getComputedStyle(document.documentElement).getPropertyValue('--text2').trim() || '#8b949e';
+  var cGrid = getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#30363d';
+
+  _compSevChart = new Chart(canvas.getContext('2d'), {
+    type: 'bar',
+    data: { labels: labels, datasets: datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: cText, font: { size: 10 } }, position: 'top' },
+        tooltip: { mode: 'index', intersect: false }
+      },
+      scales: {
+        x: { ticks: { color: cText, font: { size: 9 }, maxRotation: 45 },
+             grid: { color: cGrid + '44' } },
+        y: { ticks: { color: cText, font: { size: 10 }, stepSize: 1 },
+             grid: { color: cGrid + '44' }, beginAtZero: true,
+             title: { display: true, text: 'Issues', color: cText, font: { size: 10 } } }
+      }
+    }
+  });
+}
+
 /* ── Main init ───────────────────────────────────────────── */
 function init(data) {
   buildStrip(data);
   buildDropdownFilters(data);
   buildBoard(_getFiltered());
   buildTrendChart(data);
+  buildCompSevChart(data);
   buildInitSection(data);
 }

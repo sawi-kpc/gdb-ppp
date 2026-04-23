@@ -30,7 +30,13 @@ firebase.initializeApp({
   appId:'1:170622130981:web:23302ed9a5ce4e82ac58cc'
 });
 var _auth = firebase.auth();
-_auth.onAuthStateChanged(function(user){ if(user) window.location.href='channel/'; });
+_/* ── Safari ITP fix: wait for stable auth state ──────────
+   Safari fires onAuthStateChanged(null) then user — ignore null
+────────────────────────────────────────────────────────── */
+auth.onAuthStateChanged(function(user){
+  if (user) window.location.href = 'channel/';
+  /* null = not logged in or Safari still loading — stay on login page */
+});
 function doLogin(){
   var email=document.getElementById('auth-email').value.trim();
   var pass=document.getElementById('auth-password').value;

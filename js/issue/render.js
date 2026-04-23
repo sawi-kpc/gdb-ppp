@@ -359,29 +359,15 @@ function buildTable(data) {
     var hasTL   = d.FailureOccurs || d.CorrectionBegins || d.FailureResolved;
 
     /* row 1 — main columns */
-    var compsHtml = (d.Components||'').split(';').filter(Boolean).map(function(c) {
-      return '<span style="font-size:9px;padding:1px 5px;border-radius:8px;'
-           + 'background:var(--surface2);border:1px solid var(--border);color:var(--text3)">'
-           + c.trim() + '</span>';
-    }).join('');
-    var assigneeHtml = d.Assignee
-      ? '<span style="font-size:10px;color:var(--text3)">&#128100; ' + d.Assignee + '</span>'
-      : '';
-
     var row1 = '<tr>'
       + '<td style="white-space:nowrap;vertical-align:top;padding:8px 10px ' + (hasTL?'2px':'8px') + '">'
           + '<a href="' + ISSUE_JIRA_BASE + d.Key + '" target="_blank" '
           + 'style="color:var(--accent);font-weight:700;text-decoration:none">' + d.Key + ' ↗</a>'
       + '</td>'
-      + '<td style="max-width:420px;vertical-align:top;padding:8px 10px ' + (hasTL?'2px':'8px') + '">'
+      + '<td style="max-width:480px;vertical-align:top;padding:8px 10px ' + (hasTL?'2px':'8px') + '">'
           + '<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500" title="' + d.Summary + '">'
               + d.Summary
           + '</div>'
-          + (compsHtml || assigneeHtml
-            ? '<div style="display:flex;gap:4px;margin-top:3px;flex-wrap:wrap;align-items:center">'
-                + compsHtml + (assigneeHtml ? '<span style="margin-left:4px">' + assigneeHtml + '</span>' : '')
-              + '</div>'
-            : '')
       + '</td>'
       + '<td style="vertical-align:top;padding:8px 10px ' + (hasTL?'2px':'8px') + '">'
           + _statusTag(d.Status)

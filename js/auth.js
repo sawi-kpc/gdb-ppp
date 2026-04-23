@@ -15,6 +15,13 @@ var firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 var auth = firebase.auth();
 
+/* ── Safari ITP fix: force LOCAL persistence ─────────────
+   Safari blocks cross-site IndexedDB (Firebase default).
+   LOCAL persistence uses localStorage which Safari allows.
+──────────────────────────────────────────────────────── */
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+  .catch(function(e) { /* ignore — fall back to session */ });
+
 /* ── Helpers ─────────────────────────────── */
 function el(id) { return document.getElementById(id); }
 

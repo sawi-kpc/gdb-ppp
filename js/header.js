@@ -266,9 +266,27 @@ function gdbAuthGuard(onUser) {
     });
   }
   var _auth = firebase.auth();
+
+  /* ── Safari ITP fix: wait up to 4s for auth state ────────
+     Safari fires onAuthStateChanged(null) first while loading
+     session from localStorage, then fires again with user.
+     We wait for a non-null result OR 4s timeout before redirect.
+  ────────────────────────────────────────────────────────── */
+  var _resolved = false;
+  var _redirectTimer = setTimeout(function() {
+    if (!_resolved) {
+      _resolved = true;
+      _unsub();
+      window.location.href = '/gdb-ppp/';
+    }
+  }, 4000); /* 4s timeout — longer than Safari's ITP delay */
+
   var _unsub = _auth.onAuthStateChanged(function(user) {
+    if (!user) return; /* Safari fires null first — ignore, wait for real state */
+    if (_resolved) return;
+    _resolved = true;
+    clearTimeout(_redirectTimer);
     _unsub();
-    if (!user) { window.location.href = '/gdb-ppp/'; return; }
     setGdbUser(user);
     if (typeof onUser === 'function') onUser(user, _auth);
   });

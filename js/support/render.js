@@ -130,9 +130,9 @@ function buildAssigneeTable(data){
 
 /* ── Build group filter pills ─────────────────────────────── */
 function buildGroupFilter(data){
-  var groups=[...new Set(data.map(function(d){
+  var groups=Array.from(new Set(data.map(function(d){
     return (d.Group && d.Group.trim()) ? d.Group.trim() : 'other';
-  }))].sort();
+  }))).sort();
   var el=document.getElementById('group-filter');
   el.innerHTML='<button class="fb active" data-val="all" onclick="setFilter(\'group\',\'all\',this)">All groups</button>'+
     groups.map(function(g){
@@ -141,10 +141,10 @@ function buildGroupFilter(data){
 }
 
 function buildLabelFilter(data){
-  var labels=[...new Set(
-    data.flatMap(function(d){ return (d.Labels||'').split(';').map(function(l){return l.trim();}); })
+  var labels=Array.from(new Set(
+    data.reduce(function(acc,d){ return acc.concat((d.Labels||'').split(';').map(function(l){return l.trim();})); }, [])
         .filter(Boolean)
-  )].sort();
+  )).sort();
   var el=document.getElementById('label-filter');
   if(!el) return;
   el.innerHTML='<button class="fb active" data-val="all" onclick="setFilter(\'label\',\'all\',this)">All labels</button>'+
@@ -367,7 +367,7 @@ function buildSupportTrendChart(data) {
     }
   });
 
-  var allKeys = [...new Set([...Object.keys(created),...Object.keys(done)])].sort();
+  var allKeys = Array.from(new Set([...Object.keys(created),...Object.keys(done)])).sort();
   if (!allKeys.length) {
     el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">No date data available</div>';
     return;

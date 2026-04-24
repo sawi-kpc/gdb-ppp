@@ -29,34 +29,40 @@ firebase.initializeApp({
   messagingSenderId:'170622130981',
   appId:'1:170622130981:web:23302ed9a5ce4e82ac58cc'
 });
+
 var _auth = firebase.auth();
-_/* ── Safari ITP fix: wait for stable auth state ──────────
+
+/* ── Safari ITP fix: wait for stable auth state ──────────────
    Safari fires onAuthStateChanged(null) then user — ignore null
-────────────────────────────────────────────────────────── */
-auth.onAuthStateChanged(function(user){
+────────────────────────────────────────────────────────────── */
+_auth.onAuthStateChanged(function(user) {
   if (user) window.location.href = 'channel/';
   /* null = not logged in or Safari still loading — stay on login page */
 });
-function doLogin(){
-  var email=document.getElementById('auth-email').value.trim();
-  var pass=document.getElementById('auth-password').value;
-  var btn=document.getElementById('auth-login-btn');
-  var err=document.getElementById('auth-error');
-  if(!email||!pass){err.textContent='Please enter email and password.';return;}
-  err.textContent=''; btn.disabled=true; btn.textContent='Signing in\u2026';
-  _auth.signInWithEmailAndPassword(email,pass)
-    .then(function(){window.location.href='channel/';})
-    .catch(function(e){
-      var msg='Login failed. Check your credentials.';
-      if(e.code==='auth/user-not-found') msg='Email not found.';
-      if(e.code==='auth/wrong-password') msg='Incorrect password.';
-      if(e.code==='auth/invalid-credential') msg='Invalid email or password.';
-      if(e.code==='auth/too-many-requests') msg='Too many attempts. Try again later.';
-      err.textContent=msg; btn.disabled=false; btn.textContent='Sign in';
+
+function doLogin() {
+  var email = document.getElementById('auth-email').value.trim();
+  var pass  = document.getElementById('auth-password').value;
+  var btn   = document.getElementById('auth-login-btn');
+  var err   = document.getElementById('auth-error');
+  if (!email || !pass) { err.textContent = 'Please enter email and password.'; return; }
+  err.textContent = ''; btn.disabled = true; btn.textContent = 'Signing in\u2026';
+  _auth.signInWithEmailAndPassword(email, pass)
+    .then(function() { window.location.href = 'channel/'; })
+    .catch(function(e) {
+      var msg = 'Login failed. Check your credentials.';
+      if (e.code === 'auth/user-not-found')    msg = 'Email not found.';
+      if (e.code === 'auth/wrong-password')    msg = 'Incorrect password.';
+      if (e.code === 'auth/invalid-credential') msg = 'Invalid email or password.';
+      if (e.code === 'auth/too-many-requests') msg = 'Too many attempts. Try again later.';
+      err.textContent = msg; btn.disabled = false; btn.textContent = 'Sign in';
     });
 }
-document.getElementById('auth-login-btn').addEventListener('click',doLogin);
-document.getElementById('auth-password').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+
+document.getElementById('auth-login-btn').addEventListener('click', doLogin);
+document.getElementById('auth-password').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') doLogin();
+});
 </script>
 </body>
 </html>

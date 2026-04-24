@@ -97,20 +97,36 @@ function isOverdue(due, status) {
 }
 
 /* ── Date formatter: "23 Mar 2026" ──────────────────────── */
-function _fmtDate(raw) {
+var _MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+/* ── Robust date parser: handles "2026-03-31", "31 Mar 2026", "Mar 31 2026" etc. ── */
+function _parseDate(raw) {
   if (!raw) return null;
   var d = new Date(raw);
-  if (isNaN(d)) return raw;
-  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  return d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+  if (!isNaN(d)) return d;
+  /* fallback: try replacing space-separated parts */
+  var iso = String(raw).replace(/(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})/, function(_,day,mon,yr){
+    var mi = (function(){ for(var i=0;i<_MONTHS.length;i++){ if(_MONTHS[i].toLowerCase()===mon.toLowerCase()) return i; } return -1; })();
+    return yr+'-'+(mi>=0?String(mi+1).padStart(2,'0'):'01')+'-'+String(day).padStart(2,'0');
+  });
+  d = new Date(iso);
+  return isNaN(d) ? null : d;
 }
 
-/* ── Time formatter for timeline dots: "22:30:00" ───────── */
-function _fmtTime(raw) {
+function _fmtDate(raw) {
   if (!raw) return null;
-  var d = new Date(raw);
-  if (isNaN(d)) return raw;
-  return d.toTimeString().substring(0,8);
+  var d = _parseDate(raw);
+  if (!d) return String(raw).substring(0, 12); /* fallback: show raw */
+  return d.getDate() + ' ' + _MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+}
+
+function _fmtDateTime(raw) {
+  if (!raw) return null;
+  var d = _parseDate(raw);
+  if (!d) return String(raw).substring(0, 20);
+  var pad = function(n){ return String(n).padStart(2,'0'); };
+  return d.getDate()+' '+_MONTHS[d.getMonth()]+' '+d.getFullYear()+
+         ' '+pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
 }
 
 function buildIncidentTimeline(d) {
@@ -120,56 +136,67 @@ function buildIncidentTimeline(d) {
   var mttr  = calcMTTR(d.FailureOccurs, d.FailureResolved);
   var mttrH = calcMTTRHours(d.FailureOccurs, d.FailureResolved);
   var respH = calcResponseHours(d.FailureOccurs, d.CorrectionBegins);
+  var fixH  = d.CorrectionBegins && d.FailureResolved
+              ? calcMTTRHours(d.CorrectionBegins, d.FailureResolved) : null;
   var respLbl = respH ? (respH < 1 ? Math.round(respH*60)+'m' : respH.toFixed(1)+'h') : null;
-
-  /* ── 2-segment progress bar ── */
-  /* grey = response period (failure→fix started), green = fix period (fix started→resolved) */
-  var totalH   = mttrH || 0;
-  var fixH     = d.CorrectionBegins && d.FailureResolved
-                   ? calcMTTRHours(d.CorrectionBegins, d.FailureResolved) : null;
-  var respPct  = (totalH > 0 && respH) ? Math.min(Math.round(respH / totalH * 100), 40) : 15;
-  var fixPct   = 100 - respPct;
+  var fixDur  = fixH  ? (fixH < 24 ? fixH.toFixed(1)+'h' : (fixH/24).toFixed(1)+'d') : (mttr || null);
   var isOngoing = !d.FailureResolved;
-  var barLabel = mttr ? mttr : (respH ? Math.round(respH)+'h so far' : '');
 
-  /* dot timestamps */
-  function dotHtml(color, dateRaw, label) {
-    var dt = new Date(dateRaw);
-    var mon = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    var dateStr = dt.getDate()+' '+mon[dt.getMonth()]+' '+dt.getFullYear();
-    var timeStr = dt.toTimeString().substring(0,8);
-    return '<span class="tl2-dot" style="background:'+color+'"></span>'+
-           '<span class="tl2-ts">'+dateStr+' '+timeStr+'</span>';
+  /* ── bar segments ── */
+  var totalH  = mttrH || 0;
+  var respPct = (totalH > 0 && respH) ? Math.min(Math.round(respH / totalH * 100), 35) : 12;
+  var fixPct  = 100 - respPct;
+  var barLabel = mttr || (isOngoing && respH ? Math.round(totalH||respH)+'h so far' : '');
+
+  /* ── dot builder: color · date · time (2 lines) ── */
+  function dotHtml(color, raw) {
+    if (!raw) return '';
+    var dt = _parseDate(raw);
+    if (!dt) return '';
+    var pad = function(n){ return String(n).padStart(2,'0'); };
+    var dateStr = dt.getDate()+' '+_MONTHS[dt.getMonth()]+' '+dt.getFullYear();
+    var timeStr = pad(dt.getHours())+':'+pad(dt.getMinutes())+':'+pad(dt.getSeconds());
+    return '<span class="tl2-dot-wrap">'+
+             '<span class="tl2-dot" style="background:'+color+'"></span>'+
+             '<span class="tl2-ts-wrap">'+
+               '<span class="tl2-ts-date">'+dateStr+'</span>'+
+               '<span class="tl2-ts-time">'+timeStr+'</span>'+
+             '</span>'+
+           '</span>';
   }
 
   var html = '<div class="tl2">';
 
   /* bar */
-  html += '<div class="tl2-bar-wrap">';
-  html += '<div class="tl2-bar">';
-  html += '<div class="tl2-seg-grey" style="width:'+respPct+'%"></div>';
-  html += '<div class="tl2-seg-green" style="width:'+fixPct+'%">';
-  if (barLabel) html += '<span class="tl2-bar-label">'+barLabel+'</span>';
-  html += '</div>';
-  html += '</div>';
-  html += '</div>';
+  html += '<div class="tl2-bar">'+
+    '<div class="tl2-seg-grey" style="width:'+respPct+'%"></div>'+
+    '<div class="tl2-seg-green" style="flex:1">'+
+      (barLabel ? '<span class="tl2-bar-label">'+barLabel+'</span>' : '')+
+    '</div>'+
+  '</div>';
 
-  /* dots row */
-  html += '<div class="tl2-dots">';
-  if (d.FailureOccurs)    html += dotHtml('#888', d.FailureOccurs, 'failure');
-  if (d.CorrectionBegins) html += dotHtml('#f97316', d.CorrectionBegins, 'fix');
-  if (d.FailureResolved)  html += dotHtml('#3fb950', d.FailureResolved, 'resolved');
-  else if (isOngoing)     html += '<span class="tl2-pending">● pending</span>';
-
-  /* metrics */
-  html += '<span class="tl2-divider">|</span>';
-  if (respLbl) html += '<span class="tl2-metric">Response: <b>'+respLbl+'</b></span>';
-  if (mttr) {
-    var fixDur = fixH ? (fixH < 24 ? fixH.toFixed(1)+'h' : (fixH/24).toFixed(1)+'d') : mttr;
-    html += '<span class="tl2-metric">Fix: <b class="tl2-fix">'+fixDur+'</b></span>';
-    html += '<span class="tl2-metric">MTTR: <b class="tl2-mttr">'+mttr+'</b></span>';
+  /* dots row (date + time stacked) */
+  html += '<div class="tl2-dots-row">';
+  html += dotHtml('#6e7681', d.FailureOccurs);
+  html += dotHtml('#f97316', d.CorrectionBegins);
+  if (d.FailureResolved) {
+    html += dotHtml('#3fb950', d.FailureResolved);
+  } else {
+    html += '<span class="tl2-dot-wrap"><span class="tl2-dot" style="background:#f97316"></span><span class="tl2-pending">pending</span></span>';
   }
   html += '</div>';
+
+  /* metrics row */
+  var metrics = [];
+  if (respLbl) metrics.push('Response: <b>'+respLbl+'</b>');
+  if (fixDur)  metrics.push('Fix: <b class="tl2-fix">'+fixDur+'</b>');
+  if (mttr)    metrics.push('MTTR: <b class="tl2-mttr">'+mttr+'</b>');
+  if (metrics.length) {
+    html += '<div class="tl2-metrics-row">'+
+      metrics.map(function(m){ return '<span class="tl2-metric">'+m+'</span>'; }).join(
+        '<span class="tl2-divider">|</span>')+
+    '</div>';
+  }
 
   html += '</div>';
   return html;

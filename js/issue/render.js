@@ -1,48 +1,27 @@
-/* ── Date formatters ────────────────────────────────────── */
-var _MONTHS      = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-var _FULL_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-function _fmtDate(raw) {
-  if (!raw) return '—';
-  var d = new Date(String(raw).trim());
-  if (isNaN(d.getTime())) return raw;
-  return d.getDate() + ' ' + _FULL_MONTHS[d.getMonth()] + ' ' + d.getFullYear();
-}
-function _fmtDateTime(raw) {
-  if (!raw) return '—';
-  var d = new Date(String(raw).trim());
-  if (isNaN(d.getTime())) return raw;
-  var h = d.getHours(), m = d.getMinutes(), s = d.getSeconds();
-  return d.getDate() + ' ' + _MONTHS[d.getMonth()] + ' ' + d.getFullYear() +
-    ' ' + String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') +
-    ':' + String(s).padStart(2,'0');
-}
-
 /* ══════════════════════════════════════════════════════════════
-   ISSUE RENDER — js/issue/render.js
+   ISSUE RENDER  —  js/issue/render.js
    Depends on: js/issue/config.js, js/issue/data.js (loaded first)
-   All rendering logic for issue/index.html
 ══════════════════════════════════════════════════════════════ */
 
 /* ── State ───────────────────────────────────────────────── */
-var _filterStatuses  = ['all']; /* array — multi-select */
-var _filterPriority  = 'all';
-var _filterSeverity  = 'all';
-var _filterComps     = ['all']; /* array — multi-select */
-var _filterRootCause = 'all';
+var _filterStatus   = 'all';
+var _filterPriority = 'all';
+var _filterSeverity = 'all';
+var _filterComp     = 'all';
 var _searchQ        = '';
 var _sortCol        = 'Key';
 var _sortAsc        = true;
-var _activeView     = 'board';   /* 'board' | 'table' */
+var _activeView     = 'board';
 
-/* ── Status definitions (5-column board) ─────────────────── */
+/* ── Status board columns ────────────────────────────────── */
 var STATUSES = [
-  { key:'Open',          label:'Open',          color:'var(--down)' },
-  { key:'Investigating', label:'Investigating',  color:'var(--amber)' },
+  { key:'Open',          label:'Open',          color:'var(--down)'   },
+  { key:'Investigating', label:'Investigating',  color:'var(--amber)'  },
   { key:'In Progress',   label:'In Progress',    color:'var(--accent)' },
-  { key:'Resolved',      label:'Resolved',       color:'var(--teal)' },
-  { key:'Done',          label:'Done',           color:'var(--up)' },
+  { key:'Resolved',      label:'Resolved',       color:'var(--teal)'   },
+  { key:'Done',          label:'Done',           color:'var(--up)'     },
 ];
-/* Also handle 'Closed' as alias for 'Done' */
+
 function _normaliseStatus(s) {
   if (!s) return 'Open';
   if (s === 'Closed') return 'Done';
@@ -51,711 +30,382 @@ function _normaliseStatus(s) {
 
 /* ── Priority / Severity colors ──────────────────────────── */
 var PRIORITY_COLOR = {
-  'Highest': 'var(--down)',
-  'High':    '#f97316',
-  'Medium':  'var(--amber)',
-  'Low':     'var(--up)',
-  'Lowest':  'var(--text3)',
+  Highest:'var(--down)', High:'#f97316', Medium:'var(--amber)',
+  Low:'var(--up)', Lowest:'var(--text3)',
 };
 var SEVERITY_COLOR = {
-  'Critical': 'var(--down)',
-  'High':     '#f97316',
-  'Moderate': 'var(--amber)',
-  'Low':      'var(--up)',
+  Critical:'var(--down)', High:'#f97316',
+  Moderate:'var(--amber)', Low:'var(--up)',
 };
-function _pColor(p)  { return PRIORITY_COLOR[p]  || 'var(--text2)'; }
-function _sColor(s)  { return SEVERITY_COLOR[s]  || 'var(--text2)'; }
+function _pColor(p) { return PRIORITY_COLOR[p] || 'var(--text2)'; }
+function _sColor(s) { return SEVERITY_COLOR[s] || 'var(--text2)'; }
 
-/* ── Formatters ──────────────────────────────────────────── */
-function _secToH(s) { return s > 0 ? (s/3600).toFixed(1)+'h' : '—'; }
-function _tag(text, color, bg) {
-  return '<span style="display:inline-flex;align-items:center;font-size:10px;'+
-    'font-weight:600;padding:1px 6px;border-radius:3px;white-space:nowrap;'+
-    'color:'+color+';background:'+bg+';border:1px solid '+color+'44">'+text+'</span>';
-}
-function _statusTag(s) {
-  var ns = _normaliseStatus(s);
-  var STYLE = {
-    'Open':          {color:'var(--down)',   bg:'rgba(248,81,73,.1)',  border:'rgba(248,81,73,.3)'},
-    'Investigating': {color:'var(--amber)',  bg:'rgba(245,158,11,.1)', border:'rgba(245,158,11,.3)'},
-    'In Progress':   {color:'var(--accent)', bg:'rgba(88,166,255,.1)', border:'rgba(88,166,255,.25)'},
-    'Resolved':      {color:'var(--teal)',   bg:'rgba(34,211,164,.1)', border:'rgba(34,211,164,.3)'},
-    'Done':          {color:'var(--up)',     bg:'rgba(63,185,80,.1)',  border:'rgba(63,185,80,.28)'},
-  };
-  var st  = STYLE[ns] || STYLE['Open'];
-  var lbl = s || 'Open';
-  return '<span style="display:inline-flex;align-items:center;font-size:10px;font-weight:600;'+
-    'padding:3px 10px;border-radius:20px;white-space:nowrap;'+
-    'color:'+st.color+';background:'+st.bg+';border:1px solid '+st.border+'">'+lbl+'</span>';
+/* severity → CSS class for .sev-badge */
+function _sevCls(s) {
+  var m = { Critical:'critical', High:'high', Moderate:'moderate', Low:'low' };
+  return m[s] || '';
 }
 
-/* ── Components display (truncated) ─────────────────────── */
-function _compsHtml(c, maxShow) {
-  maxShow = maxShow || 2;
-  var parts = (c || '').split(';').map(function(p){ return p.trim(); }).filter(Boolean);
-  if (!parts.length) return '<span style="color:var(--text3)">—</span>';
-  var html = parts.slice(0, maxShow).map(function(p){
-    return '<span style="font-size:9px;padding:1px 6px;border-radius:10px;'+
-      'background:var(--surface);border:1px solid var(--border);color:var(--text2)">'+p+'</span>';
+/* ── Helpers ─────────────────────────────────────────────── */
+function _secToH(sec) {
+  if (!sec || sec <= 0) return null;
+  var h = Math.round(sec / 3600);
+  if (h < 24) return h + 'h';
+  var d = Math.round(h / 24 * 10) / 10;
+  return d + 'd';
+}
+
+function statusTag(s) {
+  s = _normaliseStatus(s);
+  var cls = { Open:'open','In Progress':'in-progress',Investigating:'investigating',
+              Resolved:'resolved',Done:'done' };
+  return '<span class="stag '+(cls[s]||'open')+'">'+s+'</span>';
+}
+
+function compsHtml(raw) {
+  if (!raw) return '';
+  return raw.split(';').map(function(c){
+    c = c.trim();
+    return c ? '<span class="comp-chip">'+c+'</span>' : '';
   }).join('');
-  if (parts.length > maxShow)
-    html += '<span style="font-size:9px;color:var(--text3);padding:1px 4px">+'+
-            (parts.length - maxShow)+' more</span>';
+}
+
+function calcMTTR(fo, fr) {
+  if (!fo || !fr) return null;
+  var ms = new Date(fr) - new Date(fo);
+  if (ms <= 0) return null;
+  var h = ms / 3600000;
+  if (h < 24) return h.toFixed(1) + 'h';
+  return (h / 24).toFixed(1) + 'd';
+}
+
+function calcMTTRHours(fo, fr) {
+  if (!fo || !fr) return null;
+  var h = (new Date(fr) - new Date(fo)) / 3600000;
+  return h > 0 ? h : null;
+}
+
+function calcResponseHours(fo, cb) {
+  if (!fo || !cb) return null;
+  var h = (new Date(cb) - new Date(fo)) / 3600000;
+  return h > 0 ? h : null;
+}
+
+function isOverdue(due, status) {
+  if (!due || status === 'Done' || status === 'Resolved') return false;
+  return new Date(due) < new Date();
+}
+
+function buildIncidentTimeline(d) {
+  var hasTimeline = d.FailureOccurs || d.CorrectionBegins || d.FailureResolved;
+  if (!hasTimeline) return '';
+  var mttr   = calcMTTR(d.FailureOccurs, d.FailureResolved);
+  var mttrH  = calcMTTRHours(d.FailureOccurs, d.FailureResolved);
+  var respH  = calcResponseHours(d.FailureOccurs, d.CorrectionBegins);
+  var respLbl= respH ? (respH < 1 ? Math.round(respH*60)+'m' : respH.toFixed(1)+'h') : null;
+  var pct    = mttrH ? Math.min(Math.round(mttrH/48*100),100) : 0;
+
+  var html = '<div class="tl">';
+  html += '<div class="tl-label">Incident timeline</div>';
+  html += '<div class="tl-dots">';
+  html += '<div class="td">Failure<span>'+(d.FailureOccurs||'—')+'</span></div>';
+  html += '<div class="td">Fix started<span>'+(d.CorrectionBegins||'—')+'</span></div>';
+  html += '<div class="td">Resolved<span>'+(d.FailureResolved||'<span style="color:var(--amber)">Ongoing</span>')+'</span></div>';
+  html += '</div>';
+  if (mttr || respLbl) {
+    html += '<div class="tl-metrics">';
+    if (respLbl) html += '<span>Response: <b>'+respLbl+'</b></span>';
+    if (mttr)    html += '<span>Fix: <b style="color:var(--amber)">'+mttr+'</b></span>';
+    if (mttr)    html += '<span>MTTR: <b style="color:var(--up)">'+mttr+'</b></span>';
+    html += '</div>';
+  }
+  if (mttr) {
+    html += '<div class="mttr-wrap">';
+    html += '<div style="font-size:10px;color:var(--text2);display:flex;justify-content:space-between"><span>MTTR</span><span style="color:var(--up);font-weight:600">'+mttr+'</span></div>';
+    html += '<div class="mttr-bar"><div class="mttr-fill" style="width:'+pct+'%"></div></div>';
+    html += '</div>';
+  }
+  html += '</div>';
   return html;
 }
 
-/* ── MTTR / incident timeline ────────────────────────────── */
-function _durLabel(ms) {
-  if (!ms || ms <= 0) return null;
-  var h = ms / 3600000;
-  if (h < 1)  return Math.round(h*60)+'min';
-  if (h < 24) return h.toFixed(1)+'h';
-  return (h/24).toFixed(1)+'d';
-}
-function buildIncidentTimeline(d) {
-  var F   = d.FailureOccurs    ? new Date(d.FailureOccurs)    : null;
-  var C   = d.CorrectionBegins ? new Date(d.CorrectionBegins) : null;
-  var R   = d.FailureResolved  ? new Date(d.FailureResolved)  : null;
-  var NOW = new Date();
-
-  var detectMs  = (F && C) ? C - F : null;
-  var fixMs     = (C && R) ? R - C : null;
-  var totalMs   = (F && R) ? R - F : null;
-  var ongoingMs = (C && !R) ? NOW - C : null;
-
-  /* ── Progress bar segments ── */
-  var segments = [];
-  if (F && C && R) {
-    var tot = R - F;
-    var w1  = Math.max(Math.round((C-F)/tot*100), 8);
-    segments = [{cls:'detect',w:w1,dur:_durLabel(detectMs)},{cls:'resolved',w:100-w1,dur:_durLabel(fixMs)}];
-  } else if (F && C && !R) {
-    var dw = Math.max(Math.round((C-F)/((NOW-F)||1)*100), 15);
-    segments = [{cls:'detect',w:dw,dur:_durLabel(detectMs)},{cls:'ongoing',w:100-dw,dur:(_durLabel(ongoingMs)||'0m')+' so far'}];
-  } else if (C) {
-    segments = [{cls:'ongoing',w:100,dur:(_durLabel(NOW-C)||'0m')+' so far'}];
-  } else if (F) {
-    segments = [{cls:'ongoing',w:100,dur:_durLabel(NOW-F)}];
-  }
-  if (!segments.length) return '';
-
-  /* ── Bar (6px) ── */
-  var barHtml = segments.map(function(s){
-    return '<div class="itl-seg '+s.cls+'" style="flex:'+s.w+'" title="'+s.dur+'">'+(s.w>=18?s.dur:'')+'</div>';
-  }).join('');
-
-  /* ── Single line: dots + datetimes + pipe + metrics ── */
-  var pts = [];
-  if (F) pts.push('<span class="itl-dot dtc"></span><span class="itl-ts">'+_fmtDateTime(d.FailureOccurs)+'</span>');
-  if (C) pts.push('<span class="itl-dot fix"></span><span class="itl-ts">'+_fmtDateTime(d.CorrectionBegins)+'</span>');
-  if (R) pts.push('<span class="itl-dot res"></span><span class="itl-ts">'+_fmtDateTime(d.FailureResolved)+'</span>');
-  else   pts.push('<span class="itl-dot ong"></span><span style="color:var(--down);font-size:10px">pending</span>');
-
-  pts.push('<span class="itl-pipe"></span>');
-
-  if (detectMs)  pts.push('<span class="itl-met">Response: '+_durLabel(detectMs)+'</span>');
-  if (fixMs)     pts.push('<span class="itl-met itl-fix">Fix: '+_durLabel(fixMs)+'</span>');
-  if (totalMs)   pts.push('<span class="itl-met itl-ok">MTTR: '+_durLabel(totalMs)+'</span>');
-  if (ongoingMs) pts.push('<span class="itl-met itl-ong">Ongoing: '+_durLabel(ongoingMs)+'</span>');
-
-  return '<div class="itl">'
-    + '<div class="itl-bar-track">'+barHtml+'</div>'
-    + '<div class="itl-row">'+pts.join('')+'</div>'
-    + '</div>';
-}
-
-/* ── Filter pipeline ─────────────────────────────────────── */
-function _getFiltered() {
-  return issueData.filter(function(d) {
-    var s   = _normaliseStatus(d.Status);
-    var okS = _filterStatuses.indexOf('all') !== -1 ||
-              _filterStatuses.indexOf(s) !== -1 ||
-              (_filterStatuses.indexOf('Done') !== -1 && d.Status === 'Closed');
-    var okP  = _filterPriority === 'all' || d.Priority === _filterPriority;
-    var okSv = _filterSeverity === 'all' || d.Severity === _filterSeverity;
-    /* Components: multi-select — any selected comp must appear in issue's component list */
-    var okC  = _filterComps.indexOf('all') !== -1 ||
-               _filterComps.some(function(fc) {
-                 return (d.Components||'').toLowerCase().includes(fc.toLowerCase());
-               });
-    /* Root Cause filter */
-    var okRC = _filterRootCause === 'all' ||
-               (d.RootCause||'').toLowerCase().includes(_filterRootCause.toLowerCase());
-    var q    = _searchQ.toLowerCase();
-    var okQ  = !q || d.Key.toLowerCase().includes(q) ||
-               d.Summary.toLowerCase().includes(q) ||
-               (d.Assignee||'').toLowerCase().includes(q);
-    return okS && okP && okSv && okC && okRC && okQ;
-  }).sort(function(a, b) {
-    var va = a[_sortCol] || '', vb = b[_sortCol] || '';
-    if (va < vb) return _sortAsc ? -1 : 1;
-    if (va > vb) return _sortAsc ? 1 : -1;
-    return 0;
-  });
-}
-
-/* ── Build summary strip ─────────────────────────────────── */
-function buildStrip(data) {
-  var total   = data.length;
-  var open    = data.filter(function(d){ return _normaliseStatus(d.Status)==='Open'; }).length;
-  var invest  = data.filter(function(d){ return d.Status==='Investigating'; }).length;
-  var inprog  = data.filter(function(d){ return d.Status==='In Progress'; }).length;
-  var resDone = data.filter(function(d){
-    var s = d.Status;
-    return s==='Resolved'||s==='Done'||s==='Closed';
-  }).length;
-  var unassigned = data.filter(function(d){ return !d.Assignee && d.Status!=='Done' && d.Status!=='Closed'; }).length;
-  var critical   = data.filter(function(d){ return d.Severity==='Critical'||d.Priority==='Highest'; }).length;
-  document.getElementById('issue-strip').innerHTML =
-    _sc('Total Issues','blue',total,'all statuses')+
-    _sc('Open','red',open, unassigned>0?unassigned+' unassigned':'')+
-    _sc('Investigating','amber',invest,'under investigation')+
-    _sc('In Progress','accent',inprog,'being fixed')+
-    _sc('Resolved / Done','green',resDone,'closed this cycle')+
-    _sc('Critical / Highest','purple',critical,'priority issues');
-}
-function _sc(label, cls, num, sub) {
-  var colors = {blue:'var(--accent)',red:'var(--down)',amber:'var(--amber)',
-                accent:'var(--accent)',green:'var(--up)',purple:'var(--purple)'};
-  var borders= {blue:'var(--accent)',red:'var(--down)',amber:'var(--amber)',
-                accent:'var(--accent)',green:'var(--up)',purple:'var(--purple)'};
-  var c = colors[cls]||'var(--accent)';
-  return '<div style="background:var(--surface);border:1px solid var(--border);'+
-    'border-top:2px solid '+c+';border-radius:8px;padding:12px 16px">'+
-    '<div style="font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;'+
-    'letter-spacing:.06em;margin-bottom:6px">'+label+'</div>'+
-    '<div style="font-size:24px;font-weight:700;color:'+c+';line-height:1;margin-bottom:2px">'+num+'</div>'+
-    '<div style="font-size:11px;color:var(--text2)">'+sub+'</div></div>';
-}
-
-/* ── Build dropdown filters ──────────────────────────────── */
-function buildDropdownFilters(data) {
-  var PRIORITIES = ['Highest', 'High', 'Medium', 'Low', 'Lowest'];
-  var SEVERITIES = ['Critical', 'Major', 'Moderate', 'Low'];
-
-  document.getElementById('filter-priority').innerHTML =
-    '<option value="all">All priorities</option>' +
-    PRIORITIES.map(function(p) { return '<option value="'+p+'">'+p+'</option>'; }).join('');
-
-  document.getElementById('filter-severity').innerHTML =
-    '<option value="all">All severity</option>' +
-    SEVERITIES.map(function(s) { return '<option value="'+s+'">'+s+'</option>'; }).join('');
-
-  /* Components: dynamic pills (multi-select) */
-  var comps = [], seen = {};
+/* ── Populate filter dropdowns ───────────────────────────── */
+function populateFilters(data) {
+  var priorities = [], severities = [], comps = [];
   data.forEach(function(d) {
-    (d.Components||'').split(';').forEach(function(c) {
+    if (d.Priority && !priorities.includes(d.Priority)) priorities.push(d.Priority);
+    if (d.Severity && !severities.includes(d.Severity)) severities.push(d.Severity);
+    (d.Components||'').split(';').forEach(function(c){
       c = c.trim();
-      if (c && !seen[c]) { seen[c] = true; comps.push(c); }
+      if (c && !comps.includes(c)) comps.push(c);
     });
   });
-  comps.sort();
-  var compEl = document.getElementById('comp-filter');
-  if (compEl) {
-    var compHtml = '<button class="fb active" data-val="all" onclick="_setCompFilter(\x27all\x27,this)">All</button>';
-    comps.forEach(function(c) {
-      compHtml += '<button class="fb" data-val="' + c + '" onclick="_setCompFilter(\x27' + c + '\x27,this)">' + c + '</button>';
+
+  function fillSelect(id, values) {
+    var sel = document.getElementById(id);
+    if (!sel) return;
+    var cur = sel.value;
+    while (sel.options.length > 1) sel.remove(1);
+    values.sort().forEach(function(v){
+      var o = document.createElement('option');
+      o.value = o.textContent = v;
+      sel.appendChild(o);
     });
-    compEl.innerHTML = compHtml;
+    if (cur) sel.value = cur;
   }
-
-  /* Root Cause: dynamic dropdown */
-  var rcs = [], rcSeen = {};
-  data.forEach(function(d) {
-    var rc = (d.RootCause||'').trim();
-    if (rc && !rcSeen[rc]) { rcSeen[rc] = true; rcs.push(rc); }
-  });
-  rcs.sort();
-  var rcEl = document.getElementById('filter-rootcause');
-  if (rcEl) {
-    rcEl.innerHTML =
-      '<option value="all">All root causes</option>' +
-      rcs.map(function(r) { return '<option value="'+r+'">'+r+'</option>'; }).join('');
-  }
+  fillSelect('filter-priority',  priorities);
+  fillSelect('filter-severity',  severities);
+  fillSelect('filter-component', comps);
 }
 
-/* Component multi-select toggle */
-function _setCompFilter(val, btn) {
-  if (val === 'all') {
-    _filterComps = ['all'];
-    document.querySelectorAll('#comp-filter .fb').forEach(function(b){b.classList.remove('active');});
-    btn.classList.add('active');
-  } else {
-    var ai = _filterComps.indexOf('all');
-    if (ai !== -1) _filterComps.splice(ai, 1);
-    var vi = _filterComps.indexOf(val);
-    if (vi !== -1) { _filterComps.splice(vi, 1); btn.classList.remove('active'); }
-    else           { _filterComps.push(val);      btn.classList.add('active'); }
-    if (_filterComps.length === 0) {
-      _filterComps = ['all'];
-      var allBtn = document.querySelector('#comp-filter .fb[data-val="all"]');
-      if (allBtn) allBtn.classList.add('active');
-    }
-  }
-  applyFilters();
-}
-
-/* ── BOARD VIEW (5-column kanban by status) ───────────────── */
-function buildBoard(data) {
-  var byStatus = {};
-  STATUSES.forEach(function(s){ byStatus[s.key] = []; });
-  data.forEach(function(d) {
-    var ns = _normaliseStatus(d.Status);
-    if (!byStatus[ns]) byStatus[ns] = [];
-    byStatus[ns].push(d);
-  });
-
-  var html = STATUSES.map(function(s) {
-    var cards = byStatus[s.key] || [];
-    var colCards = cards.map(function(d) {
-      var hasTimeline = d.FailureOccurs || d.CorrectionBegins || d.FailureResolved;
-      var multiCh = (d.Components||'').split(';').length >= 3;
-      return '<div class="iboard-card" style="'+(d.Severity==='Critical'?'border-color:rgba(248,81,73,.5);background:rgba(248,81,73,.06);':'')+'">'
-        +'<div class="ibc-top">'
-          +'<a href="'+ISSUE_JIRA_BASE+d.Key+'" target="_blank" class="ibc-key">'+d.Key+' ↗</a>'
-          +(d.Priority?'<span style="font-size:9px;font-weight:700;color:'+_pColor(d.Priority)+'">'+d.Priority+'</span>':'')
-        +'</div>'
-        +'<div class="ibc-summary">'+d.Summary+'</div>'
-        +(d.Severity?'<div style="margin:4px 0"><span style="font-size:9px;font-weight:600;'+
-          'background:'+_sColor(d.Severity)+'22;color:'+_sColor(d.Severity)+';'+
-          'padding:1px 6px;border-radius:3px;border:1px solid '+_sColor(d.Severity)+'33">'+
-          d.Severity+'</span></div>':'')
-        +'<div class="ibc-comps">'+_compsHtml(d.Components, 1)+'</div>'
-        +(d.Assignee?'<div class="ibc-assign">'+d.Assignee+'</div>':'')
-        +(d.Due ? (function(){
-            var ns = _normaliseStatus(d.Status);
-            var isDone = ns === 'Done';
-            var dueDate = new Date(d.Due);
-            var now = new Date();
-            var isOverdue = !isDone && dueDate < now;
-            var isNear    = !isDone && !isOverdue && (dueDate - now) < 7*24*60*60*1000;
-            var color  = isOverdue ? 'var(--down)' : isNear ? 'var(--amber)' : 'var(--text3)';
-            var prefix = isOverdue ? '!! Overdue ' : 'Due ';
-            return '<div style="margin-top:4px;font-size:9px;font-weight:600;color:'+color+'">'
-                 + prefix + _fmtDate(d.Due) + '</div>';
-          })() : '')
-        +(hasTimeline ? buildIncidentTimeline(d) : '')
-      +'</div>';
-    }).join('');
-
-    return '<div class="iboard-col">'
-      +'<div class="iboard-col-head" style="border-top:3px solid '+s.color+'">'
-        +'<span class="iboard-col-label">'+s.label+'</span>'
-        +'<span class="iboard-col-count">'+cards.length+'</span>'
-      +'</div>'
-      +'<div class="iboard-col-body">'+
-        (colCards || '<div style="font-size:11px;color:var(--text3);text-align:center;padding:20px 0">No issues</div>')
-      +'</div>'
-    +'</div>';
-  }).join('');
-
-  document.getElementById('issue-board').innerHTML = html;
-  document.getElementById('issue-count-label').textContent =
-    data.length + ' issue' + (data.length !== 1 ? 's' : '');
-}
-
-/* ── TABLE VIEW ──────────────────────────────────────────── */
-function buildTable(data) {
-  document.getElementById('issue-count-label').textContent =
-    data.length + ' issue' + (data.length !== 1 ? 's' : '');
-  if (!data.length) {
-    document.getElementById('issue-tbody').innerHTML =
-      '<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--text3)">No issues match this filter.</td></tr>';
-    return;
-  }
-
-  document.getElementById('issue-tbody').innerHTML = data.map(function(d) {
-    var overdue = d.Due && d.Status !== 'Done' && d.Status !== 'Closed' && new Date(d.Due) < new Date();
-
-    /* row 1 — main columns */
-    var row1 = '<tr style="border-bottom:1px solid var(--border)">'
-      + '<td style="white-space:nowrap;vertical-align:top;padding:8px 10px ' + '8px' + '">'
-          + '<a href="' + ISSUE_JIRA_BASE + d.Key + '" target="_blank" '
-          + 'style="color:var(--accent);font-weight:700;text-decoration:none">' + d.Key + ' ↗</a>'
-      + '</td>'
-      + '<td style="max-width:480px;vertical-align:top;padding:8px 10px ' + '8px' + '">'
-          + '<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500" title="' + d.Summary + '">'
-              + d.Summary
-          + '</div>'
-      + '</td>'
-      + '<td style="vertical-align:top;padding:8px 10px ' + '8px' + '">'
-          + _statusTag(d.Status)
-      + '</td>'
-      + '<td style="vertical-align:top;padding:8px 10px ' + '8px' + ';font-size:11px;white-space:nowrap">'
-          + (d.Priority ? '<span style="font-weight:600;color:' + _pColor(d.Priority) + '">' + d.Priority + '</span>' : '—')
-      + '</td>'
-      + '<td style="vertical-align:top;padding:8px 10px ' + '8px' + ';font-size:11px;white-space:nowrap">'
-          + (d.Severity ? '<span style="font-weight:600;color:' + _sColor(d.Severity) + '">' + d.Severity + '</span>' : '—')
-      + '</td>'
-      + '<td style="vertical-align:top;padding:8px 10px ' + '8px' + ';font-size:11px;white-space:nowrap">'
-          + (d.Due ? '<span style="color:' + (overdue?'var(--down)':'var(--text2)') + '">' + _fmtDate(d.Due) + '</span>' : '—')
-      + '</td>'
-      + '</tr>';
-
-    /* add border-bottom on last cell to separate rows */
-    row1 = row1.replace(/<\/tr>$/, '</tr>');
-
-    return row1;
-  }).join('');
-}
-
-/* ── Initiative conversion hints ────────────────────────── */
-function buildInitSection(data) {
-  var el = document.getElementById('issue-init-section');
-  if (!el) return;
-  var systemic = data.filter(function(d){
-    return (d.Components||'').split(';').length >= 3 ||
-           d.Priority === 'Highest' || d.Severity === 'Critical' ||
-           (d.Summary||'').includes('System Down');
-  });
-  if (!systemic.length) { el.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text3);font-size:12px">No systemic patterns detected.</div>'; return; }
-  var payment  = systemic.filter(function(d){ return d.Summary.includes('OMISE')||d.Summary.includes('K2')||d.Summary.includes('Refund'); });
-  var platform = systemic.filter(function(d){ return d.Summary.includes('System Down')||d.Summary.includes('SAP'); });
-  var other    = systemic.filter(function(d){ return !payment.includes(d)&&!platform.includes(d); });
-  var html = '';
-  if (platform.length) html += _initCard('🖥','Platform Resilience — '+platform.length+' system-down events',
-    'var(--down)','Platform outages affecting all channels. Recommend adding to PPP-9 scope.',
-    platform.map(function(d){return d.Key;}).join(', '),'All channels','New PPP candidate');
-  if (payment.length)  html += _initCard('💳','Payment Operations Gap — '+payment.length+' recurring issues',
-    'var(--amber)','OMISE float shortage and K2 refund failures indicate no automated payment monitoring.',
-    payment.map(function(d){return d.Key;}).join(', '),'Monthly recurrence','New PPP candidate');
-  if (other.length)    html += _initCard('⚠','Other critical issues ('+other.length+')',
-    'var(--accent)',other.map(function(d){return d.Key+': '+d.Summary;}).join(' · '),'—','Review needed','');
-  el.innerHTML = html;
-}
-function _initCard(icon, title, color, desc, keys, freq, badge) {
-  return '<div style="background:var(--surface2);border-radius:7px;padding:14px 16px;'+
-    'border-left:3px solid '+color+';margin-bottom:10px;display:flex;gap:12px">'
-    +'<div style="width:36px;height:36px;border-radius:6px;display:flex;align-items:center;'+
-      'justify-content:center;font-size:16px;flex-shrink:0;background:'+color+'18;'+
-      'border:1px solid '+color+'33">'+icon+'</div>'
-    +'<div style="flex:1">'
-      +'<div style="font-size:12px;font-weight:600;margin-bottom:4px;display:flex;'+
-        'align-items:center;gap:6px;flex-wrap:wrap">'+title
-        +(badge?'<span style="font-size:10px;font-weight:600;color:var(--purple);'+
-          'background:rgba(167,139,250,.12);padding:1px 6px;border-radius:3px;'+
-          'border:1px solid rgba(167,139,250,.25)">'+badge+'</span>':'')
-      +'</div>'
-      +'<div style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:5px">'+desc+'</div>'
-      +'<div style="display:flex;gap:12px;flex-wrap:wrap">'
-        +'<div style="font-size:10px;color:var(--text3)">Issues: <strong style="color:var(--text2)">'+keys+'</strong></div>'
-        +'<div style="font-size:10px;color:var(--text3)">Pattern: <strong style="color:var(--text2)">'+freq+'</strong></div>'
-      +'</div>'
-    +'</div>'
-  +'</div>';
-}
-
-/* ── Event handlers ──────────────────────────────────────── */
+/* ── Filter + sort pipeline ──────────────────────────────── */
 function applyFilters() {
+  var raw = (window._issueData || []).map(function(d){
+    var copy = Object.assign({}, d);
+    copy.Status = _normaliseStatus(copy.Status);
+    return copy;
+  });
+
   _searchQ = (document.getElementById('issue-search')||{}).value || '';
-  var data = _getFiltered();
-  if (_activeView === 'board') buildBoard(data);
-  else buildTable(data);
-  buildTrendChart(data);
-  buildCompSevChart(data);
+
+  var out = raw.filter(function(d) {
+    if (_filterStatus !== 'all' && d.Status !== _filterStatus) return false;
+    if (_filterPriority !== 'all' && d.Priority !== _filterPriority) return false;
+    if (_filterSeverity !== 'all' && d.Severity !== _filterSeverity) return false;
+    if (_filterComp !== 'all') {
+      var comps = (d.Components||'').split(';').map(function(c){return c.trim();});
+      if (!comps.includes(_filterComp)) return false;
+    }
+    if (_searchQ) {
+      var q = _searchQ.toLowerCase();
+      var hay = ((d.Key||'')+' '+(d.Summary||'')+' '+(d.Assignee||'')+' '+(d.Components||'')).toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  var col = _sortCol;
+  out.sort(function(a,b){
+    var av = (a[col]||'').toString(), bv = (b[col]||'').toString();
+    var cmp = av.localeCompare(bv, undefined, {numeric:true});
+    return _sortAsc ? cmp : -cmp;
+  });
+
+  if (_activeView === 'board') buildBoard(out);
+  else                         buildTable(out);
 }
-function setStatusFilter(val, btn) {
-  if (val === 'all') {
-    _filterStatuses = ['all'];
-    document.querySelectorAll('#issue-status-filter .fb').forEach(function(b){ b.classList.remove('active'); });
-    document.querySelector('#issue-status-filter .fb[data-val="all"]').classList.add('active');
-  } else {
-    /* Remove 'all' if specific selected */
-    var idx = _filterStatuses.indexOf('all');
-    if (idx !== -1) _filterStatuses.splice(idx, 1);
-    /* Toggle this value */
-    var vi = _filterStatuses.indexOf(val);
-    if (vi !== -1) {
-      _filterStatuses.splice(vi, 1);
-      btn.classList.remove('active');
-    } else {
-      _filterStatuses.push(val);
-      btn.classList.add('active');
-    }
-    /* If nothing selected, reset to all */
-    if (_filterStatuses.length === 0) {
-      _filterStatuses = ['all'];
-      document.querySelector('#issue-status-filter .fb[data-val="all"]').classList.add('active');
-    }
-  }
+
+function onStatusFilter(status) {
+  _filterStatus = status;
+  document.querySelectorAll('.status-btn').forEach(function(btn){
+    btn.classList.toggle('active', btn.dataset.status === status);
+  });
   applyFilters();
 }
+
 function onDropdownChange() {
-  _filterPriority  = document.getElementById('filter-priority').value;
-  _filterSeverity  = document.getElementById('filter-severity').value;
-  var rcEl = document.getElementById('filter-rootcause');
-  _filterRootCause = rcEl ? rcEl.value : 'all';
+  _filterPriority = (document.getElementById('filter-priority')||{}).value || 'all';
+  _filterSeverity = (document.getElementById('filter-severity')||{}).value || 'all';
+  _filterComp     = (document.getElementById('filter-component')||{}).value || 'all';
   applyFilters();
 }
-function setIssueView(view, btn) {
-  _activeView = view;
-  document.querySelectorAll('.vbtn').forEach(function(b){ b.classList.remove('active'); });
-  btn.classList.add('active');
-  document.getElementById('board-view-wrap').style.display  = view === 'board' ? 'block' : 'none';
-  document.getElementById('table-view-wrap').style.display  = view === 'table' ? 'block' : 'none';
-  applyFilters();
-}
+
 function sortIssueBy(col) {
   if (_sortCol === col) _sortAsc = !_sortAsc;
   else { _sortCol = col; _sortAsc = true; }
   applyFilters();
 }
 
-/* ══════════════════════════════════════════════════════════════
-   ISSUE TREND CHART — Created vs Done by Week / Month
-   Uses Chart.js (already loaded via CDN in issue/index.html)
-══════════════════════════════════════════════════════════════ */
+function switchView(view) {
+  _activeView = view;
+  var bw = document.getElementById('board-view-wrap');
+  var tw = document.getElementById('table-view-wrap');
+  var btnB = document.getElementById('view-btn-board');
+  var btnT = document.getElementById('view-btn-table');
+  if (bw) bw.style.display = view === 'board' ? '' : 'none';
+  if (tw) tw.style.display = view === 'table' ? '' : 'none';
+  if (btnB) btnB.classList.toggle('active', view === 'board');
+  if (btnT) btnT.classList.toggle('active', view === 'table');
+  applyFilters();
+}
 
-var _trendPeriod = 'month';  /* 'week' | 'month' */
-var _trendChart  = null;
+/* ── Build board view ────────────────────────────────────── */
+function buildBoard(data) {
+  var countEl = document.getElementById('count-label');
+  if (countEl) countEl.textContent = 'Showing '+data.length+' issue'+(data.length!==1?'s':'');
 
-function buildTrendChart(data) {
-  var el = document.getElementById('issue-trend-chart');
-  if (!el) return;
+  var boardEl = document.getElementById('issue-board');
+  if (!boardEl) return;
 
-  function _periodKey(raw) {
-    if (!raw) return null;
-    var d = new Date(String(raw).trim());
-    if (isNaN(d.getTime())) return null;
-    if (_trendPeriod === 'week') {
-      var jan4 = new Date(d.getFullYear(), 0, 4);
-      var w = Math.ceil(((d - jan4) / 86400000 + jan4.getDay() + 1) / 7);
-      return d.getFullYear() + '-W' + String(w).padStart(2, '0');
-    }
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-  }
-  function _label(k) {
-    if (_trendPeriod === 'week') return k;
-    var p = k.split('-');
-    return _MONTHS[parseInt(p[1]) - 1] + ' ' + p[0];
-  }
-
-  /* X-axis = FailureOccurs period (when the incident happened).
-     Stacked bars per period:
-       Bottom (green) = Resolved   — FailureResolved is set
-       Top    (red)   = Open/Pending — no FailureResolved yet  */
-  var resolved = {}, pending = {};
-
-  data.forEach(function(d) {
-    var occDate = d.FailureOccurs || d.CorrectionBegins;
-    if (!occDate) return;
-    var ck = _periodKey(occDate);
-    if (!ck) return;
-    if (d.FailureResolved) {
-      resolved[ck] = (resolved[ck] || 0) + 1;
-    } else {
-      pending[ck] = (pending[ck] || 0) + 1;
-    }
+  /* group by status */
+  var groups = {};
+  STATUSES.forEach(function(s){ groups[s.key] = []; });
+  data.forEach(function(d){
+    var sk = d.Status;
+    if (!groups[sk]) sk = 'Open';
+    groups[sk].push(d);
   });
 
-  var allKeys = Array.from(new Set(Object.keys(resolved).concat(Object.keys(pending)))).sort();
-  if (!allKeys.length) {
-    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">No incident date data (FailureOccurs) available</div>';
+  boardEl.innerHTML = STATUSES.map(function(s){
+    var items = groups[s.key] || [];
+    return '<div class="iboard-col">'+
+      '<div class="iboard-col-hd" style="border-top-color:'+s.color+'">'+
+        '<span class="iboard-col-name">'+s.label+'</span>'+
+        '<span class="iboard-col-cnt">'+items.length+'</span>'+
+      '</div>'+
+      items.map(function(d){ return buildCard(d); }).join('')+
+    '</div>';
+  }).join('');
+}
+
+/* ── Build single card ───────────────────────────────────── */
+function buildCard(d) {
+  var overdue  = isOverdue(d.Due, d.Status);
+  var mttrH    = calcMTTRHours(d.FailureOccurs, d.FailureResolved);
+  var hasTimeline = d.FailureOccurs || d.CorrectionBegins || d.FailureResolved;
+  var multiCh  = (d.Components||'').split(';').filter(Boolean).length >= 3;
+  var isSystemic = multiCh || (d.Summary||'').includes('System Down');
+
+  /* first component only for meta row */
+  var firstComp = (d.Components||'').split(';')[0].trim();
+
+  var timelineHtml = buildIncidentTimeline(d);
+
+  var initHint = '';
+  if (d.Key === 'GIT-42') {
+    initHint = '<div class="init-hint"><span>◆</span><div class="ih-body">Process gap: no automated float monitoring at month-end. Recurring risk → consider payment ops initiative</div></div>';
+  }
+  if (d.Key === 'GIT-9' || d.Key === 'GIT-4') {
+    initHint = '<div class="init-hint"><span>◆</span><div class="ih-body">Cross-channel system resilience gap. Relates to PPP-9 (Single Commerce Platform) scope.</div></div>';
+  }
+
+  /* ── meta row: severity · firstComp · assignee · due (1 line) ── */
+  var metaParts = [];
+  if (d.Severity) {
+    metaParts.push('<span class="sev-badge '+_sevCls(d.Severity)+'">'+d.Severity+'</span>');
+  }
+  if (firstComp) {
+    if (metaParts.length) metaParts.push('<span class="meta-sep">·</span>');
+    metaParts.push('<span class="comp-chip">'+firstComp+'</span>');
+  }
+  if (metaParts.length) metaParts.push('<span class="meta-sep">·</span>');
+  if (d.Assignee) {
+    metaParts.push('<span class="meta-assignee">'+d.Assignee+'</span>');
+  } else {
+    metaParts.push('<span class="meta-assignee" style="color:var(--down)">Unassigned</span>');
+  }
+  if (d.Due && d.Status !== 'Done') {
+    metaParts.push('<span class="meta-sep">·</span>');
+    metaParts.push('<span class="meta-due'+(overdue?' overdue':'')+'">Due '+d.Due+'</span>');
+  }
+  var metaHtml = '<div class="icard-meta">'+metaParts.join('')+'</div>';
+
+  var cls = {Open:'open','In Progress':'in-progress',Investigating:'investigating',
+             Resolved:'resolved',Done:'done'}[d.Status] || 'open';
+
+  return '<div class="icard '+cls+'">'+
+    '<div class="icard-top">'+
+      '<span class="ikey"><a href="'+JIRA_BASE+d.Key+'" target="_blank">'+d.Key+' ↗</a></span>'+
+      statusTag(d.Status)+
+      (multiCh ? '<span class="tag multi-ch">Multi-channel</span>' : '')+
+      (overdue ? '<span class="tag overdue-tag">Overdue</span>' : '')+
+      (!d.Assignee && d.Status !== 'Done' ? '<span class="tag unassigned-tag">Unassigned</span>' : '')+
+    '</div>'+
+    '<div class="isummary">'+d.Summary+'</div>'+
+    metaHtml+
+    (d.RootCause ? '<div class="iroot">Root cause: '+d.RootCause+'</div>' : '')+
+    timelineHtml+
+    initHint+
+  '</div>';
+}
+
+/* ── Build table view ────────────────────────────────────── */
+function buildTable(data) {
+  var countEl = document.getElementById('count-label');
+  if (countEl) countEl.textContent = 'Showing '+data.length+' issue'+(data.length!==1?'s':'');
+
+  var tbody = document.getElementById('issue-tbody');
+  if (!tbody) return;
+
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="10" class="empty">No issues match this filter.</td></tr>';
     return;
   }
 
-  var labels       = allKeys.map(_label);
-  var resolvedVals = allKeys.map(function(k){ return resolved[k] || 0; });
-  var pendingVals  = allKeys.map(function(k){ return pending[k]  || 0; });
+  tbody.innerHTML = data.map(function(d){
+    var overdue = isOverdue(d.Due, d.Status);
+    var mttr    = calcMTTR(d.FailureOccurs, d.FailureResolved);
+    var respH   = calcResponseHours(d.FailureOccurs, d.CorrectionBegins);
+    var respLbl = respH ? (respH < 1 ? Math.round(respH*60)+'m' : respH.toFixed(1)+'h') : '—';
 
-  if (_trendChart) { _trendChart.destroy(); _trendChart = null; }
-  var canvas = document.getElementById('issue-trend-canvas');
-  if (!canvas) return;
-  canvas.style.display = 'block';
-
-  var cText = getComputedStyle(document.documentElement).getPropertyValue('--text2').trim() || '#8b949e';
-  var cGrid = getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#30363d';
-
-  _trendChart = new Chart(canvas.getContext('2d'), {
-    type: 'bar',
-    data: {
-      labels: labels,
-      datasets: [
-        { label: 'Resolved',      data: resolvedVals,
-          backgroundColor: '#3fb950cc', borderColor: '#3fb950',
-          borderWidth: 1, borderRadius: 0, stack: 'st' },
-        { label: 'Open / Pending', data: pendingVals,
-          backgroundColor: '#f85149cc', borderColor: '#f85149',
-          borderWidth: 1, borderRadius: 3, stack: 'st' },
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { labels: { color: cText, font: { size: 11 } } },
-        tooltip: { mode: 'index', intersect: false }
-      },
-      scales: {
-        x: { stacked: true,
-             ticks: { color: cText, font: { size: 10 }, maxRotation: 45 },
-             grid: { color: cGrid + '44' } },
-        y: { stacked: true, beginAtZero: true,
-             ticks: { color: cText, font: { size: 11 }, stepSize: 1 },
-             grid: { color: cGrid + '44' },
-             title: { display: true, text: 'Issues', color: cText, font: { size: 11 } } }
-      }
+    var tlHtml = '';
+    if (d.FailureOccurs || d.CorrectionBegins || d.FailureResolved) {
+      tlHtml = '<div style="font-size:10px;line-height:1.8;white-space:nowrap">'+
+        '<div>Failure: '+(d.FailureOccurs||'—')+'</div>'+
+        '<div>Fix started: '+(d.CorrectionBegins||'—')+'</div>'+
+        '<div>Resolved: '+(d.FailureResolved||'<span style="color:var(--amber)">Ongoing</span>')+'</div>'+
+        '<div>Response: <b>'+respLbl+'</b> | MTTR: <b>'+(mttr||'—')+'</b></div>'+
+      '</div>';
     }
-  });
+
+    return '<tr>'+
+      '<td><a href="'+JIRA_BASE+d.Key+'" target="_blank" style="color:var(--accent);font-weight:700;text-decoration:none;white-space:nowrap">'+d.Key+' ↗</a></td>'+
+      '<td style="min-width:200px;max-width:300px">'+d.Summary+'</td>'+
+      '<td>'+statusTag(d.Status)+(overdue?'<br><span class="tag open" style="margin-top:3px">Overdue</span>':'')+'</td>'+
+      '<td style="white-space:nowrap;color:'+_pColor(d.Priority)+';font-weight:600">'+(d.Priority||'—')+'</td>'+
+      '<td style="white-space:nowrap;color:'+_sColor(d.Severity)+';font-weight:600">'+(d.Severity||'—')+'</td>'+
+      '<td style="font-size:11px">'+compsHtml(d.Components)+'</td>'+
+      '<td style="white-space:nowrap;font-size:12px">'+(d.Assignee||'<span style="color:var(--down)">—</span>')+'</td>'+
+      '<td style="white-space:nowrap;font-size:12px;color:'+(overdue?'var(--down)':'var(--text2)')+'">'+
+        (d.Due && d.Status !== 'Done' ? d.Due : '—')+
+      '</td>'+
+      '<td style="font-size:11px;max-width:200px">'+(d.RootCause||'—')+'</td>'+
+      '<td>'+tlHtml+'</td>'+
+    '</tr>';
+  }).join('');
 }
 
-function setTrendPeriod(period, btn) {
-  _trendPeriod = period;
-  document.querySelectorAll('.trend-period-btn').forEach(function(b) { b.classList.remove('active'); });
-  btn.classList.add('active');
-  buildTrendChart(_getFiltered()); /* apply current filters */
-}
-
-
-/* ══════════════════════════════════════════════════════════════
-   COMPONENT × SEVERITY CHART — grouped bar chart
-   X-axis = component (short name), bars grouped by severity
-══════════════════════════════════════════════════════════════ */
-var _compSevChart = null; /* kept for compat — not used in table mode */
-
-function buildCompSevChart(data) {
-  var el = document.getElementById('issue-compsev-chart');
+/* ── Systemic issues section ─────────────────────────────── */
+function buildSystemicSection(data) {
+  var el = document.getElementById('issue-init-section');
   if (!el) return;
 
-  /* hide canvas — we use HTML table instead */
-  var canvas = document.getElementById('issue-compsev-canvas');
-  if (canvas) canvas.style.display = 'none';
-
-  var SEVERITIES = ['Critical', 'Major', 'Moderate', 'Low'];
-  var SEV_COLORS = { 'Critical':'#f85149','Major':'#f97316','Moderate':'#f5a524','Low':'#3fb950' };
-  var SEV_BG    = { 'Critical':'rgba(248,81,73,.12)','Major':'rgba(249,115,22,.10)',
-                    'Moderate':'rgba(245,165,36,.10)','Low':'rgba(63,185,80,.10)' };
-
-  /* Collect components */
-  var seen = {};
-  data.forEach(function(d) {
-    (d.Components||'').split(';').forEach(function(c) {
-      c = c.trim(); if (c) seen[c] = true;
-    });
-  });
-  var comps = Object.keys(seen).sort();
-
-  function _short(c) {
-    return c.replace('firster-commerce','F1-Web')
-            .replace('firster-tiktok-social-commerce','F1-TikTok')
-            .replace('kingpower-commerce-th','KP-TH')
-            .replace('kingpower-commerce-cn','KP-CN')
-            .replace('kingpower-douyin-social-commerce','KP-Douyin')
-            .replace('jd-phamacy-marketplace-cn','JD-CN')
-            .replace('taihaitao-commerce-cn','THT');
-  }
-
-  /* Build 2D matrix: cell[sev][comp] = count */
-  var matrix = {};
-  var rowTotals = {}, colTotals = {};
-  var grand = 0;
-  SEVERITIES.forEach(function(s) { matrix[s] = {}; rowTotals[s] = 0; });
-  comps.forEach(function(c) { colTotals[c] = 0; });
-
-  data.forEach(function(d) {
-    var sev = d.Severity || '';
-    if (!matrix[sev]) return;
-    (d.Components||'').split(';').forEach(function(c) {
-      c = c.trim(); if (!c) return;
-      matrix[sev][c] = (matrix[sev][c] || 0) + 1;
-      rowTotals[sev]++;
-      colTotals[c] = (colTotals[c] || 0) + 1;
-      grand++;
-    });
+  var systemic = data.filter(function(d){
+    var multiCh = (d.Components||'').split(';').filter(Boolean).length >= 3;
+    return multiCh || (d.Summary||'').includes('System Down');
   });
 
-  /* Filter out empty rows/cols */
-  var activeSevs = SEVERITIES.filter(function(s){ return rowTotals[s] > 0; });
-  var activeComps = comps.filter(function(c){ return colTotals[c] > 0; });
-
-  if (!activeSevs.length || !activeComps.length) {
-    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">No severity/component data</div>';
+  if (!systemic.length) {
+    el.innerHTML = '<p style="color:var(--text2);font-size:13px;padding:10px 0">No systemic issues identified in current data.</p>';
     return;
   }
 
-  /* Build HTML table */
-  var th = function(txt, style) {
-    return '<th style="padding:5px 8px;font-size:10px;font-weight:700;color:var(--text3);'
-         + 'text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;border-bottom:1px solid var(--border);'
-         + (style||'') + '">' + txt + '</th>';
-  };
-
-  var html = '<div style="overflow-x:auto;padding:4px">'
-           + '<table style="width:100%;border-collapse:collapse;font-size:11px">'
-           + '<thead><tr>'
-           + th('Severity \\ Component', 'text-align:left;min-width:90px');
-
-  activeComps.forEach(function(c) {
-    html += th(_short(c), 'text-align:center;min-width:70px');
-  });
-  html += th('Total', 'text-align:center;min-width:60px');
-  html += '</tr></thead><tbody>';
-
-  activeSevs.forEach(function(sev) {
-    html += '<tr>';
-    /* Severity label cell */
-    html += '<td style="padding:6px 8px;font-weight:700;color:' + SEV_COLORS[sev]
-          + ';white-space:nowrap;border-bottom:1px solid var(--border22);background:' + SEV_BG[sev] + '">'
-          + sev + '</td>';
-
-    activeComps.forEach(function(c) {
-      var count = matrix[sev][c] || 0;
-      var rowPct = rowTotals[sev] > 0 ? Math.round(count / rowTotals[sev] * 100) : 0;
-      var colPct = colTotals[c]   > 0 ? Math.round(count / colTotals[c]   * 100) : 0;
-      /* cell intensity — based on % of row total */
-      var intensity = rowTotals[sev] > 0 ? count / rowTotals[sev] : 0;
-      var alpha = count > 0 ? (0.08 + intensity * 0.5).toFixed(2) : '0';
-      var bg = count > 0
-        ? 'rgba(' + hexToRgb(SEV_COLORS[sev]) + ',' + alpha + ')'
-        : 'transparent';
-
-      html += '<td style="padding:5px 6px;text-align:center;border-bottom:1px solid var(--border22);background:' + bg + '">';
-      if (count > 0) {
-        html += '<div style="font-weight:700;font-size:13px;color:var(--text)">' + count + '</div>'
-              + '<div style="font-size:9px;color:var(--text2)">row ' + rowPct + '% · col ' + colPct + '%</div>';
-      } else {
-        html += '<span style="color:var(--text3)">—</span>';
-      }
-      html += '</td>';
-    });
-
-    /* Row total */
-    var rowPct = grand > 0 ? Math.round(rowTotals[sev] / grand * 100) : 0;
-    html += '<td style="padding:5px 8px;text-align:center;font-weight:700;border-bottom:1px solid var(--border22);background:var(--surface2)">'
-          + rowTotals[sev]
-          + '<div style="font-size:9px;color:var(--text2)">' + rowPct + '%</div>'
-          + '</td>';
-    html += '</tr>';
-  });
-
-  /* Column totals row */
-  html += '<tr style="background:var(--surface2)">';
-  html += '<td style="padding:6px 8px;font-weight:700;color:var(--text2);font-size:10px;text-transform:uppercase">Total</td>';
-  activeComps.forEach(function(c) {
-    var colPct = grand > 0 ? Math.round(colTotals[c] / grand * 100) : 0;
-    html += '<td style="padding:5px 6px;text-align:center;font-weight:700">'
-          + colTotals[c]
-          + '<div style="font-size:9px;color:var(--text2)">' + colPct + '%</div>'
-          + '</td>';
-  });
-  html += '<td style="padding:5px 8px;text-align:center;font-weight:700">' + grand + '</td>';
-  html += '</tr></tbody></table></div>';
-
-  el.innerHTML = html;
+  el.innerHTML = systemic.map(function(d){
+    return '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">'+
+      '<span style="color:var(--accent);font-weight:700;font-size:12px;white-space:nowrap">'+d.Key+'</span>'+
+      '<div style="flex:1;font-size:12px">'+
+        '<div style="font-weight:600;color:var(--text)">'+d.Summary+'</div>'+
+        '<div style="color:var(--text2);margin-top:3px">'+(d.RootCause||'Root cause not documented')+'</div>'+
+      '</div>'+
+      statusTag(d.Status)+
+    '</div>';
+  }).join('');
 }
 
-function hexToRgb(hex) {
-  var r = parseInt(hex.slice(1,3),16);
-  var g = parseInt(hex.slice(3,5),16);
-  var b = parseInt(hex.slice(5,7),16);
-  return r + ',' + g + ',' + b;
+/* ── Kick off after data loaded ──────────────────────────── */
+function loadIssueData() {
+  var data = window._issueData || [];
+
+  /* normalise statuses in place */
+  data.forEach(function(d){ d.Status = _normaliseStatus(d.Status); });
+
+  populateFilters(data);
+  applyFilters();
+  buildSystemicSection(data);
 }
 
-/* ── Main init ───────────────────────────────────────────── */
-function init(data) {
-  buildStrip(data);
-  buildDropdownFilters(data);
-  buildBoard(_getFiltered());
-  buildTrendChart(data);
-  buildCompSevChart(data);
-  buildInitSection(data);
+function clearIssueCache() {
+  Object.keys(localStorage).forEach(function(k){
+    if (k.startsWith('gdb_issue_')) localStorage.removeItem(k);
+  });
 }

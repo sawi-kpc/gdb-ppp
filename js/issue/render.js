@@ -322,6 +322,18 @@ function buildBoard(data) {
           d.Severity+'</span></div>':'')
         +'<div class="ibc-comps">'+_compsHtml(d.Components, 1)+'</div>'
         +(d.Assignee?'<div class="ibc-assign">'+d.Assignee+'</div>':'')
+        +(d.Due ? (function(){
+            var ns = _normaliseStatus(d.Status);
+            var isDone = ns === 'Done';
+            var dueDate = new Date(d.Due);
+            var now = new Date();
+            var isOverdue = !isDone && dueDate < now;
+            var isNear    = !isDone && !isOverdue && (dueDate - now) < 7*24*60*60*1000;
+            var color  = isOverdue ? 'var(--down)' : isNear ? 'var(--amber)' : 'var(--text3)';
+            var prefix = isOverdue ? '!! Overdue ' : 'Due ';
+            return '<div style="margin-top:4px;font-size:9px;font-weight:600;color:'+color+'">'
+                 + prefix + _fmtDate(d.Due) + '</div>';
+          })() : '')
         +(hasTimeline ? buildIncidentTimeline(d) : '')
       +'</div>';
     }).join('');
@@ -354,54 +366,36 @@ function buildTable(data) {
 
   document.getElementById('issue-tbody').innerHTML = data.map(function(d) {
     var overdue = d.Due && d.Status !== 'Done' && d.Status !== 'Closed' && new Date(d.Due) < new Date();
-    var hasTL   = d.FailureOccurs || d.CorrectionBegins || d.FailureResolved;
 
     /* row 1 — main columns */
-    var row1 = '<tr>'
-      + '<td style="white-space:nowrap;vertical-align:top;padding:8px 10px ' + (hasTL?'2px':'8px') + '">'
+    var row1 = '<tr style="border-bottom:1px solid var(--border)">'
+      + '<td style="white-space:nowrap;vertical-align:top;padding:8px 10px ' + '8px' + '">'
           + '<a href="' + ISSUE_JIRA_BASE + d.Key + '" target="_blank" '
           + 'style="color:var(--accent);font-weight:700;text-decoration:none">' + d.Key + ' ↗</a>'
       + '</td>'
-      + '<td style="max-width:480px;vertical-align:top;padding:8px 10px ' + (hasTL?'2px':'8px') + '">'
+      + '<td style="max-width:480px;vertical-align:top;padding:8px 10px ' + '8px' + '">'
           + '<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500" title="' + d.Summary + '">'
               + d.Summary
           + '</div>'
       + '</td>'
-      + '<td style="vertical-align:top;padding:8px 10px ' + (hasTL?'2px':'8px') + '">'
+      + '<td style="vertical-align:top;padding:8px 10px ' + '8px' + '">'
           + _statusTag(d.Status)
       + '</td>'
-      + '<td style="vertical-align:top;padding:8px 10px ' + (hasTL?'2px':'8px') + ';font-size:11px;white-space:nowrap">'
+      + '<td style="vertical-align:top;padding:8px 10px ' + '8px' + ';font-size:11px;white-space:nowrap">'
           + (d.Priority ? '<span style="font-weight:600;color:' + _pColor(d.Priority) + '">' + d.Priority + '</span>' : '—')
       + '</td>'
-      + '<td style="vertical-align:top;padding:8px 10px ' + (hasTL?'2px':'8px') + ';font-size:11px;white-space:nowrap">'
+      + '<td style="vertical-align:top;padding:8px 10px ' + '8px' + ';font-size:11px;white-space:nowrap">'
           + (d.Severity ? '<span style="font-weight:600;color:' + _sColor(d.Severity) + '">' + d.Severity + '</span>' : '—')
       + '</td>'
-      + '<td style="vertical-align:top;padding:8px 10px ' + (hasTL?'2px':'8px') + ';font-size:11px;white-space:nowrap">'
+      + '<td style="vertical-align:top;padding:8px 10px ' + '8px' + ';font-size:11px;white-space:nowrap">'
           + (d.Due ? '<span style="color:' + (overdue?'var(--down)':'var(--text2)') + '">' + _fmtDate(d.Due) + '</span>' : '—')
       + '</td>'
       + '</tr>';
 
-    /* row 2 — incident timeline */
-    var row2 = '';
-    if (hasTL) {
-      var tlHtml = buildIncidentTimeline(d);
-      if (tlHtml) {
-        row2 = '<tr>'
-          + '<td colspan="6" style="padding:2px 10px 10px;border-bottom:1px solid var(--border)">'
-              + '<div style="background:var(--surface2);border-radius:7px;padding:10px 14px">'
-                  + tlHtml
-              + '</div>'
-          + '</td>'
-          + '</tr>';
-      } else {
-        row1 = row1.replace('</tr>', '<td style="border-bottom:1px solid var(--border)"></td></tr>');
-      }
-    } else {
-      /* add bottom border via style on last cell */
-      row1 = row1.replace(/padding:8px 10px 8px">/g, 'padding:8px 10px;border-bottom:1px solid var(--border)">');
-    }
+    /* add border-bottom on last cell to separate rows */
+    row1 = row1.replace(/<\/tr>$/, '</tr>');
 
-    return row1 + row2;
+    return row1;
   }).join('');
 }
 

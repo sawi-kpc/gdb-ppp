@@ -160,7 +160,7 @@ function populateFilters(data) {
 
 /* ── Filter + sort pipeline ──────────────────────────────── */
 function applyFilters() {
-  var raw = (window._issueData || []).map(function(d){
+  var raw = (window.issueData || []).map(function(d){
     var copy = Object.assign({}, d);
     copy.Status = _normaliseStatus(copy.Status);
     return copy;
@@ -305,7 +305,7 @@ function buildCard(d) {
 
   return '<div class="icard '+cls+'">'+
     '<div class="icard-top">'+
-      '<span class="ikey"><a href="'+JIRA_BASE+d.Key+'" target="_blank">'+d.Key+' ↗</a></span>'+
+      '<span class="ikey"><a href="'+ISSUE_JIRA_BASE+d.Key+'" target="_blank">'+d.Key+' ↗</a></span>'+
       statusTag(d.Status)+
       (multiCh ? '<span class="tag multi-ch">Multi-channel</span>' : '')+
       (overdue ? '<span class="tag overdue-tag">Overdue</span>' : '')+
@@ -349,7 +349,7 @@ function buildTable(data) {
     }
 
     return '<tr>'+
-      '<td><a href="'+JIRA_BASE+d.Key+'" target="_blank" style="color:var(--accent);font-weight:700;text-decoration:none;white-space:nowrap">'+d.Key+' ↗</a></td>'+
+      '<td><a href="'+ISSUE_JIRA_BASE+d.Key+'" target="_blank" style="color:var(--accent);font-weight:700;text-decoration:none;white-space:nowrap">'+d.Key+' ↗</a></td>'+
       '<td style="min-width:200px;max-width:300px">'+d.Summary+'</td>'+
       '<td>'+statusTag(d.Status)+(overdue?'<br><span class="tag open" style="margin-top:3px">Overdue</span>':'')+'</td>'+
       '<td style="white-space:nowrap;color:'+_pColor(d.Priority)+';font-weight:600">'+(d.Priority||'—')+'</td>'+
@@ -392,20 +392,31 @@ function buildSystemicSection(data) {
   }).join('');
 }
 
-/* ── Kick off after data loaded ──────────────────────────── */
-function loadIssueData() {
-  var data = window._issueData || [];
-
-  /* normalise statuses in place */
+/* ── Render pipeline (called after data is ready) ───────── */
+function _renderIssues() {
+  var data = window.issueData || [];
   data.forEach(function(d){ d.Status = _normaliseStatus(d.Status); });
-
   populateFilters(data);
   applyFilters();
   buildSystemicSection(data);
 }
 
-function clearIssueCache() {
-  Object.keys(localStorage).forEach(function(k){
-    if (k.startsWith('gdb_issue_')) localStorage.removeItem(k);
-  });
+/* ── initIssueBoard: called by index.html onDOMContentLoaded ─
+   Delegates to data.js loadIssueData(onSuccess, onError)       */
+function initIssueBoard() {
+  if (typeof loadIssueData === 'function') {
+    loadIssueData(
+      function() { _renderIssues(); },
+      function(msg) {
+        var b = document.getElementById('issue-board');
+        if (b) b.innerHTML = '<div style="padding:40px;color:var(--down);text-align:center;font-size:13px">⚠ ' + msg + '</div>';
+        var t = document.getElementById('issue-tbody');
+        if (t) t.innerHTML = '<tr><td colspan="10" class="empty">⚠ ' + msg + '</td></tr>';
+        var c = document.getElementById('count-label');
+        if (c) c.textContent = 'Error loading data';
+      }
+    );
+  } else {
+    _renderIssues();
+  }
 }

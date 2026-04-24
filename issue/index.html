@@ -11,12 +11,12 @@
 ═══════════════════════════════════════════ */
 
 /* ── Page layout ── */
-.issue-content { padding: 20px 24px; max-width: 1600px; margin: 0 auto; }
-.panel { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+.issue-content { padding: 20px 24px; max-width: 1600px; margin: 0 auto; min-width: 0; overflow: hidden; }
+.panel { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 16px; overflow: hidden; min-width: 0; }
 .panel-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); }
 .panel-title { font-size: 14px; font-weight: 700; color: var(--text); }
 .panel-sub   { font-size: 12px; color: var(--text2); margin-top: 2px; }
-.panel-body  { padding: 16px 18px; }
+.panel-body  { padding: 16px 18px; min-width: 0; overflow: hidden; }
 
 /* ── Control bar ── */
 .ctrl-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
@@ -48,14 +48,22 @@
 .tag.unassigned-tag{ background: rgba(226,75,74,.08); color: var(--down); border: 1px solid rgba(226,75,74,.15); }
 
 /* ── Board layout ── */
-.iboard { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; align-items: start; }
-.iboard-col { display: flex; flex-direction: column; gap: 8px; }
+.iboard-wrap { overflow-x: auto; width: 100%; }
+.iboard {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  align-items: start;
+  min-width: 0;
+  width: 100%;
+}
+.iboard-col { display: flex; flex-direction: column; gap: 8px; min-width: 0; overflow: hidden; }
 .iboard-col-hd { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; background: var(--surface2); border-radius: 6px; border-top: 3px solid; margin-bottom: 2px; }
-.iboard-col-name { font-size: 11px; font-weight: 700; color: var(--text); }
-.iboard-col-cnt  { font-size: 11px; font-weight: 700; color: var(--text2); background: var(--surface); padding: 1px 7px; border-radius: 10px; border: 1px solid var(--border); }
+.iboard-col-name { font-size: 11px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.iboard-col-cnt  { flex-shrink: 0; font-size: 11px; font-weight: 700; color: var(--text2); background: var(--surface); padding: 1px 7px; border-radius: 10px; border: 1px solid var(--border); }
 
 /* ── Issue card ── */
-.icard { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; position: relative; overflow: hidden; transition: border-color .15s; }
+.icard { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; position: relative; overflow: hidden; transition: border-color .15s; min-width: 0; width: 100%; box-sizing: border-box; }
 .icard:hover { border-color: var(--text3); }
 .icard::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 0; }
 .icard.open::before          { background: var(--down); }
@@ -64,35 +72,35 @@
 .icard.resolved::before      { background: var(--teal); }
 .icard.done::before          { background: var(--up); }
 
-.icard-top { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
-.ikey { font-size: 11px; font-weight: 700; }
+.icard-top { display: flex; align-items: center; gap: 5px; margin-bottom: 6px; flex-wrap: wrap; min-width: 0; }
+.ikey { font-size: 11px; font-weight: 700; flex-shrink: 0; }
 .ikey a { color: var(--accent); text-decoration: none; }
 .ikey a:hover { text-decoration: underline; }
-.isummary { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 8px; line-height: 1.4; }
+.isummary { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 8px; line-height: 1.4; word-break: break-word; overflow-wrap: break-word; }
 
 /* ── Meta row (1-line: severity · comp · assignee · due) ── */
-.icard-meta { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; margin-bottom: 6px; }
-.sev-badge { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px; white-space: nowrap; }
+.icard-meta { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-bottom: 6px; min-width: 0; }
+.sev-badge { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px; white-space: nowrap; flex-shrink: 0; }
 .sev-badge.critical { background: rgba(226,75,74,.12); color: #A32D2D; border: 1px solid rgba(226,75,74,.2); }
 .sev-badge.high     { background: rgba(249,115,22,.12); color: #7c3d12; border: 1px solid rgba(249,115,22,.2); }
 .sev-badge.moderate { background: rgba(239,159,39,.12); color: #854F0B; border: 1px solid rgba(239,159,39,.2); }
 .sev-badge.low      { background: rgba(63,185,80,.10);  color: #27500A; border: 1px solid rgba(63,185,80,.2); }
-.meta-sep    { color: var(--text3); font-size: 10px; line-height: 1; }
-.comp-chip   { font-size: 10px; padding: 2px 7px; border-radius: 3px; background: rgba(55,138,221,.1); color: #185FA5; border: 1px solid rgba(55,138,221,.2); white-space: nowrap; }
-.meta-assignee { font-size: 11px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
-.meta-due        { font-size: 11px; color: var(--text2); white-space: nowrap; }
+.meta-sep    { color: var(--text3); font-size: 10px; line-height: 1; flex-shrink: 0; }
+.comp-chip   { font-size: 10px; padding: 2px 7px; border-radius: 3px; background: rgba(55,138,221,.1); color: #185FA5; border: 1px solid rgba(55,138,221,.2); white-space: nowrap; max-width: 120px; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1; }
+.meta-assignee { font-size: 11px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1 1 60px; max-width: 140px; }
+.meta-due        { font-size: 11px; color: var(--text2); white-space: nowrap; flex-shrink: 0; }
 .meta-due.overdue { color: var(--down); }
 
 /* ── Root cause / timeline ── */
-.iroot { font-size: 11px; color: var(--text2); padding: 6px 0; border-top: 1px solid var(--border); margin-top: 6px; }
-.tl { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+.iroot { font-size: 11px; color: var(--text2); padding: 6px 0; border-top: 1px solid var(--border); margin-top: 6px; word-break: break-word; }
+.tl { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); min-width: 0; overflow: hidden; }
 .tl-label { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
-.tl-dots { display: flex; gap: 6px; }
-.td { flex: 1; font-size: 10px; color: var(--text2); }
-.td span { display: block; color: var(--text); font-weight: 600; margin-top: 2px; font-size: 10px; }
-.tl-metrics { display: flex; gap: 10px; font-size: 10px; color: var(--text2); margin-top: 6px; flex-wrap: wrap; }
+.tl-dots { display: flex; gap: 4px; min-width: 0; overflow: hidden; }
+.td { flex: 1; font-size: 10px; color: var(--text2); min-width: 0; overflow: hidden; }
+.td span { display: block; color: var(--text); font-weight: 600; margin-top: 2px; font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tl-metrics { display: flex; gap: 8px; font-size: 10px; color: var(--text2); margin-top: 6px; flex-wrap: wrap; min-width: 0; }
 .tl-metrics b { font-weight: 700; }
-.mttr-wrap { margin-top: 6px; }
+.mttr-wrap { margin-top: 6px; min-width: 0; }
 .mttr-bar { height: 4px; background: var(--border); border-radius: 2px; margin-top: 4px; overflow: hidden; }
 .mttr-fill { height: 100%; background: var(--up); border-radius: 2px; }
 
@@ -162,7 +170,9 @@
 
       <!-- Board view -->
       <div id="board-view-wrap">
-        <div class="iboard" id="issue-board"></div>
+        <div class="iboard-wrap">
+          <div class="iboard" id="issue-board"></div>
+        </div>
       </div>
 
       <!-- Table view -->

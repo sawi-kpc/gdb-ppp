@@ -91,18 +91,34 @@
 .meta-due        { font-size: 11px; color: var(--text2); white-space: nowrap; flex-shrink: 0; }
 .meta-due.overdue { color: var(--down); }
 
-/* ── Root cause / timeline ── */
-.iroot { font-size: 11px; color: var(--text2); padding: 6px 0; border-top: 1px solid var(--border); margin-top: 6px; word-break: break-word; }
-.tl { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); min-width: 0; overflow: hidden; }
-.tl-label { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
-.tl-dots { display: flex; gap: 4px; min-width: 0; overflow: hidden; }
-.td { flex: 1; font-size: 10px; color: var(--text2); min-width: 0; overflow: hidden; }
-.td span { display: block; color: var(--text); font-weight: 600; margin-top: 2px; font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tl-metrics { display: flex; gap: 8px; font-size: 10px; color: var(--text2); margin-top: 6px; flex-wrap: wrap; min-width: 0; }
-.tl-metrics b { font-weight: 700; }
-.mttr-wrap { margin-top: 6px; min-width: 0; }
-.mttr-bar { height: 4px; background: var(--border); border-radius: 2px; margin-top: 4px; overflow: hidden; }
-.mttr-fill { height: 100%; background: var(--up); border-radius: 2px; }
+/* ── Timeline 2-bar (visual style) ── */
+.tl2 { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); min-width: 0; overflow: hidden; }
+.tl2-bar-wrap { margin-bottom: 5px; }
+.tl2-bar { display: flex; height: 14px; border-radius: 3px; overflow: hidden; width: 100%; }
+.tl2-seg-grey  { background: #444; flex-shrink: 0; min-width: 8px; border-radius: 3px 0 0 3px; }
+.tl2-seg-green { background: var(--up); flex: 1; border-radius: 0 3px 3px 0; position: relative; display: flex; align-items: center; justify-content: center; }
+.tl2-bar-label { font-size: 9px; font-weight: 700; color: #000; white-space: nowrap; position: relative; z-index: 1; }
+.tl2-dots { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; font-size: 9px; color: var(--text2); margin-top: 3px; min-width: 0; }
+.tl2-dot  { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.tl2-ts   { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
+.tl2-divider { color: var(--border); font-size: 11px; margin: 0 2px; flex-shrink: 0; }
+.tl2-metric  { white-space: nowrap; font-size: 9px; color: var(--text2); }
+.tl2-metric b { font-weight: 700; }
+.tl2-fix  { color: var(--amber); }
+.tl2-mttr { color: var(--up); }
+.tl2-pending { font-size: 9px; color: var(--amber); white-space: nowrap; }
+
+/* ── Priority badge top-right of card ── */
+.icard-pri { margin-left: auto; flex-shrink: 0; }
+.pri-badge { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 3px; white-space: nowrap; }
+.pri-badge.pri-highest { color: var(--down); }
+.pri-badge.pri-high    { color: #f97316; }
+.pri-badge.pri-medium  { color: var(--amber); }
+.pri-badge.pri-low     { color: var(--up); }
+.pri-badge.pri-lowest  { color: var(--text3); }
+
+/* ── Table warning row ── */
+.tbl-warn { font-size: 10px; color: var(--down); font-weight: 600; margin-top: 2px; white-space: nowrap; }
 
 /* ── Overdue warning (replaces init-hint on cards) ── */
 .overdue-warn { display: flex; align-items: flex-start; gap: 7px; margin-top: 8px; padding: 7px 10px; background: rgba(226,75,74,.08); border-radius: 5px; border: 1px solid rgba(226,75,74,.2); }
@@ -188,8 +204,6 @@
               <th onclick="sortIssueBy('Severity')" style="white-space:nowrap;text-align:left">Severity</th>
               <th onclick="sortIssueBy('Assignee')" style="text-align:left">Assignee</th>
               <th onclick="sortIssueBy('Due')" style="white-space:nowrap;text-align:left">Due date</th>
-              <th style="text-align:left">Root cause</th>
-              <th style="text-align:left">Timeline</th>
             </tr></thead>
             <tbody id="issue-tbody"></tbody>
           </table>

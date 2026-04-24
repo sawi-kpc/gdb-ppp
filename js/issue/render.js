@@ -96,35 +96,81 @@ function isOverdue(due, status) {
   return new Date(due) < new Date();
 }
 
+/* ── Date formatter: "23 Mar 2026" ──────────────────────── */
+function _fmtDate(raw) {
+  if (!raw) return null;
+  var d = new Date(raw);
+  if (isNaN(d)) return raw;
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+}
+
+/* ── Time formatter for timeline dots: "22:30:00" ───────── */
+function _fmtTime(raw) {
+  if (!raw) return null;
+  var d = new Date(raw);
+  if (isNaN(d)) return raw;
+  return d.toTimeString().substring(0,8);
+}
+
 function buildIncidentTimeline(d) {
   var hasTimeline = d.FailureOccurs || d.CorrectionBegins || d.FailureResolved;
   if (!hasTimeline) return '';
-  var mttr   = calcMTTR(d.FailureOccurs, d.FailureResolved);
-  var mttrH  = calcMTTRHours(d.FailureOccurs, d.FailureResolved);
-  var respH  = calcResponseHours(d.FailureOccurs, d.CorrectionBegins);
-  var respLbl= respH ? (respH < 1 ? Math.round(respH*60)+'m' : respH.toFixed(1)+'h') : null;
-  var pct    = mttrH ? Math.min(Math.round(mttrH/48*100),100) : 0;
 
-  var html = '<div class="tl">';
-  html += '<div class="tl-label">Incident timeline</div>';
-  html += '<div class="tl-dots">';
-  html += '<div class="td">Failure<span>'+(d.FailureOccurs||'—')+'</span></div>';
-  html += '<div class="td">Fix started<span>'+(d.CorrectionBegins||'—')+'</span></div>';
-  html += '<div class="td">Resolved<span>'+(d.FailureResolved||'<span style="color:var(--amber)">Ongoing</span>')+'</span></div>';
+  var mttr  = calcMTTR(d.FailureOccurs, d.FailureResolved);
+  var mttrH = calcMTTRHours(d.FailureOccurs, d.FailureResolved);
+  var respH = calcResponseHours(d.FailureOccurs, d.CorrectionBegins);
+  var respLbl = respH ? (respH < 1 ? Math.round(respH*60)+'m' : respH.toFixed(1)+'h') : null;
+
+  /* ── 2-segment progress bar ── */
+  /* grey = response period (failure→fix started), green = fix period (fix started→resolved) */
+  var totalH   = mttrH || 0;
+  var fixH     = d.CorrectionBegins && d.FailureResolved
+                   ? calcMTTRHours(d.CorrectionBegins, d.FailureResolved) : null;
+  var respPct  = (totalH > 0 && respH) ? Math.min(Math.round(respH / totalH * 100), 40) : 15;
+  var fixPct   = 100 - respPct;
+  var isOngoing = !d.FailureResolved;
+  var barLabel = mttr ? mttr : (respH ? Math.round(respH)+'h so far' : '');
+
+  /* dot timestamps */
+  function dotHtml(color, dateRaw, label) {
+    var dt = new Date(dateRaw);
+    var mon = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var dateStr = dt.getDate()+' '+mon[dt.getMonth()]+' '+dt.getFullYear();
+    var timeStr = dt.toTimeString().substring(0,8);
+    return '<span class="tl2-dot" style="background:'+color+'"></span>'+
+           '<span class="tl2-ts">'+dateStr+' '+timeStr+'</span>';
+  }
+
+  var html = '<div class="tl2">';
+
+  /* bar */
+  html += '<div class="tl2-bar-wrap">';
+  html += '<div class="tl2-bar">';
+  html += '<div class="tl2-seg-grey" style="width:'+respPct+'%"></div>';
+  html += '<div class="tl2-seg-green" style="width:'+fixPct+'%">';
+  if (barLabel) html += '<span class="tl2-bar-label">'+barLabel+'</span>';
   html += '</div>';
-  if (mttr || respLbl) {
-    html += '<div class="tl-metrics">';
-    if (respLbl) html += '<span>Response: <b>'+respLbl+'</b></span>';
-    if (mttr)    html += '<span>Fix: <b style="color:var(--amber)">'+mttr+'</b></span>';
-    if (mttr)    html += '<span>MTTR: <b style="color:var(--up)">'+mttr+'</b></span>';
-    html += '</div>';
-  }
+  html += '</div>';
+  html += '</div>';
+
+  /* dots row */
+  html += '<div class="tl2-dots">';
+  if (d.FailureOccurs)    html += dotHtml('#888', d.FailureOccurs, 'failure');
+  if (d.CorrectionBegins) html += dotHtml('#f97316', d.CorrectionBegins, 'fix');
+  if (d.FailureResolved)  html += dotHtml('#3fb950', d.FailureResolved, 'resolved');
+  else if (isOngoing)     html += '<span class="tl2-pending">● pending</span>';
+
+  /* metrics */
+  html += '<span class="tl2-divider">|</span>';
+  if (respLbl) html += '<span class="tl2-metric">Response: <b>'+respLbl+'</b></span>';
   if (mttr) {
-    html += '<div class="mttr-wrap">';
-    html += '<div style="font-size:10px;color:var(--text2);display:flex;justify-content:space-between"><span>MTTR</span><span style="color:var(--up);font-weight:600">'+mttr+'</span></div>';
-    html += '<div class="mttr-bar"><div class="mttr-fill" style="width:'+pct+'%"></div></div>';
-    html += '</div>';
+    var fixDur = fixH ? (fixH < 24 ? fixH.toFixed(1)+'h' : (fixH/24).toFixed(1)+'d') : mttr;
+    html += '<span class="tl2-metric">Fix: <b class="tl2-fix">'+fixDur+'</b></span>';
+    html += '<span class="tl2-metric">MTTR: <b class="tl2-mttr">'+mttr+'</b></span>';
   }
+  html += '</div>';
+
   html += '</div>';
   return html;
 }
@@ -258,25 +304,31 @@ function buildBoard(data) {
   }).join('');
 }
 
+/* ── priority → CSS class / color ───────────────────────── */
+function _priBadgeCls(p) {
+  var m = { Highest:'pri-highest', High:'pri-high', Medium:'pri-medium',
+            Low:'pri-low', Lowest:'pri-lowest' };
+  return m[p] || '';
+}
+
 /* ── Build single card ───────────────────────────────────── */
 function buildCard(d) {
   var overdue     = isOverdue(d.Due, d.Status);
-  var hasTimeline = d.FailureOccurs || d.CorrectionBegins || d.FailureResolved;
   var multiCh     = (d.Components||'').split(';').filter(Boolean).length >= 3;
   var firstComp   = (d.Components||'').split(';')[0].trim();
   var timelineHtml = buildIncidentTimeline(d);
+  var dueFmt      = _fmtDate(d.Due);
 
-  /* ── overdue warning (replaces init-hint) ── */
+  /* ── overdue warning ── */
   var overdueWarn = '';
   if (overdue && d.Status !== 'Done' && d.Status !== 'Resolved') {
-    var dueStr = d.Due || '';
     overdueWarn = '<div class="overdue-warn">'+
       '<span class="ow-icon">⚠</span>'+
-      '<div class="ow-body">Overdue since '+dueStr+'. This issue has passed its due date and requires immediate attention.</div>'+
+      '<div class="ow-body">Overdue since '+dueFmt+'. This issue has passed its due date and requires immediate attention.</div>'+
     '</div>';
   }
 
-  /* ── meta row: severity · comp · due (NO assignee) ── */
+  /* ── meta row: severity · comp · due (NO assignee, NO status tag) ── */
   var metaParts = [];
   if (d.Severity) {
     metaParts.push('<span class="sev-badge '+_sevCls(d.Severity)+'">'+d.Severity+'</span>');
@@ -285,11 +337,16 @@ function buildCard(d) {
     if (metaParts.length) metaParts.push('<span class="meta-sep">·</span>');
     metaParts.push('<span class="comp-chip">'+firstComp+'</span>');
   }
-  if (d.Due && d.Status !== 'Done') {
+  if (dueFmt && d.Status !== 'Done') {
     if (metaParts.length) metaParts.push('<span class="meta-sep">·</span>');
-    metaParts.push('<span class="meta-due'+(overdue?' overdue':'')+'">Due '+d.Due+'</span>');
+    metaParts.push('<span class="meta-due'+(overdue?' overdue':'')+'">'+dueFmt+'</span>');
   }
   var metaHtml = metaParts.length ? '<div class="icard-meta">'+metaParts.join('')+'</div>' : '';
+
+  /* ── priority badge top-right ── */
+  var priBadge = d.Priority
+    ? '<span class="pri-badge '+_priBadgeCls(d.Priority)+'">'+d.Priority+'</span>'
+    : '';
 
   var cls = {Open:'open','In Progress':'in-progress',Investigating:'investigating',
              Resolved:'resolved',Done:'done'}[d.Status] || 'open';
@@ -297,17 +354,17 @@ function buildCard(d) {
   return '<div class="icard '+cls+'">'+
     '<div class="icard-top">'+
       '<span class="ikey"><a href="'+ISSUE_JIRA_BASE+d.Key+'" target="_blank">'+d.Key+' ↗</a></span>'+
-      statusTag(d.Status)+
       (multiCh ? '<span class="tag multi-ch">Multi-channel</span>' : '')+
       (!d.Assignee && d.Status !== 'Done' ? '<span class="tag unassigned-tag">Unassigned</span>' : '')+
+      '<span class="icard-pri">'+priBadge+'</span>'+
     '</div>'+
     '<div class="isummary">'+d.Summary+'</div>'+
     metaHtml+
-    (d.RootCause ? '<div class="iroot">Root cause: '+d.RootCause+'</div>' : '')+
     timelineHtml+
     overdueWarn+
   '</div>';
 }
+
 
 /* ── Build table view ────────────────────────────────────── */
 function buildTable(data) {
@@ -318,36 +375,43 @@ function buildTable(data) {
   if (!tbody) return;
 
   if (!data.length) {
-    tbody.innerHTML = '<tr><td colspan="9" class="empty">No issues match this filter.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty">No issues match this filter.</td></tr>';
     return;
   }
 
   tbody.innerHTML = data.map(function(d){
     var overdue = isOverdue(d.Due, d.Status);
-    var mttr    = calcMTTR(d.FailureOccurs, d.FailureResolved);
-    var respH   = calcResponseHours(d.FailureOccurs, d.CorrectionBegins);
-    var respLbl = respH ? (respH < 1 ? Math.round(respH*60)+'m' : respH.toFixed(1)+'h') : '—';
+    var dueFmt  = _fmtDate(d.Due);
 
-    var tlHtml = '';
-    if (d.FailureOccurs || d.CorrectionBegins || d.FailureResolved) {
-      tlHtml = '<div style="font-size:10px;line-height:1.8;white-space:nowrap">'+
-        '<div>Failure: '+(d.FailureOccurs||'—')+'</div>'+
-        '<div>Fix started: '+(d.CorrectionBegins||'—')+'</div>'+
-        '<div>Resolved: '+(d.FailureResolved||'<span style="color:var(--amber)">Ongoing</span>')+'</div>'+
-        '<div>Response: <b>'+respLbl+'</b> | MTTR: <b>'+(mttr||'—')+'</b></div>'+
-      '</div>';
+    /* open/re-open > 1 week warning */
+    var staleSt = (d.Status === 'Open' || d.Status === 'Re-open' || d.Status === 'Reopened');
+    var staleWarn = false;
+    if (staleSt && d.CreatedDate) {
+      var ageH = (Date.now() - new Date(d.CreatedDate)) / 3600000;
+      if (ageH > 168) staleWarn = true; /* 168h = 7 days */
+    }
+
+    /* due date cell */
+    var dueCell = '—';
+    if (dueFmt && d.Status !== 'Done') {
+      dueCell = '<span style="color:'+(overdue?'var(--down)':'var(--text2)')+'">'+dueFmt+'</span>';
+      if (overdue) {
+        dueCell += '<div class="tbl-warn">⚠ Overdue</div>';
+      } else if (staleWarn) {
+        dueCell += '<div class="tbl-warn">⚠ Open &gt;1 week</div>';
+      }
+    } else if (staleWarn && d.Status !== 'Done') {
+      dueCell = '—<div class="tbl-warn">⚠ Open &gt;1 week</div>';
     }
 
     return '<tr>'+
       '<td><a href="'+ISSUE_JIRA_BASE+d.Key+'" target="_blank" style="color:var(--accent);font-weight:700;text-decoration:none;white-space:nowrap">'+d.Key+' ↗</a></td>'+
-      '<td style="min-width:200px;max-width:300px">'+d.Summary+'</td>'+
-      '<td>'+statusTag(d.Status)+(overdue?'<br><span class="tag overdue-tag" style="margin-top:3px">Overdue</span>':'')+'</td>'+
+      '<td style="min-width:200px;max-width:280px">'+d.Summary+'</td>'+
+      '<td>'+statusTag(d.Status)+'</td>'+
       '<td style="white-space:nowrap;color:'+_pColor(d.Priority)+';font-weight:600">'+(d.Priority||'—')+'</td>'+
       '<td style="white-space:nowrap;color:'+_sColor(d.Severity)+';font-weight:600">'+(d.Severity||'—')+'</td>'+
       '<td style="white-space:nowrap;font-size:12px">'+(d.Assignee||'<span style="color:var(--text3)">—</span>')+'</td>'+
-      '<td style="white-space:nowrap;font-size:12px;color:'+(overdue?'var(--down)':'var(--text2)')+'">'+(d.Due && d.Status !== 'Done' ? d.Due : '—')+'</td>'+
-      '<td style="font-size:11px;max-width:200px">'+(d.RootCause||'—')+'</td>'+
-      '<td>'+tlHtml+'</td>'+
+      '<td style="font-size:12px;min-width:100px">'+dueCell+'</td>'+
     '</tr>';
   }).join('');
 }

@@ -104,15 +104,16 @@
 .mttr-bar { height: 4px; background: var(--border); border-radius: 2px; margin-top: 4px; overflow: hidden; }
 .mttr-fill { height: 100%; background: var(--up); border-radius: 2px; }
 
-/* ── Initiative hint ── */
-.init-hint { display: flex; align-items: flex-start; gap: 7px; margin-top: 8px; padding: 7px 10px; background: rgba(127,119,221,.1); border-radius: 5px; border: 1px solid rgba(127,119,221,.2); }
-.init-hint span { color: #534AB7; font-weight: 700; font-size: 12px; margin-top: 1px; }
-.ih-body { font-size: 11px; color: var(--text2); line-height: 1.5; }
+/* ── Overdue warning (replaces init-hint on cards) ── */
+.overdue-warn { display: flex; align-items: flex-start; gap: 7px; margin-top: 8px; padding: 7px 10px; background: rgba(226,75,74,.08); border-radius: 5px; border: 1px solid rgba(226,75,74,.2); }
+.overdue-warn .ow-icon { color: var(--down); font-weight: 700; font-size: 12px; margin-top: 1px; flex-shrink: 0; }
+.ow-body { font-size: 11px; color: #A32D2D; line-height: 1.5; }
 
 /* ── Table view ── */
 .tbl-scroll { overflow-x: auto; }
 .itbl { width: 100%; border-collapse: collapse; font-size: 12px; }
 .itbl th { text-align: left; padding: 8px 12px; border-bottom: 2px solid var(--border); font-size: 11px; font-weight: 700; color: var(--text2); white-space: nowrap; cursor: pointer; user-select: none; }
+.itbl td { text-align: left; }
 .itbl th:hover { color: var(--text); }
 .itbl td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
 .itbl tr:hover td { background: var(--surface2); }
@@ -180,16 +181,15 @@
         <div class="tbl-scroll">
           <table class="itbl">
             <thead><tr>
-              <th onclick="sortIssueBy('Key')" style="white-space:nowrap">Key</th>
-              <th onclick="sortIssueBy('Summary')">Summary</th>
-              <th onclick="sortIssueBy('Status')">Status</th>
-              <th onclick="sortIssueBy('Priority')" style="white-space:nowrap">Priority</th>
-              <th onclick="sortIssueBy('Severity')" style="white-space:nowrap">Severity</th>
-              <th>Components</th>
-              <th onclick="sortIssueBy('Assignee')">Assignee</th>
-              <th onclick="sortIssueBy('Due')" style="white-space:nowrap">Due date</th>
-              <th>Root cause</th>
-              <th>Timeline</th>
+              <th onclick="sortIssueBy('Key')" style="white-space:nowrap;text-align:left">Key</th>
+              <th onclick="sortIssueBy('Summary')" style="text-align:left">Summary</th>
+              <th onclick="sortIssueBy('Status')" style="text-align:left">Status</th>
+              <th onclick="sortIssueBy('Priority')" style="white-space:nowrap;text-align:left">Priority</th>
+              <th onclick="sortIssueBy('Severity')" style="white-space:nowrap;text-align:left">Severity</th>
+              <th onclick="sortIssueBy('Assignee')" style="text-align:left">Assignee</th>
+              <th onclick="sortIssueBy('Due')" style="white-space:nowrap;text-align:left">Due date</th>
+              <th style="text-align:left">Root cause</th>
+              <th style="text-align:left">Timeline</th>
             </tr></thead>
             <tbody id="issue-tbody"></tbody>
           </table>

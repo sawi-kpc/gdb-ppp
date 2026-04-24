@@ -6,206 +6,158 @@
 <title>Issues — GDB Dashboard</title>
 <link rel="stylesheet" href="../css/shared.css">
 <style>
-/* ── Page ────────────────────────────────────────────────── */
-.issue-page { padding: 20px 24px; }
-.page-hd    { display:flex;align-items:flex-start;justify-content:space-between;
-              flex-wrap:wrap;gap:10px;margin-bottom:16px }
-.page-title { font-size:18px;font-weight:700 }
-.page-sub   { font-size:12px;color:var(--text2);margin-top:3px }
+/* ═══════════════════════════════════════════
+   Issue page styles
+═══════════════════════════════════════════ */
 
-/* ── Summary strip ───────────────────────────────────────── */
-#issue-strip { display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:16px }
+/* ── Page layout ── */
+.issue-content { padding: 20px 24px; max-width: 1600px; margin: 0 auto; }
+.panel { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+.panel-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+.panel-title { font-size: 14px; font-weight: 700; color: var(--text); }
+.panel-sub   { font-size: 12px; color: var(--text2); margin-top: 2px; }
+.panel-body  { padding: 16px 18px; }
 
-/* ── Controls ────────────────────────────────────────────── */
-.ctrl-bar { display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px }
-.fb { padding:4px 12px;font-size:11px;font-weight:600;border-radius:20px;cursor:pointer;
-      border:1px solid var(--border);background:var(--surface2);color:var(--text2);transition:all .15s }
-.fb.active { background:var(--accent);border-color:var(--accent);color:#fff }
-.fb:hover:not(.active) { color:var(--text) }
-.ctrl-sep { width:1px;height:20px;background:var(--border) }
-.ctrl-select { background:var(--surface2);border:1px solid var(--border);color:var(--text);
-               border-radius:6px;padding:5px 10px;font-size:12px;outline:none;cursor:pointer }
-.ctrl-select:focus { border-color:var(--accent) }
-.ctrl-search { position:relative }
-.ctrl-search input { background:var(--surface2);border:1px solid var(--border);color:var(--text);
-                     border-radius:6px;padding:5px 10px 5px 28px;font-size:12px;
-                     width:200px;outline:none }
-.ctrl-search input:focus { border-color:var(--accent) }
-.ctrl-search::before { content:'⌕';position:absolute;left:9px;top:50%;transform:translateY(-50%);
-                       color:var(--text3);font-size:13px;pointer-events:none }
-.vbtn { padding:5px 12px;font-size:11px;font-weight:600;border-radius:5px;cursor:pointer;
-        border:1px solid var(--border);background:var(--surface2);color:var(--text2);transition:all .15s }
-.vbtn.active { background:var(--surface);color:var(--text);border-color:var(--text3) }
-.count-label { font-size:11px;color:var(--text2) }
+/* ── Control bar ── */
+.ctrl-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.status-btn { padding: 4px 13px; font-size: 11px; font-weight: 600; border-radius: 20px; cursor: pointer; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); transition: all .15s; }
+.status-btn.active, .status-btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+.ctrl-sep { width: 1px; height: 20px; background: var(--border); margin: 0 2px; }
+.ctrl-select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 5px 10px; font-size: 11px; outline: none; cursor: pointer; }
+.ctrl-select:focus { border-color: var(--accent); }
+.ctrl-search input { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 5px 10px 5px 28px; font-size: 12px; width: 200px; outline: none; }
+.ctrl-search input:focus { border-color: var(--accent); }
+.ctrl-search { position: relative; }
+.ctrl-search::before { content: '⌕'; position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 13px; pointer-events: none; }
+.view-btn { padding: 4px 12px; font-size: 11px; font-weight: 600; border-radius: 6px; cursor: pointer; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); transition: all .15s; }
+.view-btn.active { background: var(--surface); color: var(--text); border-color: var(--text3); }
+.count-label { font-size: 11px; color: var(--text3); margin-left: auto; }
 
-/* ── 5-column board ──────────────────────────────────────── */
-.iboard { display:grid;grid-template-columns:repeat(5,1fr);gap:10px;align-items:start }
-.iboard-col { background:var(--surface);border:1px solid var(--border);border-radius:8px;
-              min-height:200px;display:flex;flex-direction:column }
-.iboard-col-head { display:flex;align-items:center;justify-content:space-between;
-                   padding:10px 12px;border-bottom:1px solid var(--border) }
-.iboard-col-label { font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2) }
-.iboard-col-count { font-size:11px;font-weight:700;background:var(--surface2);
-                    padding:1px 7px;border-radius:10px;color:var(--text) }
-.iboard-col-body  { padding:8px;display:flex;flex-direction:column;gap:7px;flex:1 }
+/* ── Status tags ── */
+.stag { display: inline-flex; align-items: center; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+.stag.open          { background: rgba(226,75,74,.12);  color: #A32D2D; border: 1px solid rgba(226,75,74,.2); }
+.stag.investigating { background: rgba(239,159,39,.12); color: #854F0B; border: 1px solid rgba(239,159,39,.2); }
+.stag.in-progress   { background: rgba(55,138,221,.12); color: #185FA5; border: 1px solid rgba(55,138,221,.2); }
+.stag.resolved      { background: rgba(29,158,117,.12); color: #0F6E56; border: 1px solid rgba(29,158,117,.2); }
+.stag.done          { background: rgba(63,185,80,.10);  color: #27500A; border: 1px solid rgba(63,185,80,.2); }
 
-/* ── Issue card (board) ──────────────────────────────────── */
-.iboard-card { background:var(--surface2);border:1px solid var(--border);border-radius:7px;
-               padding:10px 12px;transition:border-color .15s }
-.iboard-card:hover { border-color:var(--text3) }
-.ibc-top    { display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:5px }
-.ibc-key    { font-size:10px;font-weight:700;color:var(--accent);text-decoration:none }
-.ibc-key:hover { text-decoration:underline }
-.ibc-summary{ font-size:11px;font-weight:600;color:var(--text);line-height:1.4;margin-bottom:5px }
-.ibc-comps  { margin-bottom:4px }
-.ibc-assign { font-size:10px;color:var(--text2);margin-top:3px }
+/* ── Tag badges ── */
+.tag { display: inline-flex; align-items: center; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 3px; white-space: nowrap; }
+.tag.multi-ch      { background: rgba(226,75,74,.08); color: var(--down); border: 1px solid rgba(226,75,74,.15); }
+.tag.overdue-tag   { background: rgba(226,75,74,.12); color: #A32D2D; border: 1px solid rgba(226,75,74,.2); }
+.tag.unassigned-tag{ background: rgba(226,75,74,.08); color: var(--down); border: 1px solid rgba(226,75,74,.15); }
 
-/* ── Table ───────────────────────────────────────────────── */
-.tbl-scroll { overflow-x:auto }
-.itbl { width:100%;border-collapse:collapse;font-size:12px }
-.itbl th { padding:8px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text2);
-           text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);
-           cursor:pointer;white-space:nowrap }
-.itbl th:hover { color:var(--text) }
-.itbl td { padding:8px 10px;text-align:left;border-bottom:1px solid rgba(48,54,61,.35);
-           vertical-align:top }
-.itbl tr:hover td { background:rgba(22,27,34,.7) }
-.itbl tr:last-child td { border-bottom:none }
+/* ── Board layout ── */
+.iboard { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; align-items: start; }
+.iboard-col { display: flex; flex-direction: column; gap: 8px; }
+.iboard-col-hd { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; background: var(--surface2); border-radius: 6px; border-top: 3px solid; margin-bottom: 2px; }
+.iboard-col-name { font-size: 11px; font-weight: 700; color: var(--text); }
+.iboard-col-cnt  { font-size: 11px; font-weight: 700; color: var(--text2); background: var(--surface); padding: 1px 7px; border-radius: 10px; border: 1px solid var(--border); }
 
-/* ── Panel ───────────────────────────────────────────────── */
-.panel { background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:14px }
-.panel-head { padding:12px 16px;border-bottom:1px solid var(--border);
-              display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap }
-.panel-title { font-size:13px;font-weight:700 }
-.panel-sub   { font-size:11px;color:var(--text2);margin-top:2px }
-.panel-body  { padding:14px 16px }
+/* ── Issue card ── */
+.icard { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; position: relative; overflow: hidden; transition: border-color .15s; }
+.icard:hover { border-color: var(--text3); }
+.icard::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 0; }
+.icard.open::before          { background: var(--down); }
+.icard.investigating::before { background: var(--amber); }
+.icard.in-progress::before   { background: var(--accent); }
+.icard.resolved::before      { background: var(--teal); }
+.icard.done::before          { background: var(--up); }
 
-/* ── Incident timeline — ultra compact ───────────────────── */
-.itl { margin-top:3px;padding-top:3px;border-top:1px solid rgba(48,54,61,.5) }
-.itl-bar-track { display:flex;height:6px;border-radius:3px;overflow:hidden;gap:1px;margin-bottom:3px }
-.itl-seg { display:flex;align-items:center;justify-content:center;font-size:7px;
-           font-weight:700;color:rgba(255,255,255,.9);overflow:hidden;padding:0 3px;cursor:default }
-.itl-seg.detect   { background:var(--text3) }
-.itl-seg.fixing   { background:var(--amber) }
-.itl-seg.resolved { background:var(--up) }
-.itl-seg.ongoing  { background:rgba(248,81,73,.75);animation:itl-pulse 2s ease-in-out infinite }
-@keyframes itl-pulse{0%,100%{opacity:.7}50%{opacity:1}}
-/* Single info row */
-.itl-row { display:flex;align-items:center;gap:6px;flex-wrap:nowrap;
-           font-size:10px;color:var(--text2);overflow:hidden;white-space:nowrap }
-.itl-dot  { width:6px;height:6px;border-radius:50%;flex-shrink:0;display:inline-block }
-.itl-dot.dtc { background:var(--text3) }
-.itl-dot.fix { background:var(--amber) }
-.itl-dot.res { background:var(--up) }
-.itl-dot.ong { background:var(--down) }
-.itl-ts   { font-size:10px;color:var(--text2) }
-.itl-pipe { width:1px;height:10px;background:var(--border);flex-shrink:0;margin:0 2px }
-.itl-met  { font-size:10px;font-weight:600;color:var(--text3) }
-.itl-fix  { color:var(--amber) }
-.itl-ok   { color:var(--up) }
-.itl-ong  { color:var(--down) }
-.itl-mark-val   { font-size:9px;color:var(--text2);font-weight:600 }
-.itl-dur.d-detect  { background:rgba(72,79,88,.25);color:var(--text2) }
-.itl-dur.d-fix     { background:rgba(245,158,11,.15);color:var(--amber) }
-.itl-dur.d-total   { background:rgba(63,185,80,.1);color:var(--up) }
-.itl-dur
-/* Issue page: ensure no initiative subnav shows */
-.gdb-init-subnav { display: none !important; }
-body.has-init-subnav { padding-top: calc(var(--header-h) + var(--nav-h)) !important; }
+.icard-top { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+.ikey { font-size: 11px; font-weight: 700; }
+.ikey a { color: var(--accent); text-decoration: none; }
+.ikey a:hover { text-decoration: underline; }
+.isummary { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 8px; line-height: 1.4; }
 
-@media(max-width:1100px){ #issue-strip{grid-template-columns:repeat(3,1fr)} }
-@media(max-width:900px) { #issue-strip{grid-template-columns:repeat(2,1fr)}.iboard{grid-template-columns:1fr} }
+/* ── Meta row (1-line: severity · comp · assignee · due) ── */
+.icard-meta { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; margin-bottom: 6px; }
+.sev-badge { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px; white-space: nowrap; }
+.sev-badge.critical { background: rgba(226,75,74,.12); color: #A32D2D; border: 1px solid rgba(226,75,74,.2); }
+.sev-badge.high     { background: rgba(249,115,22,.12); color: #7c3d12; border: 1px solid rgba(249,115,22,.2); }
+.sev-badge.moderate { background: rgba(239,159,39,.12); color: #854F0B; border: 1px solid rgba(239,159,39,.2); }
+.sev-badge.low      { background: rgba(63,185,80,.10);  color: #27500A; border: 1px solid rgba(63,185,80,.2); }
+.meta-sep    { color: var(--text3); font-size: 10px; line-height: 1; }
+.comp-chip   { font-size: 10px; padding: 2px 7px; border-radius: 3px; background: rgba(55,138,221,.1); color: #185FA5; border: 1px solid rgba(55,138,221,.2); white-space: nowrap; }
+.meta-assignee { font-size: 11px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+.meta-due        { font-size: 11px; color: var(--text2); white-space: nowrap; }
+.meta-due.overdue { color: var(--down); }
+
+/* ── Root cause / timeline ── */
+.iroot { font-size: 11px; color: var(--text2); padding: 6px 0; border-top: 1px solid var(--border); margin-top: 6px; }
+.tl { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+.tl-label { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+.tl-dots { display: flex; gap: 6px; }
+.td { flex: 1; font-size: 10px; color: var(--text2); }
+.td span { display: block; color: var(--text); font-weight: 600; margin-top: 2px; font-size: 10px; }
+.tl-metrics { display: flex; gap: 10px; font-size: 10px; color: var(--text2); margin-top: 6px; flex-wrap: wrap; }
+.tl-metrics b { font-weight: 700; }
+.mttr-wrap { margin-top: 6px; }
+.mttr-bar { height: 4px; background: var(--border); border-radius: 2px; margin-top: 4px; overflow: hidden; }
+.mttr-fill { height: 100%; background: var(--up); border-radius: 2px; }
+
+/* ── Initiative hint ── */
+.init-hint { display: flex; align-items: flex-start; gap: 7px; margin-top: 8px; padding: 7px 10px; background: rgba(127,119,221,.1); border-radius: 5px; border: 1px solid rgba(127,119,221,.2); }
+.init-hint span { color: #534AB7; font-weight: 700; font-size: 12px; margin-top: 1px; }
+.ih-body { font-size: 11px; color: var(--text2); line-height: 1.5; }
+
+/* ── Table view ── */
+.tbl-scroll { overflow-x: auto; }
+.itbl { width: 100%; border-collapse: collapse; font-size: 12px; }
+.itbl th { text-align: left; padding: 8px 12px; border-bottom: 2px solid var(--border); font-size: 11px; font-weight: 700; color: var(--text2); white-space: nowrap; cursor: pointer; user-select: none; }
+.itbl th:hover { color: var(--text); }
+.itbl td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.itbl tr:hover td { background: var(--surface2); }
+.itbl .empty { text-align: center; padding: 40px; color: var(--text3); }
+.comp-chips-wrap { display: flex; flex-wrap: wrap; gap: 4px; }
+
+/* ── Empty state ── */
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text3); font-size: 13px; }
 </style>
 </head>
 <body>
-<div id="gdb-error" style="display:none;padding:12px 20px;background:rgba(248,81,73,.1);
-  border-bottom:1px solid rgba(248,81,73,.3);color:var(--down);font-size:12px"></div>
+<div id="gdb-error"></div>
 
-<!-- Loading -->
-<div id="gdb-loading" style="display:flex;flex-direction:column;align-items:center;
-  justify-content:center;min-height:60vh;gap:12px;color:var(--text2);font-size:13px">
-  <div style="width:32px;height:32px;border:2px solid var(--border);
-    border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite"></div>
-  Loading issues…
-  <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
-</div>
+<div class="gdb-page" id="main-content" style="display:none">
+<div class="issue-content">
 
-<!-- Main -->
-<div id="issue-content" style="display:none">
-
-<!-- Error state — shown when Apps Script unreachable -->
-<div id="issue-error-state" style="display:none;flex-direction:column;align-items:center;
-  justify-content:center;min-height:55vh;gap:16px;padding:40px 24px;text-align:center">
-  <div style="font-size:40px;opacity:.6">⚠</div>
-  <div style="font-size:16px;font-weight:700;color:var(--down)">Unable to load issue data</div>
-  <div id="issue-error-msg" style="font-size:13px;color:var(--text2);max-width:420px;line-height:1.6"></div>
-  <div style="margin-top:8px">
-    <button onclick="location.reload()" style="padding:8px 20px;background:var(--surface2);
-      border:1px solid var(--border);border-radius:6px;color:var(--text);
-      font-size:12px;cursor:pointer;margin-right:8px">↺ Retry</button>
-  </div>
-</div>
-
-<div class="issue-page">
-
-  <!-- Page header -->
-  <div class="page-hd">
-    <div>
-      <div class="page-title">Platform Issues</div>
-      <div class="page-sub">Active issues, resolution timeline, and systemic patterns</div>
-    </div>
-    <div id="issue-last-updated" style="font-size:11px;color:var(--text3)"></div>
-  </div>
-
-  <!-- Summary strip (rendered by render.js) -->
-  <div id="issue-strip"></div>
-
-  <!-- Controls panel -->
+  <!-- Issues panel -->
   <div class="panel">
     <div class="panel-head">
       <div>
-        <div class="panel-title">Issue List</div>
-        <div class="panel-sub"><span id="issue-count-label"></span></div>
+        <div class="panel-title">◆ Issues &amp; Incidents</div>
+        <div class="panel-sub">Live issue tracking across all platforms — synced from Jira</div>
       </div>
       <div style="display:flex;gap:6px">
-        <button class="vbtn active" onclick="setIssueView('board',this)">Board</button>
-        <button class="vbtn" onclick="setIssueView('table',this)">Table</button>
+        <button class="view-btn active" id="view-btn-board" onclick="switchView('board')">Board</button>
+        <button class="view-btn" id="view-btn-table" onclick="switchView('table')">Table</button>
       </div>
     </div>
     <div class="panel-body">
 
-      <!-- Status filter (pill buttons) -->
-      <div class="ctrl-bar" id="issue-status-filter" style="margin-bottom:10px">
-        <div style="font-size:10px;color:var(--text3);margin-right:2px;align-self:center">STATUS</div>
-        <button class="fb active" data-val="all" onclick="setStatusFilter('all',this)">All</button>
-        <button class="fb" data-val="Open" onclick="setStatusFilter('Open',this)">⚠ Open</button>
-        <button class="fb" data-val="Investigating" onclick="setStatusFilter('Investigating',this)">Investigating</button>
-        <button class="fb" data-val="In Progress" onclick="setStatusFilter('In Progress',this)">In Progress</button>
-        <button class="fb" data-val="Resolved" onclick="setStatusFilter('Resolved',this)">Resolved</button>
-        <button class="fb" data-val="Done" onclick="setStatusFilter('Done',this)">Done / Closed</button>
-        <div style="font-size:10px;color:var(--text3);margin-left:4px;align-self:center">(multi-select)</div>
-      </div>
-
-      <!-- Dropdown filters: Priority + Severity + RootCause -->
-      <div class="ctrl-bar" style="margin-bottom:6px">
+      <!-- Control bar -->
+      <div class="ctrl-bar">
+        <button class="status-btn active" data-status="all" onclick="onStatusFilter('all')">All</button>
+        <button class="status-btn" data-status="Open" onclick="onStatusFilter('Open')">Open</button>
+        <button class="status-btn" data-status="Investigating" onclick="onStatusFilter('Investigating')">Investigating</button>
+        <button class="status-btn" data-status="In Progress" onclick="onStatusFilter('In Progress')">In Progress</button>
+        <button class="status-btn" data-status="Resolved" onclick="onStatusFilter('Resolved')">Resolved</button>
+        <button class="status-btn" data-status="Done" onclick="onStatusFilter('Done')">Done</button>
+        <div class="ctrl-sep"></div>
         <select class="ctrl-select" id="filter-priority" onchange="onDropdownChange()">
-          <option value="all">All priorities</option>
+          <option value="all">All priority</option>
         </select>
         <select class="ctrl-select" id="filter-severity" onchange="onDropdownChange()">
           <option value="all">All severity</option>
         </select>
-        <select class="ctrl-select" id="filter-rootcause" onchange="onDropdownChange()">
-          <option value="all">All root causes</option>
+        <select class="ctrl-select" id="filter-component" onchange="onDropdownChange()">
+          <option value="all">All components</option>
         </select>
         <div class="ctrl-sep"></div>
         <div class="ctrl-search">
           <input type="text" id="issue-search" placeholder="Search…" oninput="applyFilters()">
         </div>
-      </div>
-      <!-- Component multi-select pills -->
-      <div style="display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap;margin-bottom:8px">
-        <span style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;padding-top:5px;white-space:nowrap;flex-shrink:0">Components</span>
-        <div id="comp-filter" style="display:flex;gap:4px;flex-wrap:wrap;flex:1"></div>
+        <span class="count-label" id="count-label"></span>
       </div>
 
       <!-- Board view -->
@@ -219,11 +171,15 @@ body.has-init-subnav { padding-top: calc(var(--header-h) + var(--nav-h)) !import
           <table class="itbl">
             <thead><tr>
               <th onclick="sortIssueBy('Key')" style="white-space:nowrap">Key</th>
-              <th onclick="sortIssueBy('Summary')">Summary &amp; Details</th>
+              <th onclick="sortIssueBy('Summary')">Summary</th>
               <th onclick="sortIssueBy('Status')">Status</th>
               <th onclick="sortIssueBy('Priority')" style="white-space:nowrap">Priority</th>
               <th onclick="sortIssueBy('Severity')" style="white-space:nowrap">Severity</th>
+              <th>Components</th>
+              <th onclick="sortIssueBy('Assignee')">Assignee</th>
               <th onclick="sortIssueBy('Due')" style="white-space:nowrap">Due date</th>
+              <th>Root cause</th>
+              <th>Timeline</th>
             </tr></thead>
             <tbody id="issue-tbody"></tbody>
           </table>
@@ -233,37 +189,7 @@ body.has-init-subnav { padding-top: calc(var(--header-h) + var(--nav-h)) !import
     </div>
   </div><!-- /panel -->
 
-  <!-- Charts row: Trend + Component×Severity -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
-    <div class="panel">
-      <div class="panel-head">
-        <div>
-          <div class="panel-title">Issue Trend — Created vs Resolved</div>
-          <div class="panel-sub">Failure Occurs vs Failure Resolved over time</div>
-        </div>
-        <div style="display:flex;gap:4px">
-          <button class="trend-period-btn vbtn active" onclick="setTrendPeriod('month',this)">Monthly</button>
-          <button class="trend-period-btn vbtn" onclick="setTrendPeriod('week',this)">Weekly</button>
-        </div>
-      </div>
-      <div class="panel-body" id="issue-trend-chart" style="height:220px;position:relative">
-        <canvas id="issue-trend-canvas" style="display:none"></canvas>
-      </div>
-    </div>
-    <div class="panel">
-      <div class="panel-head">
-        <div>
-          <div class="panel-title">Issues by Component &amp; Severity</div>
-          <div class="panel-sub">Severity breakdown per component</div>
-        </div>
-      </div>
-      <div id="issue-compsev-chart" style="min-height:180px;position:relative;padding:4px;overflow:auto">
-        <canvas id="issue-compsev-canvas" style="display:none"></canvas>
-      </div>
-    </div>
-  </div>
-
-  <!-- Initiative candidates -->
+  <!-- Systemic issues / initiative candidates -->
   <div class="panel">
     <div class="panel-head">
       <div>
@@ -274,10 +200,9 @@ body.has-init-subnav { padding-top: calc(var(--header-h) + var(--nav-h)) !import
     <div class="panel-body" id="issue-init-section"></div>
   </div>
 
-</div><!-- /issue-page -->
 </div><!-- /issue-content -->
+</div><!-- /main-content -->
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="../js/issue/config.js"></script>
@@ -287,32 +212,9 @@ body.has-init-subnav { padding-top: calc(var(--header-h) + var(--nav-h)) !import
 <script>
 window.addEventListener('DOMContentLoaded', function() {
   buildGdbHeader({ showRefresh: true });
-  /* Issue page — initiative subnav hidden intentionally */
   gdbAuthGuard(function() {
-    loadIssueData(
-      function(data) {
-        document.getElementById('gdb-loading').style.display = 'none';
-        document.getElementById('issue-content').style.display = 'block';
-        if (typeof setGdbUpdateTime === 'function') setGdbUpdateTime(new Date().toISOString());
-        document.getElementById('issue-last-updated').textContent =
-          'Updated: ' + new Date().toLocaleString('en-GB', {
-            day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'
-          });
-        init(data);
-      },
-      function(err) {
-        document.getElementById('gdb-loading').style.display = 'none';
-        document.getElementById('issue-content').style.display = 'block';
-        document.getElementById('issue-error-state').style.display = 'flex';
-        document.getElementById('issue-error-msg').textContent = err;
-      }
-    );
-  });
-  /* Refresh button — clear cache and reload */
-  var rbtn = document.getElementById('gdb-refresh-btn');
-  if (rbtn) rbtn.addEventListener('click', function() {
-    clearIssueCache();
-    location.reload();
+    document.getElementById('main-content').style.display = 'block';
+    loadIssueData();
   });
 });
 </script>

@@ -260,26 +260,23 @@ function buildBoard(data) {
 
 /* ── Build single card ───────────────────────────────────── */
 function buildCard(d) {
-  var overdue  = isOverdue(d.Due, d.Status);
-  var mttrH    = calcMTTRHours(d.FailureOccurs, d.FailureResolved);
+  var overdue     = isOverdue(d.Due, d.Status);
   var hasTimeline = d.FailureOccurs || d.CorrectionBegins || d.FailureResolved;
-  var multiCh  = (d.Components||'').split(';').filter(Boolean).length >= 3;
-  var isSystemic = multiCh || (d.Summary||'').includes('System Down');
-
-  /* first component only for meta row */
-  var firstComp = (d.Components||'').split(';')[0].trim();
-
+  var multiCh     = (d.Components||'').split(';').filter(Boolean).length >= 3;
+  var firstComp   = (d.Components||'').split(';')[0].trim();
   var timelineHtml = buildIncidentTimeline(d);
 
-  var initHint = '';
-  if (d.Key === 'GIT-42') {
-    initHint = '<div class="init-hint"><span>◆</span><div class="ih-body">Process gap: no automated float monitoring at month-end. Recurring risk → consider payment ops initiative</div></div>';
-  }
-  if (d.Key === 'GIT-9' || d.Key === 'GIT-4') {
-    initHint = '<div class="init-hint"><span>◆</span><div class="ih-body">Cross-channel system resilience gap. Relates to PPP-9 (Single Commerce Platform) scope.</div></div>';
+  /* ── overdue warning (replaces init-hint) ── */
+  var overdueWarn = '';
+  if (overdue && d.Status !== 'Done' && d.Status !== 'Resolved') {
+    var dueStr = d.Due || '';
+    overdueWarn = '<div class="overdue-warn">'+
+      '<span class="ow-icon">⚠</span>'+
+      '<div class="ow-body">Overdue since '+dueStr+'. This issue has passed its due date and requires immediate attention.</div>'+
+    '</div>';
   }
 
-  /* ── meta row: severity · firstComp · assignee · due (1 line) ── */
+  /* ── meta row: severity · comp · due (NO assignee) ── */
   var metaParts = [];
   if (d.Severity) {
     metaParts.push('<span class="sev-badge '+_sevCls(d.Severity)+'">'+d.Severity+'</span>');
@@ -288,17 +285,11 @@ function buildCard(d) {
     if (metaParts.length) metaParts.push('<span class="meta-sep">·</span>');
     metaParts.push('<span class="comp-chip">'+firstComp+'</span>');
   }
-  if (metaParts.length) metaParts.push('<span class="meta-sep">·</span>');
-  if (d.Assignee) {
-    metaParts.push('<span class="meta-assignee">'+d.Assignee+'</span>');
-  } else {
-    metaParts.push('<span class="meta-assignee" style="color:var(--down)">Unassigned</span>');
-  }
   if (d.Due && d.Status !== 'Done') {
-    metaParts.push('<span class="meta-sep">·</span>');
+    if (metaParts.length) metaParts.push('<span class="meta-sep">·</span>');
     metaParts.push('<span class="meta-due'+(overdue?' overdue':'')+'">Due '+d.Due+'</span>');
   }
-  var metaHtml = '<div class="icard-meta">'+metaParts.join('')+'</div>';
+  var metaHtml = metaParts.length ? '<div class="icard-meta">'+metaParts.join('')+'</div>' : '';
 
   var cls = {Open:'open','In Progress':'in-progress',Investigating:'investigating',
              Resolved:'resolved',Done:'done'}[d.Status] || 'open';
@@ -308,14 +299,13 @@ function buildCard(d) {
       '<span class="ikey"><a href="'+ISSUE_JIRA_BASE+d.Key+'" target="_blank">'+d.Key+' ↗</a></span>'+
       statusTag(d.Status)+
       (multiCh ? '<span class="tag multi-ch">Multi-channel</span>' : '')+
-      (overdue ? '<span class="tag overdue-tag">Overdue</span>' : '')+
       (!d.Assignee && d.Status !== 'Done' ? '<span class="tag unassigned-tag">Unassigned</span>' : '')+
     '</div>'+
     '<div class="isummary">'+d.Summary+'</div>'+
     metaHtml+
     (d.RootCause ? '<div class="iroot">Root cause: '+d.RootCause+'</div>' : '')+
     timelineHtml+
-    initHint+
+    overdueWarn+
   '</div>';
 }
 
@@ -328,7 +318,7 @@ function buildTable(data) {
   if (!tbody) return;
 
   if (!data.length) {
-    tbody.innerHTML = '<tr><td colspan="10" class="empty">No issues match this filter.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="empty">No issues match this filter.</td></tr>';
     return;
   }
 
@@ -351,14 +341,11 @@ function buildTable(data) {
     return '<tr>'+
       '<td><a href="'+ISSUE_JIRA_BASE+d.Key+'" target="_blank" style="color:var(--accent);font-weight:700;text-decoration:none;white-space:nowrap">'+d.Key+' ↗</a></td>'+
       '<td style="min-width:200px;max-width:300px">'+d.Summary+'</td>'+
-      '<td>'+statusTag(d.Status)+(overdue?'<br><span class="tag open" style="margin-top:3px">Overdue</span>':'')+'</td>'+
+      '<td>'+statusTag(d.Status)+(overdue?'<br><span class="tag overdue-tag" style="margin-top:3px">Overdue</span>':'')+'</td>'+
       '<td style="white-space:nowrap;color:'+_pColor(d.Priority)+';font-weight:600">'+(d.Priority||'—')+'</td>'+
       '<td style="white-space:nowrap;color:'+_sColor(d.Severity)+';font-weight:600">'+(d.Severity||'—')+'</td>'+
-      '<td style="font-size:11px">'+compsHtml(d.Components)+'</td>'+
-      '<td style="white-space:nowrap;font-size:12px">'+(d.Assignee||'<span style="color:var(--down)">—</span>')+'</td>'+
-      '<td style="white-space:nowrap;font-size:12px;color:'+(overdue?'var(--down)':'var(--text2)')+'">'+
-        (d.Due && d.Status !== 'Done' ? d.Due : '—')+
-      '</td>'+
+      '<td style="white-space:nowrap;font-size:12px">'+(d.Assignee||'<span style="color:var(--text3)">—</span>')+'</td>'+
+      '<td style="white-space:nowrap;font-size:12px;color:'+(overdue?'var(--down)':'var(--text2)')+'">'+(d.Due && d.Status !== 'Done' ? d.Due : '—')+'</td>'+
       '<td style="font-size:11px;max-width:200px">'+(d.RootCause||'—')+'</td>'+
       '<td>'+tlHtml+'</td>'+
     '</tr>';
@@ -411,7 +398,7 @@ function initIssueBoard() {
         var b = document.getElementById('issue-board');
         if (b) b.innerHTML = '<div style="padding:40px;color:var(--down);text-align:center;font-size:13px">⚠ ' + msg + '</div>';
         var t = document.getElementById('issue-tbody');
-        if (t) t.innerHTML = '<tr><td colspan="10" class="empty">⚠ ' + msg + '</td></tr>';
+        if (t) t.innerHTML = '<tr><td colspan="9" class="empty">⚠ ' + msg + '</td></tr>';
         var c = document.getElementById('count-label');
         if (c) c.textContent = 'Error loading data';
       }

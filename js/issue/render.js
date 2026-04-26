@@ -133,22 +133,39 @@ function buildIncidentTimeline(d) {
   var hasTimeline = d.FailureOccurs || d.CorrectionBegins || d.FailureResolved;
   if (!hasTimeline) return '';
 
-  var mttr  = calcMTTR(d.FailureOccurs, d.FailureResolved);
   var mttrH = calcMTTRHours(d.FailureOccurs, d.FailureResolved);
   var respH = calcResponseHours(d.FailureOccurs, d.CorrectionBegins);
   var fixH  = d.CorrectionBegins && d.FailureResolved
               ? calcMTTRHours(d.CorrectionBegins, d.FailureResolved) : null;
   var respLbl = respH ? (respH < 1 ? Math.round(respH*60)+'m' : respH.toFixed(1)+'h') : null;
-  var fixDur  = fixH  ? (fixH < 24 ? fixH.toFixed(1)+'h' : (fixH/24).toFixed(1)+'d') : (mttr || null);
+  var fixDur  = fixH  ? (fixH < 24 ? fixH.toFixed(1)+'h' : (fixH/24).toFixed(1)+'d') : null;
   var isOngoing = !d.FailureResolved;
 
-  /* ── bar segments ── */
-  var totalH  = mttrH || 0;
+  /* ── bar proportions ── */
+  var totalH  = mttrH || (respH || 0);
   var respPct = (totalH > 0 && respH) ? Math.min(Math.round(respH / totalH * 100), 35) : 12;
-  var fixPct  = 100 - respPct;
-  var barLabel = mttr || (isOngoing && respH ? Math.round(totalH||respH)+'h so far' : '');
 
-  /* ── dot builder: color · date · time (2 lines) ── */
+  /* bar label = fix duration */
+  var barLabel = fixDur || (isOngoing && respH ? Math.round(respH)+'h so far' : '');
+
+  /* ── due date marker ── */
+  var duePct = null;
+  var dueFmtBar = null;
+  if (d.Due && d.FailureOccurs) {
+    var dtDue   = _parseDate(d.Due);
+    var dtStart = _parseDate(d.FailureOccurs);
+    var dtEnd   = d.FailureResolved ? _parseDate(d.FailureResolved) : new Date();
+    if (dtDue && dtStart && dtEnd) {
+      var spanH = (dtEnd - dtStart) / 3600000;
+      var dueOffH = (dtDue - dtStart) / 3600000;
+      if (spanH > 0) {
+        duePct = Math.max(5, Math.min(95, Math.round(dueOffH / spanH * 100)));
+        dueFmtBar = _fmtDate(d.Due);
+      }
+    }
+  }
+
+  /* ── dot builder ── */
   function dotHtml(color, raw) {
     if (!raw) return '';
     var dt = _parseDate(raw);
@@ -167,7 +184,8 @@ function buildIncidentTimeline(d) {
 
   var html = '<div class="tl2">';
 
-  /* bar */
+  /* ── bar with optional due-date marker ── */
+  html += '<div class="tl2-bar-outer">';
   html += '<div class="tl2-bar">'+
     '<div class="tl2-seg-grey" style="width:'+respPct+'%"></div>'+
     '<div class="tl2-seg-green" style="flex:1">'+
@@ -175,26 +193,37 @@ function buildIncidentTimeline(d) {
     '</div>'+
   '</div>';
 
-  /* dots row (date + time stacked) */
+  /* due date marker line */
+  if (duePct !== null) {
+    html += '<div class="tl2-due-marker" style="left:'+duePct+'%">'+
+              '<div class="tl2-due-line"></div>'+
+              '<span class="tl2-due-label">'+dueFmtBar+'</span>'+
+            '</div>';
+  }
+  html += '</div>'; /* /tl2-bar-outer */
+
+  /* ── dots row ── */
   html += '<div class="tl2-dots-row">';
   html += dotHtml('#6e7681', d.FailureOccurs);
   html += dotHtml('#f97316', d.CorrectionBegins);
   if (d.FailureResolved) {
     html += dotHtml('#3fb950', d.FailureResolved);
   } else {
-    html += '<span class="tl2-dot-wrap"><span class="tl2-dot" style="background:#f97316"></span><span class="tl2-pending">pending</span></span>';
+    html += '<span class="tl2-dot-wrap"><span class="tl2-dot" style="background:#f97316"></span>'+
+            '<span class="tl2-ts-wrap"><span class="tl2-pending">pending</span></span></span>';
   }
   html += '</div>';
 
-  /* metrics row */
+  /* ── metrics row: Response · Fix · MTTR ── */
+  var mttrLbl = calcMTTR(d.FailureOccurs, d.FailureResolved);
   var metrics = [];
-  if (respLbl) metrics.push('Response: <b>'+respLbl+'</b>');
-  if (fixDur)  metrics.push('Fix: <b class="tl2-fix">'+fixDur+'</b>');
-  if (mttr)    metrics.push('MTTR: <b class="tl2-mttr">'+mttr+'</b>');
+  if (respLbl)  metrics.push('Response: <b>'+respLbl+'</b>');
+  if (fixDur)   metrics.push('Fix: <b class="tl2-fix">'+fixDur+'</b>');
+  if (mttrLbl)  metrics.push('MTTR: <b class="tl2-mttr">'+mttrLbl+'</b>');
   if (metrics.length) {
     html += '<div class="tl2-metrics-row">'+
-      metrics.map(function(m){ return '<span class="tl2-metric">'+m+'</span>'; }).join(
-        '<span class="tl2-divider">|</span>')+
+      metrics.map(function(m){ return '<span class="tl2-metric">'+m+'</span>'; })
+             .join('<span class="tl2-divider">|</span>')+
     '</div>';
   }
 
@@ -302,6 +331,14 @@ function switchView(view) {
   applyFilters();
 }
 
+/* ── Hidden status columns (persisted in memory) ─────────── */
+var _hiddenCols = {};
+
+function toggleStatusCol(key) {
+  _hiddenCols[key] = !_hiddenCols[key];
+  applyFilters(); /* re-render board */
+}
+
 /* ── Build board view ────────────────────────────────────── */
 function buildBoard(data) {
   var countEl = document.getElementById('count-label');
@@ -319,12 +356,33 @@ function buildBoard(data) {
     groups[sk].push(d);
   });
 
+  /* visible columns */
+  var visCols = STATUSES.filter(function(s){ return !_hiddenCols[s.key]; });
+  var colPct  = visCols.length > 0 ? (100 / visCols.length).toFixed(2) : 20;
+
   boardEl.innerHTML = STATUSES.map(function(s){
-    var items = groups[s.key] || [];
-    return '<div class="iboard-col">'+
+    var items   = groups[s.key] || [];
+    var hidden  = !!_hiddenCols[s.key];
+    var eyeIcon = hidden
+      ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
+      : '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+
+    if (hidden) {
+      /* collapsed pill */
+      return '<div class="iboard-col iboard-col--hidden">'+
+        '<div class="iboard-col-hd" style="border-top-color:'+s.color+';cursor:pointer" onclick="toggleStatusCol(''+s.key+'')">'+
+          '<span class="iboard-col-name" style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px">'+s.label+'</span>'+
+          '<span class="iboard-col-cnt" style="margin-top:6px">'+items.length+'</span>'+
+          '<span class="iboard-col-eye" title="Show column">'+eyeIcon+'</span>'+
+        '</div>'+
+      '</div>';
+    }
+
+    return '<div class="iboard-col" style="width:'+colPct+'%">'+
       '<div class="iboard-col-hd" style="border-top-color:'+s.color+'">'+
         '<span class="iboard-col-name">'+s.label+'</span>'+
         '<span class="iboard-col-cnt">'+items.length+'</span>'+
+        '<button class="iboard-col-eye" title="Hide column" onclick="toggleStatusCol(''+s.key+'')">'+eyeIcon+'</button>'+
       '</div>'+
       items.map(function(d){ return buildCard(d); }).join('')+
     '</div>';

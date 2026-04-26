@@ -370,7 +370,7 @@ function buildBoard(data) {
     if (hidden) {
       /* collapsed pill */
       return '<div class="iboard-col iboard-col--hidden">'+
-        '<div class="iboard-col-hd" style="border-top-color:'+s.color+';cursor:pointer" onclick="toggleStatusCol(''+s.key+'')">'+
+        '<div class="iboard-col-hd" style="border-top-color:'+s.color+';cursor:pointer" onclick="toggleStatusCol(\\"'+s.key+'\\")">'+
           '<span class="iboard-col-name" style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px">'+s.label+'</span>'+
           '<span class="iboard-col-cnt" style="margin-top:6px">'+items.length+'</span>'+
           '<span class="iboard-col-eye" title="Show column">'+eyeIcon+'</span>'+
@@ -382,7 +382,7 @@ function buildBoard(data) {
       '<div class="iboard-col-hd" style="border-top-color:'+s.color+'">'+
         '<span class="iboard-col-name">'+s.label+'</span>'+
         '<span class="iboard-col-cnt">'+items.length+'</span>'+
-        '<button class="iboard-col-eye" title="Hide column" onclick="toggleStatusCol(''+s.key+'')">'+eyeIcon+'</button>'+
+        '<button class="iboard-col-eye" title="Hide column" onclick="toggleStatusCol(\\"'+s.key+'\\")">'+eyeIcon+'</button>'+
       '</div>'+
       items.map(function(d){ return buildCard(d); }).join('')+
     '</div>';

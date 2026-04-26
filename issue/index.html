@@ -95,11 +95,12 @@
 .tl2-bar { display: flex; height: 9px; border-radius: 3px; overflow: visible; width: 100%; }
 .tl2-seg-grey  { background: #555; flex-shrink: 0; min-width: 8px; border-radius: 3px 0 0 3px; overflow: hidden; }
 .tl2-seg-green { background: var(--up); flex: 1; border-radius: 0 3px 3px 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-.tl2-bar-label { font-size: 9px; font-weight: 700; color: rgba(0,0,0,.75); white-space: nowrap; }
-/* due-date marker */
-.tl2-due-marker { position: absolute; top: -3px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none; z-index: 2; }
-.tl2-due-line   { width: 1.5px; height: 15px; background: #fff; opacity: .85; border-radius: 1px; }
-.tl2-due-label  { font-size: 8px; color: rgba(255,255,255,.8); white-space: nowrap; margin-top: 2px; background: rgba(0,0,0,.45); padding: 1px 4px; border-radius: 3px; }
+/* .tl2-bar-label removed */
+/* due-date marker — label ABOVE bar, line through bar */
+.tl2-due-marker-top { position: absolute; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none; bottom: 0; }
+.tl2-due-label-top  { font-size: 8px; color: var(--text2); white-space: nowrap; background: var(--surface); padding: 1px 5px; border-radius: 3px; border: 1px solid var(--border); line-height: 1.4; }
+.tl2-due-tick       { width: 1.5px; height: 4px; background: rgba(255,255,255,.6); }
+.tl2-due-line-wrap  { position: absolute; top: 0; bottom: 0; width: 1.5px; background: rgba(255,255,255,.7); transform: translateX(-50%); pointer-events: none; border-radius: 1px; }
 /* dots row */
 .tl2-dots-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 5px; min-width: 0; overflow: hidden; }
 .tl2-dot-wrap { display: flex; align-items: flex-start; gap: 3px; min-width: 0; flex: 1; }

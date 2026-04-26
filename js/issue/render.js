@@ -184,21 +184,28 @@ function buildIncidentTimeline(d) {
 
   var html = '<div class="tl2">';
 
-  /* ── bar with optional due-date marker ── */
+  /* ── bar with due-date marker ABOVE bar ── */
   html += '<div class="tl2-bar-outer">';
+
+  /* due label row above bar */
+  if (duePct !== null) {
+    html += '<div class="tl2-due-row" style="position:relative;height:14px;margin-bottom:1px">'+
+              '<div class="tl2-due-marker-top" style="left:'+duePct+'%">'+
+                '<span class="tl2-due-label-top">'+dueFmtBar+'</span>'+
+                '<div class="tl2-due-tick"></div>'+
+              '</div>'+
+            '</div>';
+  }
+
+  /* bar — NO label inside */
   html += '<div class="tl2-bar">'+
     '<div class="tl2-seg-grey" style="width:'+respPct+'%"></div>'+
-    '<div class="tl2-seg-green" style="flex:1">'+
-      (barLabel ? '<span class="tl2-bar-label">'+barLabel+'</span>' : '')+
-    '</div>'+
+    '<div class="tl2-seg-green" style="flex:1"></div>'+
   '</div>';
 
-  /* due date marker line */
+  /* due date marker line overlapping bar */
   if (duePct !== null) {
-    html += '<div class="tl2-due-marker" style="left:'+duePct+'%">'+
-              '<div class="tl2-due-line"></div>'+
-              '<span class="tl2-due-label">'+dueFmtBar+'</span>'+
-            '</div>';
+    html += '<div class="tl2-due-line-wrap" style="left:'+duePct+'%"></div>';
   }
   html += '</div>'; /* /tl2-bar-outer */
 
@@ -336,8 +343,14 @@ var _hiddenCols = {};
 
 function toggleStatusCol(key) {
   _hiddenCols[key] = !_hiddenCols[key];
-  applyFilters(); /* re-render board */
+  applyFilters();
 }
+
+/* delegate clicks on eye buttons via event bubbling */
+document.addEventListener('click', function(ev) {
+  var btn = ev.target.closest('[data-toggle-col]');
+  if (btn) toggleStatusCol(btn.getAttribute('data-toggle-col'));
+});
 
 /* ── Build board view ────────────────────────────────────── */
 function buildBoard(data) {
@@ -347,7 +360,6 @@ function buildBoard(data) {
   var boardEl = document.getElementById('issue-board');
   if (!boardEl) return;
 
-  /* group by status */
   var groups = {};
   STATUSES.forEach(function(s){ groups[s.key] = []; });
   data.forEach(function(d){
@@ -356,33 +368,28 @@ function buildBoard(data) {
     groups[sk].push(d);
   });
 
-  /* visible columns */
-  var visCols = STATUSES.filter(function(s){ return !_hiddenCols[s.key]; });
-  var colPct  = visCols.length > 0 ? (100 / visCols.length).toFixed(2) : 20;
+  var eyeOpen   = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+  var eyeClosed = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
 
   boardEl.innerHTML = STATUSES.map(function(s){
-    var items   = groups[s.key] || [];
-    var hidden  = !!_hiddenCols[s.key];
-    var eyeIcon = hidden
-      ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
-      : '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+    var items  = groups[s.key] || [];
+    var hidden = !!_hiddenCols[s.key];
 
     if (hidden) {
-      /* collapsed pill */
       return '<div class="iboard-col iboard-col--hidden">'+
-        '<div class="iboard-col-hd" style="border-top-color:'+s.color+';cursor:pointer" onclick="toggleStatusCol(\\"'+s.key+'\\")">'+
+        '<div class="iboard-col-hd" style="border-top-color:'+s.color+';cursor:pointer" data-toggle-col="'+s.key+'">'+
           '<span class="iboard-col-name" style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px">'+s.label+'</span>'+
           '<span class="iboard-col-cnt" style="margin-top:6px">'+items.length+'</span>'+
-          '<span class="iboard-col-eye" title="Show column">'+eyeIcon+'</span>'+
+          '<span class="iboard-col-eye">'+eyeOpen+'</span>'+
         '</div>'+
       '</div>';
     }
 
-    return '<div class="iboard-col" style="width:'+colPct+'%">'+
+    return '<div class="iboard-col">'+
       '<div class="iboard-col-hd" style="border-top-color:'+s.color+'">'+
         '<span class="iboard-col-name">'+s.label+'</span>'+
         '<span class="iboard-col-cnt">'+items.length+'</span>'+
-        '<button class="iboard-col-eye" title="Hide column" onclick="toggleStatusCol(\\"'+s.key+'\\")">'+eyeIcon+'</button>'+
+        '<button class="iboard-col-eye" data-toggle-col="'+s.key+'" title="Hide column">'+eyeClosed+'</button>'+
       '</div>'+
       items.map(function(d){ return buildCard(d); }).join('')+
     '</div>';

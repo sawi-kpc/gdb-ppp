@@ -197,10 +197,11 @@ function buildIncidentTimeline(d) {
             '</div>';
   }
 
-  /* bar — NO label inside */
+  /* bar — orange=ongoing, green=resolved */
+  var fixColor = isOngoing ? '#f97316' : 'var(--up)';
   html += '<div class="tl2-bar">'+
     '<div class="tl2-seg-grey" style="width:'+respPct+'%"></div>'+
-    '<div class="tl2-seg-green" style="flex:1"></div>'+
+    '<div class="tl2-seg-fix" style="flex:1;background:'+fixColor+'"></div>'+
   '</div>';
 
   /* due date marker line overlapping bar */

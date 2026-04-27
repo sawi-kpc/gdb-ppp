@@ -148,6 +148,13 @@
 
 /* ── Empty state ── */
 .empty-state { text-align: center; padding: 60px 20px; color: var(--text3); font-size: 13px; }
+
+/* ── Chart bar rows ── */
+.cbar-row   { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+.cbar-label { font-size: 11px; color: var(--text2); width: 88px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cbar-track { flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.cbar-fill  { height: 100%; border-radius: 4px; transition: width .4s ease; }
+.cbar-val   { font-size: 11px; font-weight: 700; color: var(--text); width: 24px; text-align: right; flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -155,6 +162,15 @@
 
 <div class="gdb-page" id="main-content" style="display:none">
 <div class="issue-content">
+
+  <!-- KPI row -->
+  <div class="kpi-grid" id="issue-kpi" style="margin-bottom:14px"></div>
+
+  <!-- Charts row -->
+  <div class="chart-grid" style="margin-bottom:14px">
+    <div class="chart-card" id="chart-status"></div>
+    <div class="chart-card" id="chart-priority"></div>
+  </div>
 
   <!-- Issues panel -->
   <div class="panel">
@@ -187,6 +203,9 @@
         </select>
         <select class="ctrl-select" id="filter-component" onchange="onDropdownChange()">
           <option value="all">All components</option>
+        </select>
+        <select class="ctrl-select" id="filter-group" onchange="onDropdownChange()">
+          <option value="all">All groups</option>
         </select>
         <div class="ctrl-sep"></div>
         <div class="ctrl-search">
@@ -223,16 +242,7 @@
     </div>
   </div><!-- /panel -->
 
-  <!-- Systemic issues / initiative candidates -->
-  <div class="panel">
-    <div class="panel-head">
-      <div>
-        <div class="panel-title">◆ Systemic Issues — Initiative Conversion Candidates</div>
-        <div class="panel-sub">Issues indicating process gaps that should be addressed via initiatives</div>
-      </div>
-    </div>
-    <div class="panel-body" id="issue-init-section"></div>
-  </div>
+
 
 </div><!-- /issue-content -->
 </div><!-- /main-content -->

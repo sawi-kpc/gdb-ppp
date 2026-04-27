@@ -240,12 +240,11 @@ function buildIncidentTimeline(d) {
   return html;
 }
 
-/* ── Group helper — derive group from Summary prefix ────── */
+/* ── Group helper: [INCIDENT] / [ISSUE] from Summary prefix */
 function _getGroup(d) {
-  if (d.IssueType && d.IssueType !== 'Issue') return d.IssueType;
-  var m = (d.Summary||'').match(/^\[(INCIDENT|ISSUE|TASK|BUG|REQUEST)\]/i);
-  if (m) return m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase();
-  return 'Other';
+  var m = (d.Summary||'').match(/^\[([A-Z]+)\]/i);
+  if (m) return m[1].toUpperCase();
+  return 'OTHER';
 }
 
 /* ── KPI stat cards ─────────────────────────────────────── */
@@ -278,52 +277,127 @@ function kpiCard(label, value, meta, cls) {
   '</div>';
 }
 
-/* ── Charts: status bar + priority bar ─────────────────── */
+/* ── Charts ─────────────────────────────────────────────── */
 function buildCharts(data) {
-  buildStatusBar(data);
-  buildPriorityBar(data);
+  buildWeekChart(data);
+  buildGroupCompChart(data);
 }
 
-function buildStatusBar(data) {
+/* Chart 1: Incidents by week (failure occurs) — pending vs resolved */
+function buildWeekChart(data) {
   var el = document.getElementById('chart-status');
   if (!el) return;
-  var counts = {};
-  STATUSES.forEach(function(s){ counts[s.key] = 0; });
-  data.forEach(function(d){ if (counts[d.Status] !== undefined) counts[d.Status]++; });
-  var total = data.length || 1;
-  el.innerHTML = '<div class="chart-title">Issues by Status</div>'+
-    '<div class="chart-desc">Distribution across all statuses</div>'+
-    STATUSES.map(function(s){
-      var n = counts[s.key] || 0;
-      var pct = Math.round(n / total * 100);
+
+  /* collect weeks */
+  var weekMap = {};
+  data.forEach(function(d) {
+    if (!d.FailureOccurs) return;
+    var dt = _parseDate(d.FailureOccurs);
+    if (!dt) return;
+    /* ISO week key */
+    var jan1 = new Date(dt.getFullYear(), 0, 1);
+    var wk = Math.ceil(((dt - jan1) / 86400000 + jan1.getDay() + 1) / 7);
+    var key = dt.getFullYear() + '-W' + String(wk).padStart(2, '0');
+    if (!weekMap[key]) weekMap[key] = { pending: 0, resolved: 0, label: key };
+    if (d.FailureResolved) weekMap[key].resolved++;
+    else weekMap[key].pending++;
+  });
+
+  /* also bucket by month if < 2 distinct weeks */
+  var useMonth = Object.keys(weekMap).length < 3;
+  if (useMonth) {
+    weekMap = {};
+    data.forEach(function(d) {
+      if (!d.FailureOccurs) return;
+      var dt = _parseDate(d.FailureOccurs);
+      if (!dt) return;
+      var key = _MONTHS[dt.getMonth()] + ' ' + dt.getFullYear();
+      if (!weekMap[key]) weekMap[key] = { pending: 0, resolved: 0, label: key };
+      if (d.FailureResolved) weekMap[key].resolved++;
+      else weekMap[key].pending++;
+    });
+  }
+
+  var keys = Object.keys(weekMap).sort();
+  var maxVal = keys.reduce(function(m, k) { return Math.max(m, weekMap[k].pending + weekMap[k].resolved); }, 0) || 1;
+
+  el.innerHTML = '<div class="chart-title">Incidents by ' + (useMonth ? 'Month' : 'Week') + '</div>'+
+    '<div class="chart-desc">Failure occurrence — <span style="color:#3fb950">■</span> Resolved &nbsp;<span style="color:#f97316">■</span> Pending</div>'+
+    keys.map(function(k) {
+      var w = weekMap[k];
+      var tot = w.pending + w.resolved;
+      var resPct  = Math.round(w.resolved / maxVal * 100);
+      var pendPct = Math.round(w.pending  / maxVal * 100);
       return '<div class="cbar-row">'+
-        '<span class="cbar-label">'+s.label+'</span>'+
-        '<div class="cbar-track"><div class="cbar-fill" style="width:'+pct+'%;background:'+s.color+'"></div></div>'+
-        '<span class="cbar-val">'+n+'</span>'+
+        '<span class="cbar-label" style="width:100px">'+k+'</span>'+
+        '<div class="cbar-track" style="position:relative">'+
+          '<div style="position:absolute;left:0;top:0;height:100%;width:'+resPct+'%;background:#3fb950;border-radius:4px 0 0 4px"></div>'+
+          '<div style="position:absolute;left:'+resPct+'%;top:0;height:100%;width:'+pendPct+'%;background:#f97316;border-radius:'+(resPct===0?'4px':'0')+' 4px 4px '+(resPct===0?'4px':'0')+'"></div>'+
+        '</div>'+
+        '<span class="cbar-val">'+tot+'</span>'+
       '</div>';
-    }).join('');
+    }).join('') + (keys.length === 0 ? '<div style="color:var(--text3);font-size:12px;padding:20px 0">No failure date data</div>' : '');
 }
 
-function buildPriorityBar(data) {
+/* Chart 2: Count + % by group (INCIDENT/ISSUE) × component */
+function buildGroupCompChart(data) {
   var el = document.getElementById('chart-priority');
   if (!el) return;
-  var order = ['Highest','High','Medium','Low','Lowest'];
-  var colors = { Highest:'var(--down)', High:'#f97316', Medium:'var(--amber)', Low:'var(--up)', Lowest:'var(--text3)' };
-  var counts = {};
-  order.forEach(function(p){ counts[p] = 0; });
-  data.forEach(function(d){ if (d.Priority && counts[d.Priority] !== undefined) counts[d.Priority]++; });
+
+  /* group → { comp → count } */
+  var groupOrder = ['INCIDENT', 'ISSUE', 'OTHER'];
+  var groupColors = { INCIDENT: 'var(--down)', ISSUE: 'var(--accent)', OTHER: 'var(--text3)' };
+  var compSet = {};
+  var matrix = {}; /* group → comp → count */
+
+  data.forEach(function(d) {
+    var g = _getGroup(d);
+    if (!matrix[g]) matrix[g] = {};
+    var comps = (d.Components||'').split(';').map(function(c){ return c.trim(); }).filter(Boolean);
+    if (!comps.length) comps = ['Unknown'];
+    comps.forEach(function(comp) {
+      compSet[comp] = true;
+      matrix[g][comp] = (matrix[g][comp] || 0) + 1;
+    });
+  });
+
   var total = data.length || 1;
-  el.innerHTML = '<div class="chart-title">Issues by Priority</div>'+
-    '<div class="chart-desc">Breakdown by severity level</div>'+
-    order.map(function(p){
-      var n = counts[p] || 0;
-      var pct = Math.round(n / total * 100);
+  var groups = groupOrder.filter(function(g){ return matrix[g]; });
+
+  /* stacked bar per component */
+  var comps = Object.keys(compSet).sort();
+  var maxCompCount = comps.reduce(function(m, comp) {
+    var tot = groups.reduce(function(s, g){ return s + (matrix[g][comp]||0); }, 0);
+    return Math.max(m, tot);
+  }, 0) || 1;
+
+  /* short label */
+  function shortComp(s) {
+    return s.replace('kingpower-','kp-').replace('-commerce','').replace('-social','').replace('-marketplace','').replace('-cn','').replace('-th','');
+  }
+
+  el.innerHTML = '<div class="chart-title">Issues by Group × Component</div>'+
+    '<div class="chart-desc">' +
+      groups.map(function(g){ return '<span style="color:'+groupColors[g]+'">■ '+g+'</span>'; }).join(' &nbsp;') +
+    '</div>'+
+    comps.map(function(comp) {
+      var parts = '';
+      var offset = 0;
+      var compTotal = groups.reduce(function(s,g){ return s+(matrix[g][comp]||0); }, 0);
+      var pct = Math.round(compTotal/total*100);
+      groups.forEach(function(g) {
+        var n = matrix[g][comp] || 0;
+        if (!n) return;
+        var w = Math.round(n / maxCompCount * 100);
+        parts += '<div style="position:absolute;left:'+offset+'%;top:0;height:100%;width:'+w+'%;background:'+groupColors[g]+';border-radius:2px" title="'+g+': '+n+'"></div>';
+        offset += w;
+      });
       return '<div class="cbar-row">'+
-        '<span class="cbar-label">'+p+'</span>'+
-        '<div class="cbar-track"><div class="cbar-fill" style="width:'+pct+'%;background:'+colors[p]+'"></div></div>'+
-        '<span class="cbar-val">'+n+'</span>'+
+        '<span class="cbar-label" style="width:110px;font-size:10px">'+shortComp(comp)+'</span>'+
+        '<div class="cbar-track" style="position:relative">'+parts+'</div>'+
+        '<span class="cbar-val" style="width:40px">'+compTotal+' <span style="color:var(--text3);font-size:9px">('+pct+'%)</span></span>'+
       '</div>';
-    }).join('');
+    }).join('') + (comps.length === 0 ? '<div style="color:var(--text3);font-size:12px;padding:20px 0">No component data</div>' : '');
 }
 
 /* ── Populate filter dropdowns ───────────────────────────── */

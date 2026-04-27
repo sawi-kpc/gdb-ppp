@@ -150,19 +150,29 @@
 .empty-state { text-align: center; padding: 60px 20px; color: var(--text3); font-size: 13px; }
 
 /* ── Vertical bar chart ── */
-.chart-head   { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
-.chart-toggle { display: flex; gap: 4px; flex-shrink: 0; }
+.chart-head    { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+.chart-toggle  { display: flex; gap: 4px; flex-shrink: 0; }
 .ctog { font-size: 10px; font-weight: 600; padding: 3px 10px; border-radius: 4px; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); cursor: pointer; transition: all .15s; }
 .ctog.active, .ctog:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
-.vbar-wrap  { display: flex; align-items: flex-end; gap: 10px; padding: 8px 0 4px; min-height: 100px; flex-wrap: wrap; }
-.vbar-col   { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 40px; }
-.vbar-stack { display: flex; flex-direction: column; justify-content: flex-end; width: 32px; gap: 1px; }
-.vbar-seg   { width: 100%; border-radius: 2px; transition: height .4s; }
-.vbar-val   { font-size: 10px; font-weight: 700; color: var(--text); }
-.vbar-label { font-size: 9px; color: var(--text3); white-space: nowrap; }
-.chart-legend { display: flex; gap: 12px; margin-top: 8px; }
-.cleg         { display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--text2); }
-.cleg-dot     { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+/* chart area with y-axis */
+.vbar-area     { display: flex; align-items: stretch; gap: 6px; margin: 8px 0 4px; height: 160px; }
+.vbar-y-axis   { display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end; width: 28px; flex-shrink: 0; padding-bottom: 20px; }
+.vbar-y-tick   { font-size: 9px; color: var(--text3); line-height: 1; }
+.vbar-inner    { position: relative; flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.vbar-grid     { position: absolute; inset: 0; bottom: 20px; pointer-events: none; }
+.vbar-hline    { position: absolute; left: 0; right: 0; height: 1px; background: var(--border); opacity: .5; }
+.vbar-bars     { display: flex; align-items: flex-end; gap: 6px; height: calc(100% - 20px); padding: 0 4px; flex: 1; overflow-x: auto; }
+
+/* individual bar column */
+.vbar-col      { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 24px; max-width: 80px; height: 100%; }
+.vbar-stack    { display: flex; flex-direction: column; justify-content: flex-end; width: 100%; flex: 1; border-radius: 3px 3px 0 0; overflow: hidden; gap: 1px; }
+.vbar-seg      { width: 100%; flex-shrink: 0; transition: height .35s ease; }
+.vbar-x-label  { font-size: 9px; color: var(--text3); white-space: nowrap; margin-top: 4px; text-align: center; height: 16px; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
+.chart-legend  { display: flex; gap: 12px; margin-top: 6px; }
+.cleg          { display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--text2); }
+.cleg-dot      { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
 
 /* ── Heatmap chart ── */
 .hm-wrap  { overflow-x: auto; margin: 8px 0; }

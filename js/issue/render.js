@@ -370,7 +370,8 @@ function buildHeatmapChart(data) {
     if (!d.FailureOccurs || !d.FailureResolved) return;
     var mttrH = calcMTTRHours(d.FailureOccurs, d.FailureResolved);
     if (!mttrH || mttrH <= 0) return;
-    var g = _getGroup(d);
+    var g = (d.Group && d.Group.trim()) ? d.Group.trim() : null;
+    if (!g) return; /* skip if no group */
     groupSet[g] = true;
     var comps = (d.Components||'').split(';').map(function(c){ return c.trim(); }).filter(Boolean);
     if (!comps.length) comps = ['Unknown'];
@@ -461,11 +462,12 @@ function populateFilters(data) {
   data.forEach(function(d) {
     if (d.Priority && priorities.indexOf(d.Priority) < 0) priorities.push(d.Priority);
     if (d.Severity && severities.indexOf(d.Severity) < 0) severities.push(d.Severity);
-    (d.Components||'').split(';').forEach(function(c){
-      c = c.trim();
-      if (c && comps.indexOf(c) < 0) comps.push(c);
+    (d.Components||'').split(';').forEach(function(cc){
+      cc = cc.trim();
+      if (cc && comps.indexOf(cc) < 0) comps.push(cc);
     });
-    var g = _getGroup(d);
+    /* use d.Group column directly — not derived */
+    var g = (d.Group && d.Group.trim()) ? d.Group.trim() : null;
     if (g && groups.indexOf(g) < 0) groups.push(g);
   });
 
@@ -508,8 +510,7 @@ function applyFilters() {
       if (comps.indexOf(_filterComp) < 0) return false;
     }
     if (_filterGroup !== 'all') {
-      /* group by IssueType or Components prefix */
-      var grp = _getGroup(d);
+      var grp = (d.Group && d.Group.trim()) ? d.Group.trim() : null;
       if (grp !== _filterGroup) return false;
     }
     if (_searchQ) {

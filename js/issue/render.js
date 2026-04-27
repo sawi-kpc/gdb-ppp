@@ -298,65 +298,103 @@ function buildWeekChart(data) {
   if (!el) return;
   _lastFilteredData = data;
 
+  var NO_DATE_KEY = 'No date';
   var buckets = {};
+
   data.forEach(function(d) {
-    if (!d.FailureOccurs) return;
-    var dt = _parseDate(d.FailureOccurs);
-    if (!dt) return;
     var key;
-    if (_chartGroupBy === 'month') {
-      key = _MONTHS[dt.getMonth()] + ' ' + dt.getFullYear();
+    if (!d.FailureOccurs) {
+      key = NO_DATE_KEY;
     } else {
-      var day1 = new Date(dt.getFullYear(), 0, 1);
-      var wk = Math.ceil(((dt - day1) / 86400000 + day1.getDay() + 1) / 7);
-      key = 'W' + String(wk).padStart(2,'0') + " '" + String(dt.getFullYear()).slice(2);
+      var dt = _parseDate(d.FailureOccurs);
+      if (!dt) {
+        key = NO_DATE_KEY;
+      } else if (_chartGroupBy === 'month') {
+        key = _MONTHS[dt.getMonth()] + ' ' + dt.getFullYear();
+      } else {
+        var day1 = new Date(dt.getFullYear(), 0, 1);
+        var wk = Math.ceil(((dt - day1) / 86400000 + day1.getDay() + 1) / 7);
+        key = 'W' + String(wk).padStart(2, '0') + " '" + String(dt.getFullYear()).slice(2);
+      }
     }
     if (!buckets[key]) buckets[key] = { resolved: 0, pending: 0 };
     if (d.FailureResolved) buckets[key].resolved++;
     else buckets[key].pending++;
   });
 
-  var keys = Object.keys(buckets).sort();
-  var maxVal = keys.reduce(function(m,k){ return Math.max(m, buckets[k].resolved+buckets[k].pending); }, 0) || 1;
-  var barH = 80;
+  /* sort: dated buckets first, "No date" last */
+  var keys = Object.keys(buckets).sort(function(a, b) {
+    if (a === NO_DATE_KEY) return 1;
+    if (b === NO_DATE_KEY) return -1;
+    return a < b ? -1 : a > b ? 1 : 0;
+  });
 
+  var maxVal = keys.reduce(function(m, k) {
+    return Math.max(m, buckets[k].resolved + buckets[k].pending);
+  }, 0) || 1;
+
+  /* y-axis steps */
+  var yTop   = Math.ceil(maxVal / 3) * 3 || 3;
+  var yStep  = Math.ceil(yTop / 3);
+  var yGrids = [0, yStep, yStep * 2, yTop];
+
+  /* bar width responsive */
+  var BAR_W = Math.max(28, Math.min(72, Math.floor(460 / Math.max(keys.length, 1)) - 10));
+
+  var togW = _chartGroupBy === 'week';
   var toggleHtml =
-    '<div class="chart-toggle">'+
-      '<button id="toggle-week" class="ctog'  + (_chartGroupBy==='week'  ? ' active' : '') + '" data-cgrp="week">Week</button>' +
-      '<button id="toggle-month" class="ctog' + (_chartGroupBy==='month' ? ' active' : '') + '" data-cgrp="month">Month</button>'+
+    '<div class="chart-toggle">' +
+      '<button id="toggle-week"  class="ctog' + (togW  ? ' active' : '') + '" data-cgrp="week">Week</button>' +
+      '<button id="toggle-month" class="ctog' + (!togW ? ' active' : '') + '" data-cgrp="month">Month</button>' +
     '</div>';
 
-  var barsHtml = keys.map(function(k){
-    var b = buckets[k];
-    var tot = b.resolved + b.pending;
-    var resH  = Math.round(b.resolved / maxVal * barH);
-    var pendH = Math.round(b.pending  / maxVal * barH);
-    return '<div class="vbar-col">'+
-      '<div class="vbar-stack" style="height:'+barH+'px">'+
-        (b.pending  ? '<div class="vbar-seg" style="height:'+pendH+'px;background:#f97316" title="Pending: '+b.pending+'"></div>'  : '')+
-        (b.resolved ? '<div class="vbar-seg" style="height:'+resH +'px;background:#3fb950" title="Resolved: '+b.resolved+'"></div>' : '')+
-      '</div>'+
-      '<div class="vbar-val">'+tot+'</div>'+
-      '<div class="vbar-label">'+k+'</div>'+
+  /* bars HTML */
+  var barsHtml = keys.map(function(k) {
+    var b    = buckets[k];
+    var tot  = b.resolved + b.pending;
+    var resP = Math.round(b.resolved / maxVal * 100);
+    var penP = Math.round(b.pending  / maxVal * 100);
+    return '<div class="vbar-col" style="width:' + BAR_W + 'px">' +
+      '<div class="vbar-stack">' +
+        (b.pending  ? '<div class="vbar-seg" style="height:' + penP + '%;background:#f97316;min-height:3px" title="Pending: '  + b.pending  + '"></div>' : '') +
+        (b.resolved ? '<div class="vbar-seg" style="height:' + resP + '%;background:#3fb950;min-height:3px" title="Resolved: " + b.resolved + ""></div>' : '') +
+      '</div>' +
+      '<div class="vbar-x-label">' + k + '</div>' +
     '</div>';
   }).join('');
 
+  /* y-axis labels */
+  var yLabelsHtml = yGrids.slice().reverse().map(function(v) {
+    return '<span class="vbar-y-tick">' + v + '</span>';
+  }).join('');
+
+  /* grid lines */
+  var gridHtml = yGrids.map(function(v) {
+    var pct = Math.round(v / yTop * 100);
+    return '<div class="vbar-hline" style="bottom:' + pct + '%"></div>';
+  }).join('');
+
   el.innerHTML =
-    '<div class="chart-head">'+
-      '<div>'+
-        '<div class="chart-title">Incidents by '+(_chartGroupBy==='week'?'Week':'Month')+'</div>'+
-        '<div class="chart-desc">Failure occurrence — stacked by resolution status</div>'+
-      '</div>'+
-      toggleHtml+
-    '</div>'+
-    (keys.length
-      ? '<div class="vbar-wrap">'+barsHtml+'</div>'
-      : '<div style="color:var(--text3);font-size:12px;padding:20px 0">No failure date data</div>')+
-    '<div class="chart-legend">'+
-      '<span class="cleg"><span class="cleg-dot" style="background:#3fb950"></span>Resolved</span>'+
-      '<span class="cleg"><span class="cleg-dot" style="background:#f97316"></span>Pending</span>'+
+    '<div class="chart-head">' +
+      '<div>' +
+        '<div class="chart-title">Incidents by ' + (_chartGroupBy === 'week' ? 'Week' : 'Month') + '</div>' +
+        '<div class="chart-desc">Failure occurrence — stacked by resolution status</div>' +
+      '</div>' +
+      toggleHtml +
+    '</div>' +
+    '<div class="vbar-area">' +
+      '<div class="vbar-y-axis">' + yLabelsHtml + '</div>' +
+      '<div class="vbar-inner">' +
+        '<div class="vbar-grid">' + gridHtml + '</div>' +
+        '<div class="vbar-bars">' + barsHtml + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="chart-legend">' +
+      '<span class="cleg"><span class="cleg-dot" style="background:#3fb950"></span>Resolved</span>' +
+      '<span class="cleg"><span class="cleg-dot" style="background:#f97316"></span>Pending</span>' +
     '</div>';
 }
+
 
 /* ── Chart 2: Heatmap — avg MTTR by support group x component ── */
 function buildHeatmapChart(data) {

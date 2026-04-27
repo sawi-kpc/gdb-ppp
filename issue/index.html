@@ -149,12 +149,33 @@
 /* ── Empty state ── */
 .empty-state { text-align: center; padding: 60px 20px; color: var(--text3); font-size: 13px; }
 
-/* ── Chart bar rows ── */
-.cbar-row   { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
-.cbar-label { font-size: 11px; color: var(--text2); width: 88px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cbar-track { flex: 1; height: 9px; background: var(--border); border-radius: 4px; overflow: visible; position: relative; }
-.cbar-fill  { height: 100%; border-radius: 4px; transition: width .4s ease; }
-.cbar-val   { font-size: 11px; font-weight: 700; color: var(--text); width: 36px; text-align: right; flex-shrink: 0; }
+/* ── Vertical bar chart ── */
+.chart-head   { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+.chart-toggle { display: flex; gap: 4px; flex-shrink: 0; }
+.ctog { font-size: 10px; font-weight: 600; padding: 3px 10px; border-radius: 4px; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); cursor: pointer; transition: all .15s; }
+.ctog.active, .ctog:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+.vbar-wrap  { display: flex; align-items: flex-end; gap: 10px; padding: 8px 0 4px; min-height: 100px; flex-wrap: wrap; }
+.vbar-col   { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 40px; }
+.vbar-stack { display: flex; flex-direction: column; justify-content: flex-end; width: 32px; gap: 1px; }
+.vbar-seg   { width: 100%; border-radius: 2px; transition: height .4s; }
+.vbar-val   { font-size: 10px; font-weight: 700; color: var(--text); }
+.vbar-label { font-size: 9px; color: var(--text3); white-space: nowrap; }
+.chart-legend { display: flex; gap: 12px; margin-top: 8px; }
+.cleg         { display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--text2); }
+.cleg-dot     { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+/* ── Heatmap chart ── */
+.hm-wrap  { overflow-x: auto; margin: 8px 0; }
+.hm-table { border-collapse: separate; border-spacing: 3px; font-size: 10px; }
+.hm-corner { min-width: 110px; }
+.hm-th    { font-size: 10px; font-weight: 600; color: var(--text2); padding: 4px 6px; text-align: center; white-space: nowrap; }
+.hm-th-comp { text-align: left; }
+.hm-comp  { font-size: 10px; color: var(--text2); padding: 4px 8px 4px 0; white-space: nowrap; text-align: left; }
+.hm-cell  { text-align: center; padding: 5px 8px; border-radius: 4px; font-weight: 600; font-size: 10px; color: var(--text); min-width: 56px; cursor: default; transition: opacity .15s; }
+.hm-cell:hover { opacity: .75; }
+.hm-scale { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.hm-scale-lbl { font-size: 9px; color: var(--text3); white-space: nowrap; }
+.hm-scale-bar { flex: 1; height: 6px; border-radius: 3px; background: linear-gradient(to right, rgba(63,185,80,.4), rgba(239,159,39,.7), rgba(226,75,74,.9)); }
 </style>
 </head>
 <body>
@@ -205,7 +226,7 @@
           <option value="all">All components</option>
         </select>
         <select class="ctrl-select" id="filter-group" onchange="onDropdownChange()">
-          <option value="all">All issue types</option>
+          <option value="all">All support groups</option>
         </select>
         <div class="ctrl-sep"></div>
         <div class="ctrl-search">
@@ -255,6 +276,12 @@
 <script src="../js/issue/render.js"></script>
 <script>
 window.addEventListener('DOMContentLoaded', function() {
+  /* ── Chart toggle: event delegation for week/month buttons ── */
+  document.addEventListener('click', function(ev) {
+    var btn = ev.target.closest('[data-cgrp]');
+    if (btn) toggleChartGroup(btn.getAttribute('data-cgrp'));
+  });
+
   /* ── Default theme: dark ── */
   if (!localStorage.getItem('gdb_theme')) {
     document.documentElement.setAttribute('data-theme', 'dark');

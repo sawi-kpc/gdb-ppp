@@ -152,9 +152,9 @@
 /* ── Chart bar rows ── */
 .cbar-row   { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
 .cbar-label { font-size: 11px; color: var(--text2); width: 88px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cbar-track { flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.cbar-track { flex: 1; height: 9px; background: var(--border); border-radius: 4px; overflow: visible; position: relative; }
 .cbar-fill  { height: 100%; border-radius: 4px; transition: width .4s ease; }
-.cbar-val   { font-size: 11px; font-weight: 700; color: var(--text); width: 24px; text-align: right; flex-shrink: 0; }
+.cbar-val   { font-size: 11px; font-weight: 700; color: var(--text); width: 36px; text-align: right; flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -164,7 +164,7 @@
 <div class="issue-content">
 
   <!-- KPI row -->
-  <div class="kpi-grid" id="issue-kpi" style="margin-bottom:14px"></div>
+  <div class="kpi-grid" id="issue-kpi" style="margin-bottom:14px;grid-template-columns:repeat(7,1fr)"></div>
 
   <!-- Charts row -->
   <div class="chart-grid" style="margin-bottom:14px">
@@ -205,7 +205,7 @@
           <option value="all">All components</option>
         </select>
         <select class="ctrl-select" id="filter-group" onchange="onDropdownChange()">
-          <option value="all">All groups</option>
+          <option value="all">All issue types</option>
         </select>
         <div class="ctrl-sep"></div>
         <div class="ctrl-search">

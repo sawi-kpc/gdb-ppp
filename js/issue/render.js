@@ -241,10 +241,18 @@ function buildIncidentTimeline(d) {
   return html;
 }
 
-/* ── Group of Issue/Support Case: use d.Group column directly ──
-   Falls back to '—' if empty (column not yet populated in source) */
-function _getGroup(d) {
-  return (d.Group && d.Group.trim()) ? d.Group.trim() : '—';
+/* ── Group: d.Group column first, fallback to 2nd Summary bracket ──
+   e.g. "[INCIDENT] [JD] ..." → "JD"                                */
+function _getGroupSafe(d) {
+  if (d.Group && d.Group.trim()) return d.Group.trim();
+  /* fallback: extract 2nd bracket from Summary */
+  var brackets = [];
+  var re = /\[([^\]]+)\]/g, m;
+  var s = d.Summary || '';
+  while ((m = re.exec(s)) !== null) brackets.push(m[1]);
+  if (brackets.length >= 2) return brackets[1];
+  if (brackets.length === 1) return brackets[0];
+  return null;
 }
 
 /* ── KPI stat cards ─────────────────────────────────────── */
@@ -322,10 +330,10 @@ function buildWeekChart(data) {
     else buckets[key].pending++;
   });
 
-  /* sort: dated buckets first, "No date" last */
+  /* sort: "No date" first, then dated buckets ascending */
   var keys = Object.keys(buckets).sort(function(a, b) {
-    if (a === NO_DATE_KEY) return 1;
-    if (b === NO_DATE_KEY) return -1;
+    if (a === NO_DATE_KEY) return -1;
+    if (b === NO_DATE_KEY) return 1;
     return a < b ? -1 : a > b ? 1 : 0;
   });
 
@@ -354,12 +362,19 @@ function buildWeekChart(data) {
     var tot  = b.resolved + b.pending;
     var resP = Math.round(b.resolved / maxVal * 100);
     var penP = Math.round(b.pending  / maxVal * 100);
-    return '<div class="vbar-col" style="width:' + BAR_W + 'px">' +
-      '<div class="vbar-stack">' +
+    var isND = k === NO_DATE_KEY;
+    var stackStyle = isND
+      ? 'opacity:0.55;border:1.5px dashed var(--border);border-radius:3px 3px 0 0;box-sizing:border-box'
+      : '';
+    var sepStyle = isND
+      ? 'margin-right:10px;padding-right:10px;border-right:1px solid var(--border)'
+      : '';
+    return '<div class="vbar-col" style="width:' + BAR_W + 'px;' + sepStyle + '">' +
+      '<div class="vbar-stack" style="' + stackStyle + '">' +
         (b.pending  ? '<div class="vbar-seg" style="height:' + penP + '%;background:#f97316;min-height:3px" title="Pending: '  + b.pending  + '"></div>' : '') +
-        (b.resolved ? '<div class="vbar-seg" style="height:' + resP + '%;background:#3fb950;min-height:3px" title="Resolved: " + b.resolved + ""></div>' : '') +
+        (b.resolved ? '<div class="vbar-seg" style="height:' + resP + '%;background:#3fb950;min-height:3px" title="Resolved: ' + b.resolved + '"></div>' : '') +
       '</div>' +
-      '<div class="vbar-x-label">' + k + '</div>' +
+      '<div class="vbar-x-label"' + (isND ? ' style="color:var(--text3);font-style:italic"' : '') + '>' + k + '</div>' +
     '</div>';
   }).join('');
 
@@ -408,8 +423,8 @@ function buildHeatmapChart(data) {
     if (!d.FailureOccurs || !d.FailureResolved) return;
     var mttrH = calcMTTRHours(d.FailureOccurs, d.FailureResolved);
     if (!mttrH || mttrH <= 0) return;
-    var g = (d.Group && d.Group.trim()) ? d.Group.trim() : null;
-    if (!g) return; /* skip if no group */
+    var g = _getGroupSafe(d);
+    if (!g) return;
     groupSet[g] = true;
     var comps = (d.Components||'').split(';').map(function(c){ return c.trim(); }).filter(Boolean);
     if (!comps.length) comps = ['Unknown'];
@@ -504,8 +519,7 @@ function populateFilters(data) {
       cc = cc.trim();
       if (cc && comps.indexOf(cc) < 0) comps.push(cc);
     });
-    /* use d.Group column directly — not derived */
-    var g = (d.Group && d.Group.trim()) ? d.Group.trim() : null;
+    var g = _getGroupSafe(d);
     if (g && groups.indexOf(g) < 0) groups.push(g);
   });
 
@@ -548,8 +562,7 @@ function applyFilters() {
       if (comps.indexOf(_filterComp) < 0) return false;
     }
     if (_filterGroup !== 'all') {
-      var grp = (d.Group && d.Group.trim()) ? d.Group.trim() : null;
-      if (grp !== _filterGroup) return false;
+      if (_getGroupSafe(d) !== _filterGroup) return false;
     }
     if (_searchQ) {
       var q = _searchQ.toLowerCase();

@@ -13,6 +13,7 @@ var _searchQ        = '';
 var _sortCol        = 'Key';
 var _sortAsc        = true;
 var _activeView     = 'board';
+var _chartGroupBy   = 'week'; /* 'week' | 'month' */
 
 /* ── Status board columns ────────────────────────────────── */
 var STATUSES = [
@@ -240,11 +241,10 @@ function buildIncidentTimeline(d) {
   return html;
 }
 
-/* ── Group helper: [INCIDENT] / [ISSUE] from Summary prefix */
+/* ── Group of Issue/Support Case: use d.Group column directly ──
+   Falls back to '—' if empty (column not yet populated in source) */
 function _getGroup(d) {
-  var m = (d.Summary||'').match(/^\[([A-Z]+)\]/i);
-  if (m) return m[1].toUpperCase();
-  return 'OTHER';
+  return (d.Group && d.Group.trim()) ? d.Group.trim() : '—';
 }
 
 /* ── KPI stat cards ─────────────────────────────────────── */
@@ -280,125 +280,180 @@ function kpiCard(label, value, meta, cls) {
 /* ── Charts ─────────────────────────────────────────────── */
 function buildCharts(data) {
   buildWeekChart(data);
-  buildGroupCompChart(data);
+  buildHeatmapChart(data);
 }
 
-/* Chart 1: Incidents by week (failure occurs) — pending vs resolved */
+function toggleChartGroup(mode) {
+  _chartGroupBy = mode;
+  buildWeekChart(_lastFilteredData || []);
+  var w = document.getElementById('toggle-week');
+  var m = document.getElementById('toggle-month');
+  if (w) w.classList.toggle('active', mode === 'week');
+  if (m) m.classList.toggle('active', mode === 'month');
+}
+
+/* ── Chart 1: Vertical stacked bar — incidents by week/month ── */
 function buildWeekChart(data) {
   var el = document.getElementById('chart-status');
   if (!el) return;
+  _lastFilteredData = data;
 
-  /* collect weeks */
-  var weekMap = {};
+  var buckets = {};
   data.forEach(function(d) {
     if (!d.FailureOccurs) return;
     var dt = _parseDate(d.FailureOccurs);
     if (!dt) return;
-    /* ISO week key */
-    var jan1 = new Date(dt.getFullYear(), 0, 1);
-    var wk = Math.ceil(((dt - jan1) / 86400000 + jan1.getDay() + 1) / 7);
-    var key = dt.getFullYear() + '-W' + String(wk).padStart(2, '0');
-    if (!weekMap[key]) weekMap[key] = { pending: 0, resolved: 0, label: key };
-    if (d.FailureResolved) weekMap[key].resolved++;
-    else weekMap[key].pending++;
+    var key;
+    if (_chartGroupBy === 'month') {
+      key = _MONTHS[dt.getMonth()] + ' ' + dt.getFullYear();
+    } else {
+      var day1 = new Date(dt.getFullYear(), 0, 1);
+      var wk = Math.ceil(((dt - day1) / 86400000 + day1.getDay() + 1) / 7);
+      key = 'W' + String(wk).padStart(2,'0') + " '" + String(dt.getFullYear()).slice(2);
+    }
+    if (!buckets[key]) buckets[key] = { resolved: 0, pending: 0 };
+    if (d.FailureResolved) buckets[key].resolved++;
+    else buckets[key].pending++;
   });
 
-  /* also bucket by month if < 2 distinct weeks */
-  var useMonth = Object.keys(weekMap).length < 3;
-  if (useMonth) {
-    weekMap = {};
-    data.forEach(function(d) {
-      if (!d.FailureOccurs) return;
-      var dt = _parseDate(d.FailureOccurs);
-      if (!dt) return;
-      var key = _MONTHS[dt.getMonth()] + ' ' + dt.getFullYear();
-      if (!weekMap[key]) weekMap[key] = { pending: 0, resolved: 0, label: key };
-      if (d.FailureResolved) weekMap[key].resolved++;
-      else weekMap[key].pending++;
-    });
-  }
+  var keys = Object.keys(buckets).sort();
+  var maxVal = keys.reduce(function(m,k){ return Math.max(m, buckets[k].resolved+buckets[k].pending); }, 0) || 1;
+  var barH = 80;
 
-  var keys = Object.keys(weekMap).sort();
-  var maxVal = keys.reduce(function(m, k) { return Math.max(m, weekMap[k].pending + weekMap[k].resolved); }, 0) || 1;
+  var toggleHtml =
+    '<div class="chart-toggle">'+
+      '<button id="toggle-week" class="ctog'  + (_chartGroupBy==='week'  ? ' active' : '') + '" data-cgrp="week">Week</button>' +
+      '<button id="toggle-month" class="ctog' + (_chartGroupBy==='month' ? ' active' : '') + '" data-cgrp="month">Month</button>'+
+    '</div>';
 
-  el.innerHTML = '<div class="chart-title">Incidents by ' + (useMonth ? 'Month' : 'Week') + '</div>'+
-    '<div class="chart-desc">Failure occurrence — <span style="color:#3fb950">■</span> Resolved &nbsp;<span style="color:#f97316">■</span> Pending</div>'+
-    keys.map(function(k) {
-      var w = weekMap[k];
-      var tot = w.pending + w.resolved;
-      var resPct  = Math.round(w.resolved / maxVal * 100);
-      var pendPct = Math.round(w.pending  / maxVal * 100);
-      return '<div class="cbar-row">'+
-        '<span class="cbar-label" style="width:100px">'+k+'</span>'+
-        '<div class="cbar-track" style="position:relative">'+
-          '<div style="position:absolute;left:0;top:0;height:100%;width:'+resPct+'%;background:#3fb950;border-radius:4px 0 0 4px"></div>'+
-          '<div style="position:absolute;left:'+resPct+'%;top:0;height:100%;width:'+pendPct+'%;background:#f97316;border-radius:'+(resPct===0?'4px':'0')+' 4px 4px '+(resPct===0?'4px':'0')+'"></div>'+
-        '</div>'+
-        '<span class="cbar-val">'+tot+'</span>'+
-      '</div>';
-    }).join('') + (keys.length === 0 ? '<div style="color:var(--text3);font-size:12px;padding:20px 0">No failure date data</div>' : '');
+  var barsHtml = keys.map(function(k){
+    var b = buckets[k];
+    var tot = b.resolved + b.pending;
+    var resH  = Math.round(b.resolved / maxVal * barH);
+    var pendH = Math.round(b.pending  / maxVal * barH);
+    return '<div class="vbar-col">'+
+      '<div class="vbar-stack" style="height:'+barH+'px">'+
+        (b.pending  ? '<div class="vbar-seg" style="height:'+pendH+'px;background:#f97316" title="Pending: '+b.pending+'"></div>'  : '')+
+        (b.resolved ? '<div class="vbar-seg" style="height:'+resH +'px;background:#3fb950" title="Resolved: '+b.resolved+'"></div>' : '')+
+      '</div>'+
+      '<div class="vbar-val">'+tot+'</div>'+
+      '<div class="vbar-label">'+k+'</div>'+
+    '</div>';
+  }).join('');
+
+  el.innerHTML =
+    '<div class="chart-head">'+
+      '<div>'+
+        '<div class="chart-title">Incidents by '+(_chartGroupBy==='week'?'Week':'Month')+'</div>'+
+        '<div class="chart-desc">Failure occurrence — stacked by resolution status</div>'+
+      '</div>'+
+      toggleHtml+
+    '</div>'+
+    (keys.length
+      ? '<div class="vbar-wrap">'+barsHtml+'</div>'
+      : '<div style="color:var(--text3);font-size:12px;padding:20px 0">No failure date data</div>')+
+    '<div class="chart-legend">'+
+      '<span class="cleg"><span class="cleg-dot" style="background:#3fb950"></span>Resolved</span>'+
+      '<span class="cleg"><span class="cleg-dot" style="background:#f97316"></span>Pending</span>'+
+    '</div>';
 }
 
-/* Chart 2: Count + % by group (INCIDENT/ISSUE) × component */
-function buildGroupCompChart(data) {
+/* ── Chart 2: Heatmap — avg MTTR by support group x component ── */
+function buildHeatmapChart(data) {
   var el = document.getElementById('chart-priority');
   if (!el) return;
 
-  /* group → { comp → count } */
-  var groupOrder = ['INCIDENT', 'ISSUE', 'OTHER'];
-  var groupColors = { INCIDENT: 'var(--down)', ISSUE: 'var(--accent)', OTHER: 'var(--text3)' };
-  var compSet = {};
-  var matrix = {}; /* group → comp → count */
+  var groupSet = {}, compSet = {};
+  var matrix = {};
 
   data.forEach(function(d) {
+    if (!d.FailureOccurs || !d.FailureResolved) return;
+    var mttrH = calcMTTRHours(d.FailureOccurs, d.FailureResolved);
+    if (!mttrH || mttrH <= 0) return;
     var g = _getGroup(d);
-    if (!matrix[g]) matrix[g] = {};
+    groupSet[g] = true;
     var comps = (d.Components||'').split(';').map(function(c){ return c.trim(); }).filter(Boolean);
     if (!comps.length) comps = ['Unknown'];
     comps.forEach(function(comp) {
       compSet[comp] = true;
-      matrix[g][comp] = (matrix[g][comp] || 0) + 1;
+      if (!matrix[g]) matrix[g] = {};
+      if (!matrix[g][comp]) matrix[g][comp] = [];
+      matrix[g][comp].push(mttrH);
     });
   });
 
-  var total = data.length || 1;
-  var groups = groupOrder.filter(function(g){ return matrix[g]; });
+  var groups = Object.keys(groupSet).sort();
+  var comps  = Object.keys(compSet).sort();
 
-  /* stacked bar per component */
-  var comps = Object.keys(compSet).sort();
-  var maxCompCount = comps.reduce(function(m, comp) {
-    var tot = groups.reduce(function(s, g){ return s + (matrix[g][comp]||0); }, 0);
-    return Math.max(m, tot);
-  }, 0) || 1;
-
-  /* short label */
-  function shortComp(s) {
-    return s.replace('kingpower-','kp-').replace('-commerce','').replace('-social','').replace('-marketplace','').replace('-cn','').replace('-th','');
+  if (!groups.length || !comps.length) {
+    el.innerHTML = '<div class="chart-title">Avg MTTR Heatmap</div>'+
+      '<div style="color:var(--text3);font-size:12px;padding:20px 0">Need resolved issues with failure dates for MTTR</div>';
+    return;
   }
 
-  el.innerHTML = '<div class="chart-title">Issues by Group × Component</div>'+
-    '<div class="chart-desc">' +
-      groups.map(function(g){ return '<span style="color:'+groupColors[g]+'">■ '+g+'</span>'; }).join(' &nbsp;') +
-    '</div>'+
-    comps.map(function(comp) {
-      var parts = '';
-      var offset = 0;
-      var compTotal = groups.reduce(function(s,g){ return s+(matrix[g][comp]||0); }, 0);
-      var pct = Math.round(compTotal/total*100);
-      groups.forEach(function(g) {
-        var n = matrix[g][comp] || 0;
-        if (!n) return;
-        var w = Math.round(n / maxCompCount * 100);
-        parts += '<div style="position:absolute;left:'+offset+'%;top:0;height:100%;width:'+w+'%;background:'+groupColors[g]+';border-radius:2px" title="'+g+': '+n+'"></div>';
-        offset += w;
-      });
-      return '<div class="cbar-row">'+
-        '<span class="cbar-label" style="width:110px;font-size:10px">'+shortComp(comp)+'</span>'+
-        '<div class="cbar-track" style="position:relative">'+parts+'</div>'+
-        '<span class="cbar-val" style="width:40px">'+compTotal+' <span style="color:var(--text3);font-size:9px">('+pct+'%)</span></span>'+
-      '</div>';
-    }).join('') + (comps.length === 0 ? '<div style="color:var(--text3);font-size:12px;padding:20px 0">No component data</div>' : '');
+  function avgH(list) {
+    if (!list || !list.length) return null;
+    return list.reduce(function(s,v){ return s+v; },0) / list.length;
+  }
+
+  var maxH = 0;
+  groups.forEach(function(g){ comps.forEach(function(comp){
+    var a = avgH(matrix[g] && matrix[g][comp]);
+    if (a && a > maxH) maxH = a;
+  }); });
+
+  function heatColor(h) {
+    if (h === null) return 'transparent';
+    var p = Math.min(h / maxH, 1);
+    if (p < 0.33) return 'rgba(63,185,80,'  + (0.25 + p * 1.5).toFixed(2) + ')';
+    if (p < 0.66) return 'rgba(239,159,39,' + (0.4  + p * 0.9).toFixed(2) + ')';
+    return               'rgba(226,75,74,'  + (0.45 + p * 0.55).toFixed(2) + ')';
+  }
+
+  function fmtH(h) {
+    if (h === null) return '';
+    if (h < 24) return h.toFixed(1)+'h';
+    return (h/24).toFixed(1)+'d';
+  }
+
+  function shortComp(s) {
+    return s.replace('kingpower-','kp-').replace('firster-','f1-')
+            .replace('-social-commerce','').replace('-marketplace-cn','')
+            .replace('-commerce-cn','').replace('-commerce-th','')
+            .replace('-commerce','').replace('-cn','').replace('-th','');
+  }
+
+  var colW = Math.max(56, Math.floor(260 / Math.max(groups.length,1)));
+  var thead = '<tr><th class="hm-th hm-corner"></th>'+
+    groups.map(function(g){ return '<th class="hm-th" style="min-width:'+colW+'px">'+g+'</th>'; }).join('')+
+  '</tr>';
+
+  var tbody = comps.map(function(comp){
+    return '<tr>'+
+      '<td class="hm-comp">'+shortComp(comp)+'</td>'+
+      groups.map(function(g){
+        var a = avgH(matrix[g] && matrix[g][comp]);
+        var n = (matrix[g] && matrix[g][comp]) ? matrix[g][comp].length : 0;
+        return '<td class="hm-cell" style="background:'+heatColor(a)+'" title="'+g+' x '+comp+(n?' (n='+n+')':'')+'">'+(a ? fmtH(a) : '—')+'</td>';
+      }).join('')+
+    '</tr>';
+  }).join('');
+
+  el.innerHTML =
+    '<div class="chart-title">Avg MTTR Heatmap — Support Group × Component</div>'+
+    '<div class="chart-desc">Average time-to-resolve per issue group and affected component</div>'+
+    '<div class="hm-wrap"><table class="hm-table"><thead>'+thead+'</thead><tbody>'+tbody+'</tbody></table></div>'+
+    '<div class="hm-scale">'+
+      '<span class="hm-scale-lbl">Fast</span>'+
+      '<div class="hm-scale-bar"></div>'+
+      '<span class="hm-scale-lbl">Slow (&gt;'+fmtH(maxH)+')</span>'+
+    '</div>';
 }
+
+/* cache for chart week/month toggle */
+var _lastFilteredData = [];
+
+
 
 /* ── Populate filter dropdowns ───────────────────────────── */
 function populateFilters(data) {

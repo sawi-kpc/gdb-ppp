@@ -4,10 +4,11 @@
 ══════════════════════════════════════════════════════════════ */
 
 /* ── State ───────────────────────────────────────────────── */
-var _filterStatus   = 'all';
+var _filterStatuses = {};   /* multi-select: {Open:true, Done:true ...} */
 var _filterPriority = 'all';
 var _filterSeverity = 'all';
 var _filterComp     = 'all';
+var _filterGroup    = 'all';
 var _searchQ        = '';
 var _sortCol        = 'Key';
 var _sortAsc        = true;
@@ -239,16 +240,104 @@ function buildIncidentTimeline(d) {
   return html;
 }
 
+/* ── Group helper — derive group from Summary prefix ────── */
+function _getGroup(d) {
+  if (d.IssueType && d.IssueType !== 'Issue') return d.IssueType;
+  var m = (d.Summary||'').match(/^\[(INCIDENT|ISSUE|TASK|BUG|REQUEST)\]/i);
+  if (m) return m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase();
+  return 'Other';
+}
+
+/* ── KPI stat cards ─────────────────────────────────────── */
+function buildKPI(data) {
+  var el = document.getElementById('issue-kpi');
+  if (!el) return;
+  var total    = data.length;
+  var open     = data.filter(function(d){ return d.Status === 'Open' || d.Status === 'Investigating'; }).length;
+  var inprog   = data.filter(function(d){ return d.Status === 'In Progress'; }).length;
+  var done     = data.filter(function(d){ return d.Status === 'Done' || d.Status === 'Resolved'; }).length;
+  var critical = data.filter(function(d){ return d.Severity === 'Critical' || d.Priority === 'Highest'; }).length;
+  var overdue  = data.filter(function(d){ return isOverdue(d.Due, d.Status); }).length;
+  var unassigned = data.filter(function(d){ return !d.Assignee && d.Status !== 'Done'; }).length;
+
+  el.innerHTML =
+    kpiCard('TOTAL ISSUES', total, 'all statuses', 'accent') +
+    kpiCard('OPEN', open, 'open & investigating', 'orange') +
+    kpiCard('IN PROGRESS', inprog, 'being fixed', 'accent') +
+    kpiCard('RESOLVED / DONE', done, 'closed this cycle', 'green') +
+    kpiCard('CRITICAL / HIGHEST', critical, 'priority issues', 'purple') +
+    kpiCard('OVERDUE', overdue, 'past due date', overdue > 0 ? 'orange' : '') +
+    kpiCard('UNASSIGNED', unassigned, 'no owner', unassigned > 0 ? 'orange' : '');
+}
+
+function kpiCard(label, value, meta, cls) {
+  return '<div class="kpi-card '+(cls||'')+'">'+
+    '<div class="kpi-label">'+label+'</div>'+
+    '<div class="kpi-value">'+value+'</div>'+
+    '<div class="kpi-meta">'+meta+'</div>'+
+  '</div>';
+}
+
+/* ── Charts: status bar + priority bar ─────────────────── */
+function buildCharts(data) {
+  buildStatusBar(data);
+  buildPriorityBar(data);
+}
+
+function buildStatusBar(data) {
+  var el = document.getElementById('chart-status');
+  if (!el) return;
+  var counts = {};
+  STATUSES.forEach(function(s){ counts[s.key] = 0; });
+  data.forEach(function(d){ if (counts[d.Status] !== undefined) counts[d.Status]++; });
+  var total = data.length || 1;
+  el.innerHTML = '<div class="chart-title">Issues by Status</div>'+
+    '<div class="chart-desc">Distribution across all statuses</div>'+
+    STATUSES.map(function(s){
+      var n = counts[s.key] || 0;
+      var pct = Math.round(n / total * 100);
+      return '<div class="cbar-row">'+
+        '<span class="cbar-label">'+s.label+'</span>'+
+        '<div class="cbar-track"><div class="cbar-fill" style="width:'+pct+'%;background:'+s.color+'"></div></div>'+
+        '<span class="cbar-val">'+n+'</span>'+
+      '</div>';
+    }).join('');
+}
+
+function buildPriorityBar(data) {
+  var el = document.getElementById('chart-priority');
+  if (!el) return;
+  var order = ['Highest','High','Medium','Low','Lowest'];
+  var colors = { Highest:'var(--down)', High:'#f97316', Medium:'var(--amber)', Low:'var(--up)', Lowest:'var(--text3)' };
+  var counts = {};
+  order.forEach(function(p){ counts[p] = 0; });
+  data.forEach(function(d){ if (d.Priority && counts[d.Priority] !== undefined) counts[d.Priority]++; });
+  var total = data.length || 1;
+  el.innerHTML = '<div class="chart-title">Issues by Priority</div>'+
+    '<div class="chart-desc">Breakdown by severity level</div>'+
+    order.map(function(p){
+      var n = counts[p] || 0;
+      var pct = Math.round(n / total * 100);
+      return '<div class="cbar-row">'+
+        '<span class="cbar-label">'+p+'</span>'+
+        '<div class="cbar-track"><div class="cbar-fill" style="width:'+pct+'%;background:'+colors[p]+'"></div></div>'+
+        '<span class="cbar-val">'+n+'</span>'+
+      '</div>';
+    }).join('');
+}
+
 /* ── Populate filter dropdowns ───────────────────────────── */
 function populateFilters(data) {
-  var priorities = [], severities = [], comps = [];
+  var priorities = [], severities = [], comps = [], groups = [];
   data.forEach(function(d) {
-    if (d.Priority && !priorities.includes(d.Priority)) priorities.push(d.Priority);
-    if (d.Severity && !severities.includes(d.Severity)) severities.push(d.Severity);
+    if (d.Priority && priorities.indexOf(d.Priority) < 0) priorities.push(d.Priority);
+    if (d.Severity && severities.indexOf(d.Severity) < 0) severities.push(d.Severity);
     (d.Components||'').split(';').forEach(function(c){
       c = c.trim();
-      if (c && !comps.includes(c)) comps.push(c);
+      if (c && comps.indexOf(c) < 0) comps.push(c);
     });
+    var g = _getGroup(d);
+    if (g && groups.indexOf(g) < 0) groups.push(g);
   });
 
   function fillSelect(id, values) {
@@ -266,6 +355,7 @@ function populateFilters(data) {
   fillSelect('filter-priority',  priorities);
   fillSelect('filter-severity',  severities);
   fillSelect('filter-component', comps);
+  fillSelect('filter-group',     groups);
 }
 
 /* ── Filter + sort pipeline ──────────────────────────────── */
@@ -279,17 +369,24 @@ function applyFilters() {
   _searchQ = (document.getElementById('issue-search')||{}).value || '';
 
   var out = raw.filter(function(d) {
-    if (_filterStatus !== 'all' && d.Status !== _filterStatus) return false;
+    /* multi-select status */
+    var activeStatuses = Object.keys(_filterStatuses).filter(function(k){ return _filterStatuses[k]; });
+    if (activeStatuses.length > 0 && activeStatuses.indexOf(d.Status) < 0) return false;
     if (_filterPriority !== 'all' && d.Priority !== _filterPriority) return false;
     if (_filterSeverity !== 'all' && d.Severity !== _filterSeverity) return false;
     if (_filterComp !== 'all') {
       var comps = (d.Components||'').split(';').map(function(c){return c.trim();});
-      if (!comps.includes(_filterComp)) return false;
+      if (comps.indexOf(_filterComp) < 0) return false;
+    }
+    if (_filterGroup !== 'all') {
+      /* group by IssueType or Components prefix */
+      var grp = _getGroup(d);
+      if (grp !== _filterGroup) return false;
     }
     if (_searchQ) {
       var q = _searchQ.toLowerCase();
       var hay = ((d.Key||'')+' '+(d.Summary||'')+' '+(d.Assignee||'')+' '+(d.Components||'')).toLowerCase();
-      if (!hay.includes(q)) return false;
+      if (hay.indexOf(q) < 0) return false;
     }
     return true;
   });
@@ -301,14 +398,28 @@ function applyFilters() {
     return _sortAsc ? cmp : -cmp;
   });
 
+  buildKPI(out);
+  buildCharts(out);
   if (_activeView === 'board') buildBoard(out);
   else                         buildTable(out);
 }
 
 function onStatusFilter(status) {
-  _filterStatus = status;
+  if (status === 'all') {
+    _filterStatuses = {};
+  } else {
+    _filterStatuses[status] = !_filterStatuses[status];
+    if (!_filterStatuses[status]) delete _filterStatuses[status];
+  }
+  /* update button active states */
+  var active = Object.keys(_filterStatuses).filter(function(k){ return _filterStatuses[k]; });
   document.querySelectorAll('.status-btn').forEach(function(btn){
-    btn.classList.toggle('active', btn.dataset.status === status);
+    var s = btn.dataset.status;
+    if (s === 'all') {
+      btn.classList.toggle('active', active.length === 0);
+    } else {
+      btn.classList.toggle('active', _filterStatuses[s] === true);
+    }
   });
   applyFilters();
 }
@@ -317,6 +428,7 @@ function onDropdownChange() {
   _filterPriority = (document.getElementById('filter-priority')||{}).value || 'all';
   _filterSeverity = (document.getElementById('filter-severity')||{}).value || 'all';
   _filterComp     = (document.getElementById('filter-component')||{}).value || 'all';
+  _filterGroup    = (document.getElementById('filter-group')||{}).value || 'all';
   applyFilters();
 }
 
@@ -541,8 +653,9 @@ function _renderIssues() {
   var data = window.issueData || [];
   data.forEach(function(d){ d.Status = _normaliseStatus(d.Status); });
   populateFilters(data);
+  buildKPI(data);
+  buildCharts(data);
   applyFilters();
-  buildSystemicSection(data);
 }
 
 /* ── initIssueBoard: called by index.html onDOMContentLoaded ─

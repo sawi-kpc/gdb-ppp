@@ -180,12 +180,15 @@
 .hm-corner { min-width: 110px; }
 .hm-th    { font-size: 10px; font-weight: 600; color: var(--text2); padding: 4px 6px; text-align: center; white-space: nowrap; }
 .hm-th-comp { text-align: left; }
-.hm-comp  { font-size: 10px; color: var(--text2); padding: 4px 8px 4px 0; white-space: nowrap; text-align: left; }
+.hm-comp  { font-size: 10px; color: var(--text2); padding: 4px 8px 4px 0; white-space: nowrap; text-align: left; max-width: 220px; }
 .hm-cell  { text-align: center; padding: 5px 8px; border-radius: 4px; font-weight: 600; font-size: 10px; color: var(--text); min-width: 56px; cursor: default; transition: opacity .15s; }
 .hm-cell:hover { opacity: .75; }
 .hm-scale { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
 .hm-scale-lbl { font-size: 9px; color: var(--text3); white-space: nowrap; }
 .hm-scale-bar { flex: 1; height: 6px; border-radius: 3px; background: linear-gradient(to right, rgba(63,185,80,.4), rgba(239,159,39,.7), rgba(226,75,74,.9)); }
+.hm-legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.hm-leg-item { display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--text2); }
+.hm-leg-dot  { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -274,6 +277,16 @@
   </div><!-- /panel -->
 
 
+
+  <!-- Risk Heatmap: Component × Priority -->
+  <div class="panel" style="margin-top:16px">
+    <div class="panel-body" id="chart-risk"></div>
+  </div>
+
+  <!-- Performance Heatmap: Component × Response + MTTR -->
+  <div class="panel" style="margin-top:16px">
+    <div class="panel-body" id="chart-perf"></div>
+  </div>
 
 </div><!-- /issue-content -->
 </div><!-- /main-content -->

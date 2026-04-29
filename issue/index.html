@@ -156,13 +156,13 @@
 .ctog.active, .ctog:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
 
 /* chart area with y-axis */
-.vbar-area     { display: flex; align-items: stretch; gap: 6px; margin: 8px 0 4px; height: 160px; }
-.vbar-y-axis   { display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end; width: 28px; flex-shrink: 0; padding-bottom: 20px; }
+.vbar-area     { display: flex; align-items: flex-end; gap: 6px; margin: 8px 0 4px; height: 150px; }
+.vbar-y-axis   { display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end; width: 28px; flex-shrink: 0; padding-bottom: 0; }
 .vbar-y-tick   { font-size: 9px; color: var(--text3); line-height: 1; }
-.vbar-inner    { position: relative; flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.vbar-inner    { position: relative; flex: 1; display: flex; flex-direction: column; min-width: 0; justify-content: flex-end; }
 .vbar-grid     { position: absolute; inset: 0; bottom: 20px; pointer-events: none; }
 .vbar-hline    { position: absolute; left: 0; right: 0; height: 1px; background: var(--border); opacity: .5; }
-.vbar-bars     { display: flex; align-items: flex-end; gap: 16px; height: calc(100% - 20px); padding: 0 12px; flex: 1; overflow-x: auto; justify-content: center; }
+.vbar-bars     { display: flex; align-items: flex-end; gap: 16px; height: 100%; padding: 0 12px; flex: 1; overflow-x: auto; justify-content: center; }
 
 /* individual bar column */
 .vbar-col      { display: flex; flex-direction: column; align-items: center; flex: 0 1 72px; min-width: 40px; max-width: 100px; height: 100%; }

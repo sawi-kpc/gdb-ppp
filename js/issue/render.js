@@ -289,6 +289,8 @@ function kpiCard(label, value, meta, cls) {
 function buildCharts(data) {
   buildWeekChart(data);
   buildHeatmapChart(data);
+  buildRiskHeatmap(data);
+  buildPerfHeatmap(data);
 }
 
 function toggleChartGroup(mode) {
@@ -411,102 +413,238 @@ function buildWeekChart(data) {
 }
 
 
-/* ── Chart 2: Heatmap — avg MTTR by support group x component ── */
+/* ── Chart 2: replace with Option A — Component × Status count ── */
 function buildHeatmapChart(data) {
   var el = document.getElementById('chart-priority');
   if (!el) return;
 
-  var groupSet = {}, compSet = {};
-  var matrix = {};
+  var STATUS_ORDER = ['Open','Investigating','In Progress','Resolved','Done'];
+  var STATUS_COLORS = {
+    'Open':          {bg:'rgba(226,75,74,.15)',  fg:'#A32D2D'},
+    'Investigating': {bg:'rgba(239,159,39,.15)', fg:'#854F0B'},
+    'In Progress':   {bg:'rgba(55,138,221,.15)', fg:'#185FA5'},
+    'Resolved':      {bg:'rgba(29,158,117,.15)', fg:'#0F6E56'},
+    'Done':          {bg:'rgba(63,185,80,.12)',  fg:'#27500A'},
+  };
+
+  /* collect comp × status */
+  var compSet = {};
+  var matrix  = {}; /* comp → status → count */
 
   data.forEach(function(d) {
-    if (!d.FailureOccurs || !d.FailureResolved) return;
-    var mttrH = calcMTTRHours(d.FailureOccurs, d.FailureResolved);
-    if (!mttrH || mttrH <= 0) return;
-    var g = _getGroupSafe(d);
-    if (!g) return;
-    groupSet[g] = true;
     var comps = (d.Components||'').split(';').map(function(c){ return c.trim(); }).filter(Boolean);
     if (!comps.length) comps = ['Unknown'];
     comps.forEach(function(comp) {
       compSet[comp] = true;
-      if (!matrix[g]) matrix[g] = {};
-      if (!matrix[g][comp]) matrix[g][comp] = [];
-      matrix[g][comp].push(mttrH);
+      if (!matrix[comp]) matrix[comp] = {};
+      var st = d.Status || 'Unknown';
+      matrix[comp][st] = (matrix[comp][st] || 0) + 1;
     });
   });
 
-  var groups = Object.keys(groupSet).sort();
-  var comps  = Object.keys(compSet).sort();
+  var comps    = Object.keys(compSet).sort();
+  var statuses = STATUS_ORDER.filter(function(s) {
+    return comps.some(function(c) { return matrix[c] && matrix[c][s]; });
+  });
 
-  if (!groups.length || !comps.length) {
-    el.innerHTML = '<div class="chart-title">Avg MTTR Heatmap</div>'+
-      '<div style="color:var(--text3);font-size:12px;padding:20px 0">Need resolved issues with failure dates for MTTR</div>';
+  if (!comps.length) {
+    el.innerHTML = '<div class="chart-title">Issue Status Heatmap</div>'+
+      '<div style="color:var(--text3);font-size:12px;padding:20px 0">No component data</div>';
     return;
   }
 
-  function avgH(list) {
-    if (!list || !list.length) return null;
-    return list.reduce(function(s,v){ return s+v; },0) / list.length;
-  }
-
-  var maxH = 0;
-  groups.forEach(function(g){ comps.forEach(function(comp){
-    var a = avgH(matrix[g] && matrix[g][comp]);
-    if (a && a > maxH) maxH = a;
-  }); });
-
-  function heatColor(h) {
-    if (h === null) return 'transparent';
-    var p = Math.min(h / maxH, 1);
-    if (p < 0.33) return 'rgba(63,185,80,'  + (0.25 + p * 1.5).toFixed(2) + ')';
-    if (p < 0.66) return 'rgba(239,159,39,' + (0.4  + p * 0.9).toFixed(2) + ')';
-    return               'rgba(226,75,74,'  + (0.45 + p * 0.55).toFixed(2) + ')';
-  }
-
-  function fmtH(h) {
-    if (h === null) return '';
-    if (h < 24) return h.toFixed(1)+'h';
-    return (h/24).toFixed(1)+'d';
-  }
-
-  function shortComp(s) {
-    return s.replace('kingpower-','kp-').replace('firster-','f1-')
-            .replace('-social-commerce','').replace('-marketplace-cn','')
-            .replace('-commerce-cn','').replace('-commerce-th','')
-            .replace('-commerce','').replace('-cn','').replace('-th','');
-  }
-
-  var colW = Math.max(56, Math.floor(260 / Math.max(groups.length,1)));
-  var thead = '<tr><th class="hm-th hm-corner"></th>'+
-    groups.map(function(g){ return '<th class="hm-th" style="min-width:'+colW+'px">'+g+'</th>'; }).join('')+
+  var thead = '<tr><th class="hm-th hm-corner">Component</th>'+
+    statuses.map(function(s){
+      return '<th class="hm-th">'+s+'</th>';
+    }).join('')+
+    '<th class="hm-th">Total</th>'+
   '</tr>';
 
-  var tbody = comps.map(function(comp){
-    return '<tr>'+
-      '<td class="hm-comp">'+shortComp(comp)+'</td>'+
-      groups.map(function(g){
-        var a = avgH(matrix[g] && matrix[g][comp]);
-        var n = (matrix[g] && matrix[g][comp]) ? matrix[g][comp].length : 0;
-        return '<td class="hm-cell" style="background:'+heatColor(a)+'" title="'+g+' x '+comp+(n?' (n='+n+')':'')+'">'+(a ? fmtH(a) : '—')+'</td>';
+  var tbody = comps.map(function(comp) {
+    var row   = matrix[comp] || {};
+    var total = statuses.reduce(function(s,st){ return s+(row[st]||0); }, 0);
+    var openCnt = (row['Open']||0) + (row['Investigating']||0) + (row['In Progress']||0);
+    var rowAccent = openCnt >= 3 ? 'border-left:2px solid var(--down)' :
+                    openCnt >= 2 ? 'border-left:2px solid var(--amber)' : '';
+    return '<tr style="'+rowAccent+'">'+
+      '<td class="hm-comp">'+comp+'</td>'+
+      statuses.map(function(st) {
+        var n  = row[st] || 0;
+        var sc = STATUS_COLORS[st] || {bg:'var(--surface2)', fg:'var(--text2)'};
+        return '<td class="hm-cell" style="background:'+(n ? sc.bg : 'transparent')+
+               ';color:'+(n ? sc.fg : 'var(--text3)')+'">'+
+               (n || '—')+'</td>';
       }).join('')+
+      '<td class="hm-cell" style="font-weight:600;color:var(--text)">'+total+'</td>'+
+    '</tr>';
+  }).join('');
+
+  /* legend */
+  var legendHtml = '<div class="hm-legend">'+
+    statuses.map(function(s) {
+      var sc = STATUS_COLORS[s];
+      return '<span class="hm-leg-item">'+
+               '<span class="hm-leg-dot" style="background:'+sc.bg+';border:1px solid '+sc.fg+'"></span>'+
+               s+'</span>';
+    }).join('')+
+  '</div>';
+
+  el.innerHTML =
+    '<div class="chart-title">Issue Status Heatmap — Component × Status</div>'+
+    '<div class="chart-desc">Issue count per component, colored by status type</div>'+
+    '<div class="hm-wrap"><table class="hm-table"><thead>'+thead+'</thead><tbody>'+tbody+'</tbody></table></div>'+
+    legendHtml;
+}
+
+/* ── Option B: Component × Priority risk ─────────────────────────── */
+function buildRiskHeatmap(data) {
+  var el = document.getElementById('chart-risk');
+  if (!el) return;
+
+  var PRI_ORDER   = ['Highest','High','Medium','Low','Lowest'];
+  var PRI_WEIGHT  = {Highest:3, High:2, Medium:1, Low:0.5, Lowest:0};
+  var PRI_COLORS  = {
+    Highest: {bg:'rgba(226,75,74,.18)',  fg:'#A32D2D'},
+    High:    {bg:'rgba(249,115,22,.15)', fg:'#7c3d12'},
+    Medium:  {bg:'rgba(239,159,39,.15)', fg:'#854F0B'},
+    Low:     {bg:'rgba(63,185,80,.12)',  fg:'#27500A'},
+    Lowest:  {bg:'rgba(107,114,128,.1)', fg:'var(--text3)'},
+  };
+
+  var compSet = {}, matrix = {};
+  data.forEach(function(d) {
+    var comps = (d.Components||'').split(';').map(function(c){ return c.trim(); }).filter(Boolean);
+    if (!comps.length) comps = ['Unknown'];
+    var p = d.Priority || 'Unknown';
+    comps.forEach(function(comp) {
+      compSet[comp] = true;
+      if (!matrix[comp]) matrix[comp] = {};
+      matrix[comp][p] = (matrix[comp][p]||0) + 1;
+    });
+  });
+
+  var comps = Object.keys(compSet).sort();
+  var pris  = PRI_ORDER.filter(function(p){ return comps.some(function(c){ return matrix[c]&&matrix[c][p]; }); });
+  if (!comps.length) { el.innerHTML=''; return; }
+
+  var thead = '<tr><th class="hm-th hm-corner">Component</th>'+
+    pris.map(function(p){ return '<th class="hm-th">'+p+'</th>'; }).join('')+
+    '<th class="hm-th">Risk score</th></tr>';
+
+  /* max score for color scale */
+  var scores = comps.map(function(comp) {
+    return pris.reduce(function(s,p){ return s+(matrix[comp][p]||0)*PRI_WEIGHT[p]; }, 0);
+  });
+  var maxScore = Math.max.apply(null, scores) || 1;
+
+  var tbody = comps.map(function(comp, i) {
+    var row   = matrix[comp] || {};
+    var score = scores[i];
+    var pct   = score / maxScore;
+    var scoreBg = pct >= .67 ? 'rgba(226,75,74,.2)'  :
+                  pct >= .34 ? 'rgba(239,159,39,.2)' :
+                               'rgba(63,185,80,.12)';
+    var scoreFg = pct >= .67 ? '#A32D2D' : pct >= .34 ? '#854F0B' : '#27500A';
+    return '<tr>'+
+      '<td class="hm-comp">'+comp+'</td>'+
+      pris.map(function(p) {
+        var n = row[p]||0;
+        var pc = PRI_COLORS[p]||{bg:'transparent',fg:'var(--text3)'};
+        return '<td class="hm-cell" style="background:'+(n?pc.bg:'transparent')+
+               ';color:'+(n?pc.fg:'var(--text3)')+'">'+
+               (n||'—')+'</td>';
+      }).join('')+
+      '<td class="hm-cell" style="background:'+scoreBg+';color:'+scoreFg+';font-weight:600">'+score.toFixed(1)+'</td>'+
     '</tr>';
   }).join('');
 
   el.innerHTML =
-    '<div class="chart-title">Avg MTTR Heatmap — Support Group × Component</div>'+
-    '<div class="chart-desc">Average time-to-resolve per issue group and affected component</div>'+
-    '<div class="hm-wrap"><table class="hm-table"><thead>'+thead+'</thead><tbody>'+tbody+'</tbody></table></div>'+
-    '<div class="hm-scale">'+
-      '<span class="hm-scale-lbl">Fast</span>'+
-      '<div class="hm-scale-bar"></div>'+
-      '<span class="hm-scale-lbl">Slow (&gt;'+fmtH(maxH)+')</span>'+
-    '</div>';
+    '<div class="chart-title">Risk Heatmap — Component × Priority</div>'+
+    '<div class="chart-desc">Issue count per priority; risk score = Highest×3 + High×2 + Medium×1</div>'+
+    '<div class="hm-wrap"><table class="hm-table"><thead>'+thead+'</thead><tbody>'+tbody+'</tbody></table></div>';
 }
 
-/* cache for chart week/month toggle */
-var _lastFilteredData = [];
+/* ── Option C: Component × Response + MTTR performance ───────────── */
+function buildPerfHeatmap(data) {
+  var el = document.getElementById('chart-perf');
+  if (!el) return;
 
+  var compResp = {}, compMttr = {};
+
+  data.forEach(function(d) {
+    var comps = (d.Components||'').split(';').map(function(c){ return c.trim(); }).filter(Boolean);
+    if (!comps.length) return;
+
+    if (d.FailureOccurs && d.CorrectionBegins) {
+      var rh = (_parseDate(d.CorrectionBegins) - _parseDate(d.FailureOccurs)) / 3600000;
+      if (rh > 0) comps.forEach(function(c) {
+        if (!compResp[c]) compResp[c] = [];
+        compResp[c].push(rh);
+      });
+    }
+    if (d.FailureOccurs && d.FailureResolved) {
+      var mh = (_parseDate(d.FailureResolved) - _parseDate(d.FailureOccurs)) / 3600000;
+      if (mh > 0) comps.forEach(function(c) {
+        if (!compMttr[c]) compMttr[c] = [];
+        compMttr[c].push(mh);
+      });
+    }
+  });
+
+  var allComps = Object.keys(Object.assign({}, compResp, compMttr)).sort();
+  if (!allComps.length) { el.innerHTML=''; return; }
+
+  function avg(arr) { return arr&&arr.length ? arr.reduce(function(s,v){return s+v;},0)/arr.length : null; }
+  function fmtH(h)  { if(h===null)return '—'; return h<24 ? h.toFixed(1)+'h' : (h/24).toFixed(1)+'d'; }
+
+  var maxResp = allComps.reduce(function(m,c){ var a=avg(compResp[c]); return a&&a>m?a:m; },0)||1;
+  var maxMttr = allComps.reduce(function(m,c){ var a=avg(compMttr[c]); return a&&a>m?a:m; },0)||1;
+
+  function heatColor(val, maxVal) {
+    if (val===null) return {bg:'transparent', fg:'var(--text3)'};
+    var p = Math.min(val/maxVal, 1);
+    if (p < 0.33) return {bg:'rgba(63,185,80,.15)',  fg:'#27500A'};
+    if (p < 0.66) return {bg:'rgba(239,159,39,.18)', fg:'#854F0B'};
+    return              {bg:'rgba(226,75,74,.2)',    fg:'#A32D2D'};
+  }
+
+  var thead = '<tr><th class="hm-th hm-corner">Component</th>'+
+    '<th class="hm-th">Avg response</th>'+
+    '<th class="hm-th">Avg MTTR</th>'+
+    '<th class="hm-th">Performance</th></tr>';
+
+  var tbody = allComps.map(function(comp) {
+    var rAvg = avg(compResp[comp]);
+    var mAvg = avg(compMttr[comp]);
+    var rc   = heatColor(rAvg, maxResp);
+    var mc   = heatColor(mAvg, maxMttr);
+    var rPct = rAvg ? rAvg/maxResp : 0;
+    var mPct = mAvg ? mAvg/maxMttr : 0;
+    var combined = (rPct + mPct) / 2;
+    var perf = combined >= .67 ? {bg:'rgba(226,75,74,.2)',  fg:'#A32D2D', lbl:'Critical'} :
+               combined >= .34 ? {bg:'rgba(239,159,39,.18)',fg:'#854F0B', lbl:'Slow'} :
+               mAvg            ? {bg:'rgba(63,185,80,.15)', fg:'#27500A', lbl:'OK'} :
+                                 {bg:'transparent',          fg:'var(--text3)', lbl:'—'};
+    return '<tr>'+
+      '<td class="hm-comp">'+comp+'</td>'+
+      '<td class="hm-cell" style="background:'+rc.bg+';color:'+rc.fg+'">'+fmtH(rAvg)+'</td>'+
+      '<td class="hm-cell" style="background:'+mc.bg+';color:'+mc.fg+'">'+fmtH(mAvg)+'</td>'+
+      '<td class="hm-cell" style="background:'+perf.bg+';color:'+perf.fg+';font-weight:500">'+perf.lbl+'</td>'+
+    '</tr>';
+  }).join('');
+
+  var scaleHtml = '<div class="hm-scale">'+
+    '<span class="hm-scale-lbl">Fast / low</span>'+
+    '<div class="hm-scale-bar"></div>'+
+    '<span class="hm-scale-lbl">Slow / high</span>'+
+  '</div>';
+
+  el.innerHTML =
+    '<div class="chart-title">Performance Heatmap — Component × Response + MTTR</div>'+
+    '<div class="chart-desc">Average response time and time-to-resolve per component</div>'+
+    '<div class="hm-wrap"><table class="hm-table"><thead>'+thead+'</thead><tbody>'+tbody+'</tbody></table></div>'+
+    scaleHtml;
+}
 
 
 /* ── Populate filter dropdowns ───────────────────────────── */

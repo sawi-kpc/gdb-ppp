@@ -312,31 +312,38 @@ function buildWeekChart(data) {
   var buckets = {};
 
   data.forEach(function(d) {
-    var key;
+    var key, sortKey;
     if (!d.FailureOccurs) {
       key = NO_DATE_KEY;
+      sortKey = '0000-00';
     } else {
       var dt = _parseDate(d.FailureOccurs);
       if (!dt) {
         key = NO_DATE_KEY;
+        sortKey = '0000-00';
       } else if (_chartGroupBy === 'month') {
         key = _MONTHS[dt.getMonth()] + ' ' + dt.getFullYear();
+        /* sortKey: YYYY-MM for correct ASC sort */
+        sortKey = dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0');
       } else {
         var day1 = new Date(dt.getFullYear(), 0, 1);
         var wk = Math.ceil(((dt - day1) / 86400000 + day1.getDay() + 1) / 7);
         key = 'W' + String(wk).padStart(2, '0') + " '" + String(dt.getFullYear()).slice(2);
+        sortKey = String(dt.getFullYear()) + '-' + String(wk).padStart(2,'0');
       }
     }
-    if (!buckets[key]) buckets[key] = { resolved: 0, pending: 0 };
+    if (!buckets[key]) buckets[key] = { resolved: 0, pending: 0, sortKey: sortKey };
     if (d.FailureResolved) buckets[key].resolved++;
     else buckets[key].pending++;
   });
 
-  /* sort: "No date" first, then dated buckets ascending */
+  /* sort: "No date" first, then dated buckets ASC by date */
   var keys = Object.keys(buckets).sort(function(a, b) {
     if (a === NO_DATE_KEY) return -1;
     if (b === NO_DATE_KEY) return 1;
-    return a < b ? -1 : a > b ? 1 : 0;
+    var sa = buckets[a].sortKey || a;
+    var sb = buckets[b].sortKey || b;
+    return sa < sb ? -1 : sa > sb ? 1 : 0;
   });
 
   var maxVal = keys.reduce(function(m, k) {
@@ -371,7 +378,7 @@ function buildWeekChart(data) {
     var sepStyle = isND
       ? 'margin-right:10px;padding-right:10px;border-right:1px solid var(--border)'
       : '';
-    return '<div class="vbar-col" style="width:' + BAR_W + 'px;' + sepStyle + '">' +
+    return '<div class="vbar-col" style="flex:1;max-width:' + (BAR_W*2) + 'px;min-width:' + BAR_W + 'px;' + sepStyle + '">' +
       '<div class="vbar-stack" style="' + stackStyle + '">' +
         (b.pending  ? '<div class="vbar-seg" style="height:' + penP + '%;background:#f97316;min-height:3px" title="Pending: '  + b.pending  + '"></div>' : '') +
         (b.resolved ? '<div class="vbar-seg" style="height:' + resP + '%;background:#3fb950;min-height:3px" title="Resolved: ' + b.resolved + '"></div>' : '') +

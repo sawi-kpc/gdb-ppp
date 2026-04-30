@@ -924,7 +924,7 @@ function buildTable(data) {
 
     /* due date cell */
     var dueCell = '—';
-    if (dueFmt && d.Status !== 'Done') {
+    if (dueFmt) {
       dueCell = '<span style="color:'+(overdue?'var(--down)':'var(--text2)')+'">'+dueFmt+'</span>';
       if (overdue) {
         dueCell += '<div class="tbl-warn">⚠ Overdue</div>';

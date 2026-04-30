@@ -1,3 +1,6 @@
+/* Override buildPatterns — replaced by heatmap, keep as no-op to prevent crash */
+function buildPatterns(data) { /* replaced by buildHeatmapAC */ }
+
 /* ── Support Render Patch ──────────────────────────────────────────────
    Override buildGroupChart (bar→pie) + add buildHeatmapAC
    Hook into init() after it runs via MutationObserver on #support-content

@@ -162,13 +162,13 @@
 .vbar-inner    { position: relative; flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .vbar-grid     { position: absolute; left: 0; right: 0; top: 0; bottom: 20px; pointer-events: none; }
 .vbar-hline    { position: absolute; left: 0; right: 0; height: 1px; background: var(--border); opacity: .4; }
-.vbar-bars     { position: absolute; left: 0; right: 0; bottom: 20px; top: 0; display: flex; align-items: flex-end; gap: 16px; padding: 0 12px; overflow-x: auto; justify-content: center; }
+.vbar-bars     { position: absolute; left: 0; right: 0; bottom: 20px; top: 0; display: flex; align-items: flex-end; gap: 8px; padding: 0 16px; overflow-x: auto; justify-content: space-evenly; }
 
 /* individual bar column */
-.vbar-col      { display: flex; flex-direction: column; align-items: center; flex: 0 1 72px; min-width: 40px; max-width: 100px; height: 100%; }
+.vbar-col      { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 40px; height: 100%; }
 .vbar-stack    { display: flex; flex-direction: column; justify-content: flex-end; width: 100%; flex: 1; border-radius: 3px 3px 0 0; overflow: hidden; gap: 1px; }
 .vbar-seg      { width: 100%; flex-shrink: 0; transition: height .35s ease; }
-.vbar-x-label  { font-size: 9px; color: var(--text3); white-space: nowrap; margin-top: 4px; text-align: center; height: 16px; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.vbar-x-label  { font-size: 9px; color: var(--text3); white-space: nowrap; margin-top: 2px; text-align: center; height: 14px; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 
 .chart-legend  { display: flex; gap: 12px; margin-top: 6px; }
 .cleg          { display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--text2); }

@@ -139,7 +139,7 @@ function buildIncidentTimeline(d) {
   var respH = calcResponseHours(d.FailureOccurs, d.CorrectionBegins);
   var fixH  = d.CorrectionBegins && d.FailureResolved
               ? calcMTTRHours(d.CorrectionBegins, d.FailureResolved) : null;
-  var respLbl = respH ? (respH < 1 ? Math.round(respH*60)+'m' : respH.toFixed(1)+'h') : null;
+  var respLbl = respH ? (respH < 1 ? Math.round(respH*60)+'m' : respH < 24 ? respH.toFixed(1)+'h' : (respH/24).toFixed(1)+'d') : null;
   var fixDur  = fixH  ? (fixH < 24 ? fixH.toFixed(1)+'h' : (fixH/24).toFixed(1)+'d') : null;
   var isOngoing = !d.FailureResolved;
 

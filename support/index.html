@@ -226,10 +226,21 @@
 
 <div class="panel">
   <div class="ph2">
-    <div><div class="pt">◆ Recurring Patterns — Initiative Candidates</div>
-    <div class="ps">Auto-detected from support task data</div></div>
+    <div>
+      <div class="pt">◆ Workload Heatmap — Support Group Analysis</div>
+      <div class="ps">Volume trend and effort per task — by month × support group</div>
+    </div>
   </div>
-  <div class="pb" id="patterns"></div>
+  <div class="pb" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;min-width:0">
+    <div>
+      <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">A — Volume (tasks/month)</div>
+      <div id="heatmap-vol"></div>
+    </div>
+    <div>
+      <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">C — Avg effort/task (hours)</div>
+      <div id="heatmap-effort"></div>
+    </div>
+  </div>
 </div>
 
 </div><!-- /support-content -->
@@ -241,6 +252,7 @@
 <script src="../js/header.js"></script>
 <script src="../js/support/data.js"></script>
 <script src="../js/support/render.js"></script>
+<script src="../js/support/render_patch.js"></script>
 <script>
 window.addEventListener('DOMContentLoaded', function() {
   buildGdbHeader({ showRefresh: true });

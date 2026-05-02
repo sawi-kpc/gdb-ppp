@@ -6,60 +6,31 @@ function buildPatterns(data) { /* replaced by buildHeatmapAC */ }
    Hook into init() after it runs via MutationObserver on #support-content
 ────────────────────────────────────────────────────────────────────── */
 
-/* 1. Override buildGroupChart — pie chart (soft colors, thin stroke) */
+/* 1. Override buildGroupChart — doughnut chart via GDB.doughnutChart */
 function buildGroupChart(data) {
   var el = document.getElementById('group-chart');
   if (!el) return;
+
   var counts = {};
   data.forEach(function(d) {
     var g = (d.Group && d.Group.trim()) ? d.Group.trim() : 'other';
     counts[g] = (counts[g] || 0) + 1;
   });
   var entries = Object.entries(counts).sort(function(a, b) { return b[1] - a[1]; });
-  var total = entries.reduce(function(s, e) { return s + e[1]; }, 0) || 1;
+  if (!entries.length) { el.innerHTML = ''; return; }
 
-  /* soft muted palette */
-  var COLORS = ['#6BA8D4','#7DBF8A','#E8B86D','#D97E7E','#8B7EC8','#5BADA0'];
-  var W = Math.max(el.offsetWidth || 0, 200);
-  var R = Math.min(W * 0.36, 68);
-  var cx = W / 2, cy = R + 14;
-  var H = R * 2 + 28 + Math.ceil(entries.length / 2) * 16;
-  var svg = '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '">';
-  var startAngle = -Math.PI / 2;
+  var COLORS = ['#6BAED4','#6DBF9A','#D4A850','#E07878','#9B8FE0','#5BADA0','#D4B85A','#88C470'];
+  var labels = entries.map(function(e) { return e[0].replace(/_/g, ' '); });
+  var values = entries.map(function(e) { return e[1]; });
+  var colors = entries.map(function(_, i) { return COLORS[i % COLORS.length]; });
 
-  entries.forEach(function(e, i) {
-    var sweep = e[1] / total * Math.PI * 2;
-    var x1 = cx + R * Math.cos(startAngle), y1 = cy + R * Math.sin(startAngle);
-    var x2 = cx + R * Math.cos(startAngle + sweep), y2 = cy + R * Math.sin(startAngle + sweep);
-    var large = sweep > Math.PI ? 1 : 0;
-    var col = COLORS[i % COLORS.length];
-    svg += '<path d="M' + cx + ' ' + cy + ' L' + x1.toFixed(1) + ' ' + y1.toFixed(1) +
-           ' A' + R + ' ' + R + ' 0 ' + large + ' 1 ' + x2.toFixed(1) + ' ' + y2.toFixed(1) + ' Z"' +
-           ' fill="' + col + '" stroke="rgba(255,255,255,0.15)" stroke-width="0.5">' +
-           '<title>' + e[0] + ': ' + e[1] + ' (' + Math.round(e[1] / total * 100) + '%)</title></path>';
-    if (sweep > 0.2) {
-      var mx = cx + R * 0.62 * Math.cos(startAngle + sweep / 2);
-      var my = cy + R * 0.62 * Math.sin(startAngle + sweep / 2);
-      svg += '<text x="' + mx.toFixed(1) + '" y="' + my.toFixed(1) + '"' +
-             ' text-anchor="middle" dominant-baseline="middle"' +
-             ' font-size="10" font-weight="500" fill="rgba(255,255,255,0.9)">' +
-             Math.round(e[1] / total * 100) + '%</text>';
-    }
-    startAngle += sweep;
-  });
+  var canvasId = 'c-support-group';
+  if (!document.getElementById(canvasId)) {
+    el.innerHTML = '<canvas id="' + canvasId + '"></canvas>';
+  }
+  el.style.cssText = 'height:200px;position:relative';
 
-  /* legend */
-  var legY = R * 2 + 24;
-  entries.forEach(function(e, i) {
-    var row = Math.floor(i / 2), col = i % 2;
-    var lx = 6 + col * (W / 2), ly = legY + row * 16;
-    var label = e[0].length > 22 ? e[0].substring(0, 21) + '\u2026' : e[0];
-    svg += '<rect x="' + lx + '" y="' + ly + '" width="8" height="8" rx="2" fill="' + COLORS[i % COLORS.length] + '"/>';
-    svg += '<text x="' + (lx + 11) + '" y="' + (ly + 7) + '" font-size="9.5" fill="var(--text2)">' + label + ' (' + e[1] + ')</text>';
-  });
-
-  svg += '</svg>';
-  el.innerHTML = svg;
+  GDB.doughnutChart({ id: canvasId, labels: labels, data: values, colors: colors, legendPos: 'right' });
 }
 
 /* 2. buildHeatmapAC — Volume (A) + Avg effort (C) */

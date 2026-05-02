@@ -395,10 +395,10 @@ function buildSupportTrendChart(data) {
       labels: allKeys.map(_label),
       datasets: [
         { label: 'Done', data: allKeys.map(function(k){return done[k]||0;}),
-          backgroundColor: '#3fb950cc', borderColor: '#3fb950', borderWidth:1, borderRadius:0,
+          backgroundColor: '#6DBF9Acc', borderColor: '#4EA87A', borderWidth:1, borderRadius:0,
           stack: 'stack0' },
         { label: 'Open / Pending', data: allKeys.map(function(k){return Math.max(0,(created[k]||0)-(done[k]||0));}),
-          backgroundColor: '#f85149cc', borderColor: '#f85149', borderWidth:1, borderRadius:0,
+          backgroundColor: '#E07878cc', borderColor: '#C05050', borderWidth:1, borderRadius:0,
           stack: 'stack0' },
       ]
     },

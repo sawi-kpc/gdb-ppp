@@ -380,8 +380,8 @@ function buildWeekChart(data) {
       : '';
     return '<div class="vbar-col" style="flex:1;max-width:' + (BAR_W*2) + 'px;min-width:' + BAR_W + 'px;' + sepStyle + '">' +
       '<div class="vbar-stack" style="' + stackStyle + '">' +
-        (b.pending  ? '<div class="vbar-seg" style="height:' + penP + '%;background:#f97316;min-height:3px" title="Pending: '  + b.pending  + '"></div>' : '') +
-        (b.resolved ? '<div class="vbar-seg" style="height:' + resP + '%;background:#3fb950;min-height:3px" title="Resolved: ' + b.resolved + '"></div>' : '') +
+        (b.pending  ? '<div class="vbar-seg" style="height:' + penP + '%;background:#E07878;min-height:3px" title="Pending: '  + b.pending  + '"></div>' : '') +
+        (b.resolved ? '<div class="vbar-seg" style="height:' + resP + '%;background:#6DBF9A;min-height:3px" title="Resolved: ' + b.resolved + '"></div>' : '') +
       '</div>' +
       '<div class="vbar-x-label"' + (isND ? ' style="color:var(--text3);font-style:italic"' : '') + '>' + k + '</div>' +
     '</div>';
@@ -414,8 +414,8 @@ function buildWeekChart(data) {
       '</div>' +
     '</div>' +
     '<div class="chart-legend">' +
-      '<span class="cleg"><span class="cleg-dot" style="background:#3fb950"></span>Resolved</span>' +
-      '<span class="cleg"><span class="cleg-dot" style="background:#f97316"></span>Pending</span>' +
+      '<span class="cleg"><span class="cleg-dot" style="background:#6DBF9A"></span>Resolved</span>' +
+      '<span class="cleg"><span class="cleg-dot" style="background:#E07878"></span>Pending</span>' +
     '</div>';
 }
 
@@ -427,11 +427,11 @@ function buildHeatmapChart(data) {
 
   var STATUS_ORDER = ['Open','Investigating','In Progress','Resolved','Done'];
   var STATUS_COLORS = {
-    'Open':          {bg:'rgba(226,75,74,.15)',  fg:'#A32D2D'},
-    'Investigating': {bg:'rgba(239,159,39,.15)', fg:'#854F0B'},
-    'In Progress':   {bg:'rgba(55,138,221,.15)', fg:'#185FA5'},
-    'Resolved':      {bg:'rgba(29,158,117,.15)', fg:'#0F6E56'},
-    'Done':          {bg:'rgba(63,185,80,.12)',  fg:'#27500A'},
+    'Open':          {bg:'rgba(224,120,120,.3)', fg:'#E8A0A0'},
+    'Investigating': {bg:'rgba(212,168,80,.3)',  fg:'#D4B870'},
+    'In Progress':   {bg:'rgba(107,174,212,.3)', fg:'#88C0E0'},
+    'Resolved':      {bg:'rgba(109,191,154,.3)', fg:'#80D0B0'},
+    'Done':          {bg:'rgba(109,191,154,.2)', fg:'#6DBF9A'},
   };
 
   /* collect comp × status */
@@ -511,11 +511,11 @@ function buildRiskHeatmap(data) {
   var PRI_ORDER   = ['Highest','High','Medium','Low','Lowest'];
   var PRI_WEIGHT  = {Highest:3, High:2, Medium:1, Low:0.5, Lowest:0};
   var PRI_COLORS  = {
-    Highest: {bg:'rgba(226,75,74,.18)',  fg:'#A32D2D'},
-    High:    {bg:'rgba(249,115,22,.15)', fg:'#7c3d12'},
-    Medium:  {bg:'rgba(239,159,39,.15)', fg:'#854F0B'},
-    Low:     {bg:'rgba(63,185,80,.12)',  fg:'#27500A'},
-    Lowest:  {bg:'rgba(107,114,128,.1)', fg:'var(--text3)'},
+    Highest: {bg:'rgba(224,120,120,.45)', fg:'#F0A0A0'},
+    High:    {bg:'rgba(212,168,80,.45)',  fg:'#E0C070'},
+    Medium:  {bg:'rgba(212,168,80,.3)',   fg:'#C8A860'},
+    Low:     {bg:'rgba(109,191,154,.4)',  fg:'#80D0B0'},
+    Lowest:  {bg:'rgba(158,152,144,.25)', fg:'var(--text3)'},
   };
 
   var compSet = {}, matrix = {};
@@ -548,10 +548,10 @@ function buildRiskHeatmap(data) {
     var row   = matrix[comp] || {};
     var score = scores[i];
     var pct   = score / maxScore;
-    var scoreBg = pct >= .67 ? 'rgba(226,75,74,.2)'  :
-                  pct >= .34 ? 'rgba(239,159,39,.2)' :
-                               'rgba(63,185,80,.12)';
-    var scoreFg = pct >= .67 ? '#A32D2D' : pct >= .34 ? '#854F0B' : '#27500A';
+    var scoreBg = pct >= .67 ? 'rgba(224,120,120,.45)' :
+                  pct >= .34 ? 'rgba(212,168,80,.45)'  :
+                               'rgba(109,191,154,.35)';
+    var scoreFg = pct >= .67 ? '#F0A0A0' : pct >= .34 ? '#E0C070' : '#80D0B0';
     return '<tr>'+
       '<td class="hm-comp">'+comp+'</td>'+
       pris.map(function(p) {

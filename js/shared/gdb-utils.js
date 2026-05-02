@@ -357,5 +357,69 @@
     return 'Showing ' + filtered + ' of ' + total + ' items';
   };
 
+  /* ── Shared doughnut/pie chart (Chart.js) ─────────────────────────
+     GDB.doughnutChart(opts)
+     opts: { id, labels, data, colors, chartStore?, legendPos? }
+     Destroys previous chart in chartStore[id] if present.
+     Returns the Chart instance.
+  ────────────────────────────────────────────────────────────────── */
+  GDB.doughnutChart = function(opts) {
+    var ctx = document.getElementById(opts.id);
+    if (!ctx) return null;
+    if (opts.chartStore && opts.chartStore[opts.id]) {
+      opts.chartStore[opts.id].destroy();
+    }
+    var total = (opts.data || []).reduce(function(a, b) { return a + b; }, 0);
+    var textColor = getComputedStyle(document.documentElement).getPropertyValue('--text2').trim() || '#8b949e';
+    var chart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: opts.labels,
+        datasets: [{
+          data: opts.data,
+          backgroundColor: opts.colors,
+          borderWidth: 2,
+          borderColor: 'rgba(0,0,0,0.25)'
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true,
+            position: opts.legendPos || 'bottom',
+            labels: {
+              color: textColor,
+              font: { size: 10 }, padding: 8,
+              generateLabels: function(ch) {
+                return ch.data.labels.map(function(l, i) {
+                  var v = ch.data.datasets[0].data[i];
+                  var pct = total > 0 ? Math.round(v / total * 100) : 0;
+                  return {
+                    text: l + ' (' + v + ', ' + pct + '%)',
+                    fillStyle: ch.data.datasets[0].backgroundColor[i],
+                    strokeStyle: 'rgba(0,0,0,0.2)',
+                    fontColor: textColor,
+                    lineWidth: 1, hidden: false, index: i
+                  };
+                });
+              }
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(c) {
+                var pct = total > 0 ? Math.round(c.parsed / total * 100) : 0;
+                return ' ' + c.label + ': ' + c.parsed + ' (' + pct + '%)';
+              }
+            }
+          }
+        }
+      }
+    });
+    if (opts.chartStore) opts.chartStore[opts.id] = chart;
+    return chart;
+  };
+
   global.GDB = GDB;
 })(window);

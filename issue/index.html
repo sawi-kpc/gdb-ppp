@@ -38,6 +38,12 @@
 .view-btn.active { background: var(--surface); color: var(--text); border-color: var(--text3); }
 .count-label { font-size: 11px; color: var(--text3); margin-left: auto; }
 
+/* ── Pagination ── */
+.pg-btn { padding: 3px 9px; font-size: 11px; font-weight: 600; border-radius: 5px; cursor: pointer; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); transition: all .15s; }
+.pg-btn:hover:not(:disabled) { background: var(--accent); border-color: var(--accent); color: #fff; }
+.pg-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.pg-btn:disabled { opacity: .35; cursor: default; }
+
 /* ── Status tags ── */
 .stag { display: inline-flex; align-items: center; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
 .stag.open          { background: rgba(226,75,74,.12);  color: #A32D2D; border: 1px solid rgba(226,75,74,.2); }
@@ -161,7 +167,8 @@
 .ctog.active, .ctog:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
 
 /* chart area with y-axis */
-.vbar-area     { display: flex; align-items: stretch; gap: 6px; margin: 8px 0 4px; height: 160px; }
+#chart-status  { display: flex; flex-direction: column; }
+.vbar-area     { display: flex; align-items: stretch; gap: 6px; margin: 8px 0 4px; flex: 1; min-height: 140px; }
 .vbar-y-axis   { display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end; width: 28px; flex-shrink: 0; padding-bottom: 20px; }
 .vbar-y-tick   { font-size: 9px; color: var(--text3); line-height: 1; }
 .vbar-inner    { position: relative; flex: 1; display: flex; flex-direction: column; min-width: 0; }
@@ -276,6 +283,7 @@
             <tbody id="issue-tbody"></tbody>
           </table>
         </div>
+        <div id="issue-pagination" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 4px 4px"></div>
       </div>
 
     </div>

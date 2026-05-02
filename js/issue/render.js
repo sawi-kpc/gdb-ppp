@@ -4,15 +4,17 @@
 ══════════════════════════════════════════════════════════════ */
 
 /* ── State ───────────────────────────────────────────────── */
-var _filterStatuses = {};   /* multi-select: {Open:true, Done:true ...} */
+var _filterStatuses = {};   /* multi-select: {} = show all */
 var _filterPriority = 'all';
 var _filterSeverity = 'all';
 var _filterComp     = 'all';
 var _filterGroup    = 'all';
 var _searchQ        = '';
-var _sortCol        = 'Key';
-var _sortAsc        = true;
+var _sortCol        = 'FailureOccurs';
+var _sortAsc        = false;   /* desc — newest first */
 var _activeView     = 'board';
+var _tablePage      = 1;
+var _tablePageSize  = 20;
 var _chartGroupBy   = 'week'; /* 'week' | 'month' */
 
 /* ── Status board columns ────────────────────────────────── */
@@ -778,7 +780,7 @@ function switchView(view) {
 }
 
 /* ── Hidden status columns (persisted in memory) ─────────── */
-var _hiddenCols = {};
+var _hiddenCols = { 'Done': true };   /* Done hidden by default */
 
 function toggleStatusCol(key) {
   _hiddenCols[key] = !_hiddenCols[key];
@@ -898,19 +900,50 @@ function buildCard(d) {
 
 
 /* ── Build table view ────────────────────────────────────── */
+function _goTablePage(n) {
+  var totalPages = Math.max(1, Math.ceil((_lastTableData || []).length / _tablePageSize));
+  _tablePage = Math.max(1, Math.min(n, totalPages));
+  buildTable(_lastTableData || []);
+}
+var _lastTableData = [];
+
 function buildTable(data) {
+  _lastTableData = data;
+  var totalPages = Math.max(1, Math.ceil(data.length / _tablePageSize));
+  _tablePage = Math.max(1, Math.min(_tablePage, totalPages));
+  var pageData = data.slice((_tablePage - 1) * _tablePageSize, _tablePage * _tablePageSize);
+
   var countEl = document.getElementById('count-label');
-  if (countEl) countEl.textContent = 'Showing '+data.length+' issue'+(data.length!==1?'s':'');
+  if (countEl) countEl.textContent = 'Showing ' + pageData.length + ' of ' + data.length + ' issues (page ' + _tablePage + '/' + totalPages + ')';
 
   var tbody = document.getElementById('issue-tbody');
   if (!tbody) return;
 
   if (!data.length) {
     tbody.innerHTML = '<tr><td colspan="7" class="empty">No issues match this filter.</td></tr>';
+    var pg = document.getElementById('issue-pagination');
+    if (pg) pg.innerHTML = '';
     return;
   }
 
-  tbody.innerHTML = data.map(function(d){
+  var pgEl = document.getElementById('issue-pagination');
+  if (pgEl) {
+    if (totalPages <= 1) {
+      pgEl.innerHTML = '';
+    } else {
+      var p = _tablePage, html = '';
+      html += '<button class="pg-btn" ' + (p <= 1 ? 'disabled' : '') + ' onclick="_goTablePage(' + (p - 1) + ')">‹</button>';
+      var from = Math.max(1, p - 2), to = Math.min(totalPages, from + 4);
+      from = Math.max(1, to - 4);
+      for (var i = from; i <= to; i++) {
+        html += '<button class="pg-btn' + (i === p ? ' active' : '') + '" onclick="_goTablePage(' + i + ')">' + i + '</button>';
+      }
+      html += '<button class="pg-btn" ' + (p >= totalPages ? 'disabled' : '') + ' onclick="_goTablePage(' + (p + 1) + ')">›</button>';
+      pgEl.innerHTML = html;
+    }
+  }
+
+  tbody.innerHTML = pageData.map(function(d){
     var overdue = isOverdue(d.Due, d.Status);
     var dueFmt  = _fmtDate(d.Due);
 

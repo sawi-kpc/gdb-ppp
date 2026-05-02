@@ -5,12 +5,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Initiatives List — GDB</title>
 <link rel="stylesheet" href="../css/shared.css">
+<link rel="stylesheet" href="../css/gdb-shared.css">
 <link rel="stylesheet" href="../css/initiative.css">
 </head>
 <body class="has-init-subnav">
 
 <div id="gdb-error"></div>
-<div id="gdb-loading"><div class="gdb-spinner"></div><div class="gdb-loading-text">Loading…</div></div>
+<div id="gdb-loading" class="gdb-loading-state"><div class="gdb-spinner-wrap"></div>Loading…</div>
 
 <div id="init-content" class="gdb-page" style="display:none">
 <!-- Initiatives List Tab -->
@@ -53,6 +54,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="../js/initiative/config.js"></script>
 <script src="../js/header.js"></script>
+<script src="../js/shared/gdb-utils.js"></script>
 <script src="../js/initiative/render.js"></script>
 <script src="../js/initiative/data.js"></script>
 <script>

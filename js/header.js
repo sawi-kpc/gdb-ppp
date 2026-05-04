@@ -46,6 +46,60 @@ function buildGdbInitiativeSubNav() {
 
 
 
+/* ── Issue sub-tab bar ───────────────────────────────────────────
+   Call this on issue pages to render a tab bar below the main nav.
+─────────────────────────────────────────────────────────────── */
+function buildGdbIssueSubNav() {
+  var p = window.location.pathname;
+  var boardActive = (p.endsWith('/issue/') || p.endsWith('/issue/index.html')) ? ' active' : '';
+  var dashActive  = p.endsWith('/issue/dashboard.html') ? ' active' : '';
+  var listActive  = p.endsWith('/issue/list.html') ? ' active' : '';
+
+  var subNav = '<div class="gdb-init-subnav" id="gdb-issue-subnav">' +
+    '<a class="gdb-init-tab' + boardActive + '" href="/gdb-ppp/issue/">Board</a>' +
+    '<a class="gdb-init-tab' + dashActive  + '" href="/gdb-ppp/issue/dashboard.html">Dashboard</a>' +
+    '<a class="gdb-init-tab' + listActive  + '" href="/gdb-ppp/issue/list.html">List</a>' +
+  '</div>';
+
+  document.body.insertAdjacentHTML('afterbegin', subNav);
+
+  requestAnimationFrame(function() {
+    var subNavEl = document.getElementById('gdb-issue-subnav');
+    if (!subNavEl) return;
+    var divider = document.querySelector('.gdb-nav-divider');
+    if (divider) {
+      var rect = divider.getBoundingClientRect();
+      subNavEl.style.left = rect.right + 'px';
+    }
+  });
+}
+
+
+/* ── Support sub-tab bar ──────────────────────────────────────── */
+function buildGdbSupportSubNav() {
+  var p = window.location.pathname;
+  var dashActive = (p.endsWith('/support/') || p.endsWith('/support/index.html')) ? ' active' : '';
+  var listActive = p.endsWith('/support/list.html') ? ' active' : '';
+
+  var subNav = '<div class="gdb-init-subnav" id="gdb-support-subnav">' +
+    '<a class="gdb-init-tab' + dashActive + '" href="/gdb-ppp/support/">Dashboard</a>' +
+    '<a class="gdb-init-tab' + listActive + '" href="/gdb-ppp/support/list.html">List</a>' +
+  '</div>';
+
+  document.body.insertAdjacentHTML('afterbegin', subNav);
+
+  requestAnimationFrame(function() {
+    var subNavEl = document.getElementById('gdb-support-subnav');
+    if (!subNavEl) return;
+    var divider = document.querySelector('.gdb-nav-divider');
+    if (divider) {
+      var rect = divider.getBoundingClientRect();
+      subNavEl.style.left = rect.right + 'px';
+    }
+  });
+}
+
+
 /* ── Cache status badge helpers (used by channel + initiative) ── */
 function gdbSetCacheBadge(state, label) {
   /* state: 'live' | 'cached' | 'loading' | 'hide' */
@@ -136,7 +190,7 @@ function buildGdbHeader(opts) {
   var compActive = p.endsWith('/initiative/completed.html') ? ' active' : '';
 
   /* Initiatives — single nav item; sub-tabs rendered by buildGdbInitiativeSubNav() */
-  nav += '<a class="gdb-nav-item' + initActive + '" href="/gdb-ppp/initiative/index.html">Initiatives</a>';
+  nav += '<a class="gdb-nav-item' + initActive + '" href="/gdb-ppp/initiative/">Initiatives</a>';
 
   /* Issues */
   var issueActive = p.includes('/issue/') ? ' active' : '';

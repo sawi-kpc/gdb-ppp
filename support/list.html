@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Support Tasks — List — GDB</title>
+<link rel="stylesheet" href="../css/shared.css">
+<link rel="stylesheet" href="../css/gdb-shared.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+/* Filter bar */
+.fb{padding:4px 12px;font-size:11px;font-weight:600;border-radius:20px;cursor:pointer;
+  border:1px solid var(--border);background:var(--surface2);color:var(--text2);transition:all .15s}
+.fb.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.fb:hover:not(.active){color:var(--text)}
+/* Main task table */
+.ttbl{width:100%;border-collapse:collapse;font-size:12px}
+.ttbl th{padding:8px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text2);
+  text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);
+  white-space:nowrap;cursor:pointer;user-select:none}
+.ttbl th:hover{color:var(--text)}
+.ttbl th.sorted{color:var(--accent)}
+.ttbl td{padding:8px 10px;border-bottom:1px solid rgba(48,54,61,.35);vertical-align:top;text-align:left}
+.ttbl tr:hover td{background:var(--surface2)}
+.ttbl tr:last-child td{border-bottom:none}
+/* Tags */
+.tag{display:inline-flex;align-items:center;font-size:10px;font-weight:600;
+  padding:2px 7px;border-radius:3px;white-space:nowrap}
+.tag.todo{background:rgba(245,158,11,.15);color:var(--amber);border:1px solid rgba(245,158,11,.3)}
+.tag.in-progress{background:rgba(88,166,255,.12);color:var(--accent);border:1px solid rgba(88,166,255,.25)}
+.tag.done{background:rgba(63,185,80,.1);color:var(--up);border:1px solid rgba(63,185,80,.2)}
+/* Search */
+.search-wrap{position:relative}
+.search-wrap input{background:var(--surface2);border:1px solid var(--border);
+  color:var(--text);border-radius:6px;padding:5px 10px 5px 28px;font-size:12px;
+  width:220px;outline:none;transition:border-color .15s}
+.search-wrap input:focus{border-color:var(--accent)}
+.search-wrap::before{content:'⌕';position:absolute;left:9px;top:50%;transform:translateY(-50%);
+  color:var(--text3);font-size:13px;pointer-events:none}
+.empty{padding:24px;text-align:center;color:var(--text3);font-size:12px}
+/* Pagination */
+.pg-btn{padding:4px 10px;font-size:11px;font-weight:600;border-radius:5px;cursor:pointer;
+  border:1px solid var(--border);background:var(--surface2);color:var(--text2);transition:all .15s;min-width:32px}
+.pg-btn:hover:not(:disabled){color:var(--text);border-color:var(--text3)}
+.pg-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.pg-btn:disabled{opacity:.35;cursor:default}
+</style>
+</head>
+<body class="has-init-subnav">
+<div id="gdb-error" style="display:none;padding:12px 20px;background:rgba(248,81,73,.1);border-bottom:1px solid rgba(248,81,73,.3);color:var(--down);font-size:12px"></div>
+
+<div id="gdb-loading" class="gdb-loading-state"><div class="gdb-spinner-wrap"></div>Loading support tasks…</div>
+
+<div id="support-content" style="display:none">
+
+<div id="support-error-state" class="gdb-error-state">
+  <div style="font-size:40px;opacity:.6">⚠</div>
+  <div style="font-size:16px;font-weight:700;color:var(--down)">Unable to load support data</div>
+  <div id="support-error-msg" style="font-size:13px;color:var(--text2);max-width:420px;line-height:1.6"></div>
+  <div style="margin-top:8px">
+    <button onclick="location.reload()" style="padding:8px 20px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;cursor:pointer">↺ Retry</button>
+  </div>
+</div>
+
+<div class="gdb-page-content">
+
+<div class="panel">
+  <div class="panel-head">
+    <div><div class="panel-title">All Tasks</div><div class="panel-sub" id="task-count-label"></div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <div class="search-wrap"><input type="text" id="search" placeholder="Search…" oninput="applyFilters()"></div>
+    </div>
+  </div>
+  <div class="panel-body">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+      <span style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0">Status</span>
+      <div id="status-filter" style="display:contents">
+        <button class="pill-btn active" data-val="all" onclick="setFilter('status','all',this)">All</button>
+        <button class="pill-btn" data-val="To do" onclick="setFilter('status','To do',this)">⚠ Pending</button>
+        <button class="pill-btn" data-val="In Progress" onclick="setFilter('status','In Progress',this)">In Progress</button>
+        <button class="pill-btn" data-val="Done" onclick="setFilter('status','Done',this)">Done</button>
+        <span style="font-size:10px;color:var(--text3)">(multi)</span>
+      </div>
+      <div style="height:16px;width:1px;background:var(--border);flex-shrink:0"></div>
+      <span style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0">Priority</span>
+      <select class="ctrl-select" id="filter-priority" onchange="onDropdownChange()" style="padding:3px 8px;font-size:11px">
+        <option value="all">All</option>
+      </select>
+    </div>
+    <div style="display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+      <span style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;padding-top:5px;white-space:nowrap;flex-shrink:0">Group</span>
+      <div id="group-filter" style="display:flex;gap:4px;flex-wrap:wrap;flex:1"></div>
+    </div>
+    <div style="display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+      <span style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;padding-top:5px;white-space:nowrap;flex-shrink:0">Labels</span>
+      <div id="label-filter" style="display:flex;gap:4px;flex-wrap:wrap;flex:1"></div>
+    </div>
+    <div class="tbl-scroll">
+      <table class="ttbl">
+        <thead><tr>
+          <th onclick="sortBy('Key')">Key ↕</th>
+          <th onclick="sortBy('Summary')">Summary ↕</th>
+          <th onclick="sortBy('Status')">Status</th>
+          <th onclick="sortBy('Group')">Group</th>
+          <th>Component</th>
+          <th onclick="sortBy('Assignee')">Assignee</th>
+          <th onclick="sortBy('Due date')">Due date ↕</th>
+          <th onclick="sortBy('Hours')">Hours spent ↕</th>
+        </tr></thead>
+        <tbody id="task-tbody"></tbody>
+      </table>
+      <div id="task-pagination" style="display:flex;gap:4px;justify-content:center;padding:10px 0;flex-wrap:wrap"></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /gdb-page-content -->
+</div><!-- /support-content -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="../js/support/config.js"></script>
+<script src="../js/header.js"></script>
+<script src="../js/support/data.js"></script>
+<script src="../js/shared/gdb-utils.js"></script>
+<script src="../js/support/render.js"></script>
+<script src="../js/support/render_patch.js"></script>
+<script>
+window.addEventListener('DOMContentLoaded', function() {
+  buildGdbHeader({ showRefresh: true });
+  buildGdbSupportSubNav();
+  gdbAuthGuard(function() {
+    loadSupportData(
+      function(data) {
+        document.getElementById('gdb-loading').style.display = 'none';
+        document.getElementById('support-content').style.display = 'block';
+        if (typeof setGdbUpdateTime === 'function') setGdbUpdateTime(new Date().toISOString());
+        init();
+      },
+      function(err) {
+        document.getElementById('gdb-loading').style.display = 'none';
+        document.getElementById('support-content').style.display = 'block';
+        document.getElementById('support-error-state').style.display = 'flex';
+        document.getElementById('support-error-msg').textContent = err;
+      }
+    );
+  });
+
+  var rbtn = document.getElementById('gdb-refresh-btn');
+  if (rbtn) rbtn.addEventListener('click', function() {
+    clearSupportCache();
+    location.reload();
+  });
+});
+</script>
+</body>
+</html>

@@ -64,6 +64,7 @@ function _ssc(label,cls,num,sub){
     '<div style="font-size:11px;color:var(--text2)">'+sub+'</div></div>';
 }
 function buildStrip(data){
+  var el=document.getElementById('strip'); if(!el) return;
   var total=data.length;
   var todo=data.filter(function(d){return d.Status==='To do';}).length;
   var inprog=data.filter(function(d){return d.Status==='In Progress';}).length;
@@ -71,7 +72,7 @@ function buildStrip(data){
   var totalSec=data.reduce(function(a,d){return a+d.TimeSpentSec;},0);
   var recurring=data.filter(function(d){return d.Group==='marketing_automation'||d.Group==='firster_tiktok_report';}).length;
   var overdue=data.filter(function(d){return isOverdue(d.Due,d.Status);}).length;
-  document.getElementById('strip').innerHTML=
+  el.innerHTML=
     _ssc('Total Tasks','accent',total,'all statuses')+
     _ssc('Done','green',done,'completed')+
     _ssc('Pending','amber',todo,(overdue>0?'<span style="color:var(--down)">'+overdue+' overdue</span>':'on track'))+
@@ -103,6 +104,7 @@ function buildGroupChart(data){
 
 /* ── Build assignee table ────────────────────────────────── */
 function buildAssigneeTable(data){
+  if(!document.getElementById('assignee-tbl')) return;
   var agg={};
   data.forEach(function(d){
     var name=d.Assignee||'(unassigned)';
@@ -134,6 +136,7 @@ function buildGroupFilter(data){
     return (d.Group && d.Group.trim()) ? d.Group.trim() : 'other';
   }))).sort();
   var el=document.getElementById('group-filter');
+  if(!el) return;
   el.innerHTML='<button class="fb active" data-val="all" onclick="setFilter(\'group\',\'all\',this)">All groups</button>'+
     groups.map(function(g){
       return '<button class="fb" data-val="'+g+'" onclick="setFilter(\'group\',\''+g+'\',this)">'+fmtGroup(g)+'</button>';
@@ -163,15 +166,18 @@ function buildPriorityDropdown(data){
 
 /* ── Build task table ────────────────────────────────────── */
 function buildTaskTable(data){
+  var tbody=document.getElementById('task-tbody');
+  if(!tbody) return;
+  var cntEl=document.getElementById('task-count-label');
   if(!data.length){
-    document.getElementById('task-tbody').innerHTML='<tr><td colspan="8" class="empty">No tasks match this filter.</td></tr>';
-    document.getElementById('task-count-label').textContent='0 tasks';
+    tbody.innerHTML='<tr><td colspan="8" class="empty">No tasks match this filter.</td></tr>';
+    if(cntEl) cntEl.textContent='0 tasks';
     return;
   }
   var totalPages = Math.max(1, Math.ceil(data.length / _taskPageSize));
   _taskPage = Math.min(_taskPage, totalPages);
   var pageData = data.slice((_taskPage-1)*_taskPageSize, _taskPage*_taskPageSize);
-  document.getElementById('task-count-label').textContent=
+  if(cntEl) cntEl.textContent=
     'Showing '+pageData.length+' of '+data.length+' tasks (page '+_taskPage+'/'+totalPages+')';
   var today=new Date();
   var html=pageData.map(function(d){
@@ -191,7 +197,7 @@ function buildTaskTable(data){
       '<td style="text-align:left">'+timeHtml+'</td>'+
       '</tr>';
   }).join('');
-  document.getElementById('task-tbody').innerHTML=html;
+  tbody.innerHTML=html;
 
   /* Pagination controls */
   var pgEl = document.getElementById('task-pagination');

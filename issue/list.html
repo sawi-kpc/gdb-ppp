@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Issues — List — GDB Dashboard</title>
+<link rel="stylesheet" href="../css/shared.css">
+<link rel="stylesheet" href="../css/gdb-shared.css">
+<style>
+.issue-content { padding: 20px 24px; max-width: 1600px; margin: 0 auto; min-width: 0; overflow: hidden; }
+.panel-title { font-size: 14px; font-weight: 700; color: var(--text); }
+.panel-sub   { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+/* ── Control bar ── */
+.ctrl-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.status-btn { padding: 4px 13px; font-size: 11px; font-weight: 600; border-radius: 20px; cursor: pointer; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); transition: all .15s; }
+.status-btn.active, .status-btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+.ctrl-sep { width: 1px; height: 20px; background: var(--border); margin: 0 2px; }
+.ctrl-select:focus { border-color: var(--accent); }
+.ctrl-search input { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 5px 10px 5px 28px; font-size: 12px; width: 200px; outline: none; }
+.ctrl-search input:focus { border-color: var(--accent); }
+.ctrl-search { position: relative; }
+.ctrl-search::before { content: '⌕'; position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 13px; pointer-events: none; }
+.count-label { font-size: 11px; color: var(--text3); margin-left: auto; }
+
+/* ── Pagination ── */
+.pg-btn { padding: 3px 9px; font-size: 11px; font-weight: 600; border-radius: 5px; cursor: pointer; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); transition: all .15s; }
+.pg-btn:hover:not(:disabled) { background: var(--accent); border-color: var(--accent); color: #fff; }
+.pg-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.pg-btn:disabled { opacity: .35; cursor: default; }
+
+/* ── Status tags ── */
+.stag { display: inline-flex; align-items: center; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+.stag.open          { background: rgba(226,75,74,.12);  color: #A32D2D; border: 1px solid rgba(226,75,74,.2); }
+.stag.investigating { background: rgba(239,159,39,.12); color: #854F0B; border: 1px solid rgba(239,159,39,.2); }
+.stag.in-progress   { background: rgba(55,138,221,.12); color: #185FA5; border: 1px solid rgba(55,138,221,.2); }
+.stag.resolved      { background: rgba(29,158,117,.12); color: #0F6E56; border: 1px solid rgba(29,158,117,.2); }
+.stag.done          { background: rgba(63,185,80,.10);  color: #27500A; border: 1px solid rgba(63,185,80,.2); }
+
+/* ── Severity badges ── */
+.sev-badge { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px; white-space: nowrap; flex-shrink: 0; }
+.sev-badge.critical { background: rgba(226,75,74,.12); color: #A32D2D; border: 1px solid rgba(226,75,74,.2); }
+.sev-badge.high     { background: rgba(249,115,22,.12); color: #7c3d12; border: 1px solid rgba(249,115,22,.2); }
+.sev-badge.moderate { background: rgba(239,159,39,.12); color: #854F0B; border: 1px solid rgba(239,159,39,.2); }
+.sev-badge.low      { background: rgba(63,185,80,.10);  color: #27500A; border: 1px solid rgba(63,185,80,.2); }
+.comp-chip { font-size: 10px; padding: 2px 7px; border-radius: 3px; background: rgba(55,138,221,.1); color: #185FA5; border: 1px solid rgba(55,138,221,.2); white-space: nowrap; max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+.comp-chips-wrap { display: flex; flex-wrap: wrap; gap: 4px; }
+
+/* ── Table ── */
+.itbl { width: 100%; border-collapse: collapse; font-size: 12px; }
+.itbl th { text-align: left; padding: 8px 12px; border-bottom: 2px solid var(--border); font-size: 11px; font-weight: 700; color: var(--text2); white-space: nowrap; cursor: pointer; user-select: none; }
+.itbl th:hover { color: var(--text); }
+.itbl td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.itbl tr:hover td { background: var(--surface2); }
+.itbl .empty { text-align: center; padding: 40px; color: var(--text3); }
+.tbl-warn { font-size: 10px; color: var(--down); font-weight: 600; margin-top: 2px; white-space: nowrap; }
+
+/* ── Empty state ── */
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text3); font-size: 13px; }
+</style>
+</head>
+<body class="has-init-subnav">
+<div id="gdb-error"></div>
+
+<div class="gdb-page" id="main-content" style="display:none">
+<div class="issue-content">
+
+  <!-- Issues panel -->
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">◆ Issues &amp; Incidents</div>
+        <div class="panel-sub">Live issue tracking across all platforms — synced from Jira</div>
+      </div>
+    </div>
+    <div class="panel-body">
+
+      <!-- Control bar -->
+      <div class="ctrl-bar">
+        <button class="status-btn active" data-status="all" onclick="onStatusFilter('all')">All</button>
+        <button class="status-btn" data-status="Open" onclick="onStatusFilter('Open')">Open</button>
+        <button class="status-btn" data-status="Investigating" onclick="onStatusFilter('Investigating')">Investigating</button>
+        <button class="status-btn" data-status="In Progress" onclick="onStatusFilter('In Progress')">In Progress</button>
+        <button class="status-btn" data-status="Resolved" onclick="onStatusFilter('Resolved')">Resolved</button>
+        <button class="status-btn" data-status="Done" onclick="onStatusFilter('Done')">Done</button>
+        <div class="ctrl-sep"></div>
+        <select class="ctrl-select" id="filter-priority" onchange="onDropdownChange()">
+          <option value="all">All priority</option>
+        </select>
+        <select class="ctrl-select" id="filter-severity" onchange="onDropdownChange()">
+          <option value="all">All severity</option>
+        </select>
+        <select class="ctrl-select" id="filter-component" onchange="onDropdownChange()">
+          <option value="all">All components</option>
+        </select>
+        <select class="ctrl-select" id="filter-group" onchange="onDropdownChange()">
+          <option value="all">All support groups</option>
+        </select>
+        <div class="ctrl-sep"></div>
+        <div class="ctrl-search">
+          <input type="text" id="issue-search" placeholder="Search…" oninput="applyFilters()">
+        </div>
+        <span class="count-label" id="count-label"></span>
+      </div>
+
+      <!-- Table view -->
+      <div id="table-view-wrap">
+        <div class="tbl-scroll">
+          <table class="itbl">
+            <thead><tr>
+              <th onclick="sortIssueBy('Key')" style="white-space:nowrap">Key</th>
+              <th onclick="sortIssueBy('Summary')">Summary</th>
+              <th onclick="sortIssueBy('Status')">Status</th>
+              <th onclick="sortIssueBy('Priority')" style="white-space:nowrap">Priority</th>
+              <th onclick="sortIssueBy('Severity')" style="white-space:nowrap">Severity</th>
+              <th onclick="sortIssueBy('Assignee')">Assignee</th>
+              <th onclick="sortIssueBy('Due')" style="white-space:nowrap">Due date</th>
+            </tr></thead>
+            <tbody id="issue-tbody"></tbody>
+          </table>
+        </div>
+        <div id="issue-pagination" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 4px 4px"></div>
+      </div>
+
+    </div>
+  </div><!-- /panel -->
+
+</div><!-- /issue-content -->
+</div><!-- /main-content -->
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="../js/issue/config.js"></script>
+<script src="../js/header.js"></script>
+<script src="../js/issue/data.js"></script>
+<script src="../js/shared/gdb-utils.js"></script>
+<script src="../js/issue/render.js"></script>
+<script>
+window.addEventListener('DOMContentLoaded', function() {
+  if (!localStorage.getItem('gdb_theme')) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    localStorage.setItem('gdb_theme', 'dark');
+  }
+
+  buildGdbHeader({ showRefresh: true });
+  buildGdbIssueSubNav();
+  gdbAuthGuard(function() {
+    document.getElementById('main-content').style.display = 'block';
+    _activeView = 'table';
+    initIssueBoard();
+  });
+});
+</script>
+</body>
+</html>

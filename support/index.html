@@ -7,19 +7,6 @@
 <link rel="stylesheet" href="../css/shared.css">
 <link rel="stylesheet" href="../css/gdb-shared.css">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-.page{max-width:1600px;margin:0 auto;padding:20px 24px}
-.ph{margin-bottom:20px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px}
-.ph-title{font-size:18px;font-weight:700}
-.ph-sub{font-size:12px;color:var(--text2);margin-top:3px}
-/* Summary strip */
-.strip{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px}
-/* Bar chart */
-.brow{display:flex;align-items:center;gap:8px;margin-bottom:7px}
-.blabel{font-size:11px;color:var(--text2);width:200px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.btrack{flex:1;height:20px;background:var(--surface2);border-radius:3px;overflow:hidden}
-.bfill{height:100%;border-radius:3px;display:flex;align-items:center;padding:0 8px;font-size:10px;font-weight:600;color:#fff;white-space:nowrap;min-width:28px;transition:width .4s}
-.bcount{font-size:11px;color:var(--text2);width:32px;text-align:right;flex-shrink:0}
 /* Assignee table */
 .atbl{width:100%;border-collapse:collapse;font-size:12px}
 .atbl th{padding:7px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)}
@@ -30,13 +17,15 @@
 .atbl tr:hover td{background:var(--surface2)}
 .hbar-wrap{display:flex;justify-content:flex-end;align-items:center;gap:6px}
 .hbar{height:6px;border-radius:3px;background:var(--accent);flex-shrink:0}
-/* Tags */
+/* Status tags */
 .tag{display:inline-flex;align-items:center;font-size:10px;font-weight:600;padding:2px 7px;border-radius:3px;white-space:nowrap}
 .tag.todo{background:rgba(245,158,11,.15);color:var(--amber);border:1px solid rgba(245,158,11,.3)}
 .tag.in-progress{background:rgba(88,166,255,.12);color:var(--accent);border:1px solid rgba(88,166,255,.25)}
 .tag.done{background:rgba(63,185,80,.1);color:var(--up);border:1px solid rgba(63,185,80,.2)}
 .empty{padding:24px;text-align:center;color:var(--text3);font-size:12px}
-@media(max-width:900px){.strip{grid-template-columns:repeat(2,1fr)}}
+/* KPI strip: 6 columns on wide, 3 on mobile */
+.kpi-grid{grid-template-columns:repeat(6,1fr)}
+@media(max-width:900px){.kpi-grid{grid-template-columns:repeat(3,1fr)!important}}
 </style>
 </head>
 <body class="has-init-subnav">
@@ -57,15 +46,15 @@
 
 <div class="gdb-page-content">
 
-<div class="ph">
+<div class="page-header">
   <div>
-    <div class="ph-title">Support Tasks</div>
-    <div class="ph-sub">Operational workload monitoring · recurring patterns · initiative candidates</div>
+    <div class="page-title">Support Tasks</div>
+    <div class="page-sub">Operational workload monitoring · recurring patterns · initiative candidates</div>
   </div>
   <div id="last-updated" style="font-size:11px;color:var(--text3)"></div>
 </div>
 
-<div class="strip" id="strip"></div>
+<div class="kpi-grid" id="strip" style="margin-bottom:20px"></div>
 
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
   <div class="panel">

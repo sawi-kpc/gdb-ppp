@@ -55,13 +55,15 @@ var searchQ='', sortCol='Key', sortAsc=true;
 
 /* ── Build summary strip ─────────────────────────────────── */
 function _ssc(label,cls,num,sub){
-  var colors={accent:'var(--accent)',green:'var(--up)',amber:'var(--amber)',teal:'var(--teal)',purple:'var(--purple)'};
-  var c=colors[cls]||'var(--accent)';
-  return '<div style="background:var(--surface);border:1px solid var(--border);border-top:2px solid '+c+
-    ';border-radius:8px;padding:12px 16px"><div style="font-size:10px;font-weight:600;color:var(--text2);'+
-    'text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">'+label+'</div>'+
-    '<div style="font-size:24px;font-weight:700;color:'+c+';line-height:1;margin-bottom:2px">'+num+'</div>'+
-    '<div style="font-size:11px;color:var(--text2)">'+sub+'</div></div>';
+  var colorMap={accent:'var(--accent)',green:'var(--up)',amber:'var(--amber)',teal:'var(--teal)',purple:'var(--purple)'};
+  var clsMap={accent:'accent',green:'green',amber:'orange',purple:'purple'};
+  var cardCls=clsMap[cls]||'accent';
+  var valColor=colorMap[cls]||'var(--accent)';
+  var topStyle=cls==='teal'?'border-top-color:var(--teal);':'';
+  return '<div class="kpi-card '+cardCls+'" style="'+topStyle+'">'+
+    '<div class="kpi-label">'+label+'</div>'+
+    '<div class="kpi-value" style="color:'+valColor+'">'+num+'</div>'+
+    '<div class="kpi-meta">'+sub+'</div></div>';
 }
 function buildStrip(data){
   var el=document.getElementById('strip'); if(!el) return;

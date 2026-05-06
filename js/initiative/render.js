@@ -449,39 +449,75 @@ function _buildKPI(data) {
     mc('Parking lot', parking, 'Backlog / not planned', 'var(--text3)');
 }
 
-/* ── Section 2A: Delivery Pipeline ── */
+/* ── Section 2A: Unified Delivery & Action panel ── */
 function _buildPipeline(data) {
-  var el = document.getElementById('dash-pipeline'); if (!el) return;
-  var delivery = data.filter(function(d){ return d.Status === 'Delivery'; });
-  var AVATAR_COLORS = ['#40b8a8','#b088e0','#d4a040','#4a9e5c','#e06050','#5bb8d4','#e07080'];
-  var assigneeColorMap = {};
-  var colorIdx = 0;
-  data.forEach(function(d) {
-    var name = (d['Assignee'] && d['Assignee'].displayName) || d['Assignee.displayName'] || '';
-    if (name && !assigneeColorMap[name]) assigneeColorMap[name] = AVATAR_COLORS[colorIdx++ % AVATAR_COLORS.length];
+  var el = document.getElementById('dash-delivery'); if (!el) return;
+
+  /* Items to show: Delivery + Budget Approval + Ready for Delivery */
+  var items = data.filter(function(d) {
+    return d.Status === 'Delivery' || d.Status === 'Budget Approval' || d.Status === 'Ready for Delivery';
   });
 
-  var rows = delivery.map(function(d) {
+  /* Build action map per key */
+  function _actionFor(d) {
+    var mon = (d['Project Monitoring Status'] || '').toLowerCase();
+    if (mon.includes('delay')) return { label: 'Provide revised plan & mitigation', color: 'var(--down)' };
+    if (mon.includes('risk'))  return { label: 'Identify blockers', color: 'var(--amber)' };
+    if (d.Status === 'Budget Approval')     return { label: 'Pending budget approval', color: 'var(--accent)' };
+    if (d.Status === 'Ready for Delivery')  return { label: 'Confirm sprint kick-off', color: 'var(--teal)' };
+    return null;
+  }
+
+  /* Sort: delayed → at-risk → budget → ready → on-track */
+  function _sortOrder(d) {
+    var mon = (d['Project Monitoring Status'] || '').toLowerCase();
+    if (mon.includes('delay')) return 0;
+    if (mon.includes('risk'))  return 1;
+    if (d.Status === 'Budget Approval')    return 2;
+    if (d.Status === 'Ready for Delivery') return 3;
+    return 4;
+  }
+  items = items.slice().sort(function(a, b) { return _sortOrder(a) - _sortOrder(b); });
+
+  /* Avatar color map */
+  var AVATAR_COLORS = ['#40b8a8','#b088e0','#d4a040','#4a9e5c','#e06050','#5bb8d4','#e07080'];
+  var colorMap = {};
+  var colorIdx = 0;
+  data.forEach(function(d) {
+    var n1 = (d['Assignee'] && d['Assignee'].displayName) || d['Assignee.displayName'] || '';
+    var n2 = (d['Assignee (2nd)'] && d['Assignee (2nd)'].displayName) || d['Assignee (2nd).displayName'] || '';
+    if (n1 && !colorMap[n1]) colorMap[n1] = AVATAR_COLORS[colorIdx++ % AVATAR_COLORS.length];
+    if (n2 && !colorMap[n2]) colorMap[n2] = AVATAR_COLORS[colorIdx++ % AVATAR_COLORS.length];
+  });
+
+  function _avatar(name) {
+    if (!name) return '';
+    return '<span style="width:22px;height:22px;border-radius:50%;background:'+(colorMap[name]||'#6b5c48')+';color:#fff;font-size:9px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0" title="'+name+'">'+_initials(name)+'</span>';
+  }
+
+  var rows = items.map(function(d) {
     var mon = d['Project Monitoring Status'] || '';
     var monCol = _monColor(mon);
-    var monTxt = mon || 'In progress';
-    var assigneeName = (d['Assignee'] && d['Assignee'].displayName) || d['Assignee.displayName'] || '';
-    var avatarColor = assigneeColorMap[assigneeName] || '#6b5c48';
-    var effort = parseInt(d['Effort Estimation']) || 0;
-    var effortDots = '';
-    for (var i = 1; i <= 5; i++) effortDots += '<span style="color:'+(i<=effort?'var(--accent)':'var(--text3)')+'">●</span>';
-    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);min-width:0">'+
+    var monTxt = d.Status === 'Delivery' ? (mon || 'On track') : d.Status;
+    var action = _actionFor(d);
+    var a1 = (d['Assignee'] && d['Assignee'].displayName) || d['Assignee.displayName'] || '';
+    var a2 = (d['Assignee (2nd)'] && d['Assignee (2nd)'].displayName) || d['Assignee (2nd).displayName'] || '';
+    var actionChip = action
+      ? '<span style="font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;background:'+action.color+'22;color:'+action.color+';white-space:nowrap;flex-shrink:0">'+action.label+'</span>'
+      : '';
+    return '<div style="display:flex;align-items:center;gap:7px;padding:7px 0;border-bottom:1px solid var(--border);min-width:0">'+
       '<span style="width:7px;height:7px;border-radius:50%;background:'+monCol+';flex-shrink:0"></span>'+
-      '<span style="font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;background:'+monCol+'22;color:'+monCol+';white-space:nowrap;flex-shrink:0">'+monTxt+'</span>'+
+      '<span style="font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;background:'+monCol+'22;color:'+monCol+';white-space:nowrap;flex-shrink:0;min-width:54px;text-align:center">'+monTxt+'</span>'+
       '<a href="'+CONFIG.JIRA_BASE+d.Key+'" target="_blank" style="font-size:10px;font-weight:700;color:var(--accent);text-decoration:none;white-space:nowrap;flex-shrink:0">'+d.Key+' ↗</a>'+
       '<span style="font-size:11px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+d.Summary+'">'+d.Summary+'</span>'+
-      '<span style="font-size:9px;letter-spacing:0;flex-shrink:0">'+effortDots+'</span>'+
-      (assigneeName ? '<span style="width:22px;height:22px;border-radius:50%;background:'+avatarColor+';color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0" title="'+assigneeName+'">'+_initials(assigneeName)+'</span>' : '')+
+      actionChip+
+      _avatar(a2)+
+      _avatar(a1)+
     '</div>';
   }).join('');
 
-  el.innerHTML = '<div class="panel-head"><div><div class="panel-title">Delivery pipeline</div><div class="panel-sub">Active initiatives in delivery</div></div></div>'+
-    '<div class="panel-body">'+(rows||'<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">No active deliveries</div>')+'</div>';
+  el.innerHTML = '<div class="panel-head"><div><div class="panel-title">Delivery & action required</div><div class="panel-sub">Active delivery · budget · pipeline — sorted by urgency</div></div></div>'+
+    '<div class="panel-body">'+(rows||'<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">No active items</div>')+'</div>';
 }
 
 /* ── Section 2B: Health Matrix ── */
@@ -831,7 +867,6 @@ function renderInitiatives(){
   var filtered=showNoYear?filterNoYear(allData):filterYear(allData,initYearFilter);
   renderYF('yf-init',initYearFilter,function(btn,val){initYearFilter=toggleYF(initYearFilter,val);showNoYear=false;document.getElementById('btn-no-year').classList.remove('active');renderInitiatives();});
   buildDashboard(filtered);
-  buildAttention(filtered);
 }
 
 /* CSV parser — handles normal row-per-record format */

@@ -792,32 +792,19 @@ function _buildAssigneeCompact(data) {
   var rows = names.map(function(n) {
     var p = prim[n] || 0, s = sec[n] || 0;
     var total = p + s;
-    var px = Math.round((p / maxVal) * 100);
-    var sx = Math.round((s / maxVal) * 100);
-    var lo = Math.min(px, sx), hi = Math.max(px, sx);
-    /* connector line — always draw between the two positions */
-    var connector = '<div style="position:absolute;top:50%;left:'+lo+'%;width:'+(hi-lo)+'%;height:2px;transform:translateY(-50%);background:linear-gradient(to right,var(--accent),var(--teal));border-radius:2px"></div>';
-    /* primary dot — solid if count > 0, hollow (border only) if 0 */
-    var d1 = p > 0
-      ? '<div style="position:absolute;top:50%;left:'+px+'%;width:10px;height:10px;border-radius:50%;background:var(--accent);transform:translate(-50%,-50%)" title="Primary: '+p+'"></div>'
-      : '<div style="position:absolute;top:50%;left:0%;width:10px;height:10px;border-radius:50%;border:2px solid var(--accent);background:transparent;transform:translate(-50%,-50%);opacity:0.5" title="Primary: 0"></div>';
-    /* 2nd dot — solid if count > 0, hollow if 0 */
-    var d2 = s > 0
-      ? '<div style="position:absolute;top:50%;left:'+sx+'%;width:7px;height:7px;border-radius:50%;background:var(--teal);transform:translate(-50%,-50%)" title="2nd: '+s+'"></div>'
-      : '<div style="position:absolute;top:50%;left:0%;width:7px;height:7px;border-radius:50%;border:2px solid var(--teal);background:transparent;transform:translate(-50%,-50%);opacity:0.5" title="2nd: 0"></div>';
-    var label = '<span style="font-size:10px;white-space:nowrap">'+
-      '<span style="color:var(--accent)">P:'+p+'</span>'+
-      '<span style="color:var(--border)"> · </span>'+
-      '<span style="color:var(--teal)">2nd:'+s+'</span>'+
-      '<span style="color:var(--border)"> · </span>'+
-      '<span style="color:var(--text2);font-weight:600">'+total+'</span>'+
-      '</span>';
+    var totalPct = Math.round((total / maxVal) * 100);
+    var primPct = Math.round((p / total) * 100);
+    var secPct = 100 - primPct;
+    var bar = '<div style="width:'+totalPct+'%;height:100%;border-radius:3px;overflow:hidden;display:flex">'+
+      (p > 0 ? '<div style="width:'+primPct+'%;background:var(--accent)" title="Primary: '+p+'"></div>' : '')+
+      (s > 0 ? '<div style="width:'+secPct+'%;background:var(--teal)" title="2nd: '+s+'"></div>' : '')+
+    '</div>';
+    var label = '<span style="font-size:10px;color:var(--text2);font-weight:600">'+total+'</span>'+
+      '<span style="font-size:10px;color:var(--text3);margin-left:4px">(P:'+p+' 2:'+s+')</span>';
     return '<div style="display:flex;align-items:center;gap:8px;padding:3px 0">'+
       '<div style="width:68px;flex-shrink:0;font-size:11px;color:var(--text2);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+n+'</div>'+
-      '<div style="flex:1;position:relative;height:18px;background:var(--surface2);border-radius:4px">'+
-        connector+d1+d2+
-      '</div>'+
-      '<div style="width:88px;flex-shrink:0">'+label+'</div>'+
+      '<div style="flex:1;height:10px;background:var(--surface2);border-radius:3px">'+bar+'</div>'+
+      '<div style="width:90px;flex-shrink:0;white-space:nowrap">'+label+'</div>'+
     '</div>';
   }).join('');
 
@@ -827,14 +814,13 @@ function _buildAssigneeCompact(data) {
       '<div class="panel-sub">Primary · 2nd — initiatives per person</div>'+
     '</div></div>'+
     '<div class="panel-body">'+
-      '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:8px">'+
+      '<div style="display:flex;gap:12px;align-items:center;margin-bottom:8px">'+
         '<span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)">'+
-          '<span style="width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block"></span>Primary'+
+          '<span style="width:10px;height:6px;border-radius:2px;background:var(--accent);display:inline-block"></span>Primary'+
         '</span>'+
         '<span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)">'+
-          '<span style="width:7px;height:7px;border-radius:50%;background:var(--teal);display:inline-block"></span>2nd assignee'+
+          '<span style="width:10px;height:6px;border-radius:2px;background:var(--teal);display:inline-block"></span>2nd assignee'+
         '</span>'+
-        '<span style="font-size:10px;color:var(--text3)">(hollow = 0)</span>'+
       '</div>'+
       rows+
     '</div>';

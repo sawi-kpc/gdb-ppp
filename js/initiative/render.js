@@ -763,38 +763,76 @@ function _buildBauStrategic(data) {
     '</div>';
 }
 
-/* ── Section 5: Compact assignee charts ── */
+/* ── Section 5: Assignee lollipop chart ── */
 function _buildAssigneeCompact(data) {
-  ['dash-assignee1','dash-assignee2'].forEach(function(id, idx) {
-    var el = document.getElementById(id); if (!el) return;
-    var fieldName = idx === 0 ? 'Assignee' : 'Assignee (2nd)';
-    var title = idx === 0 ? 'By primary assignee' : 'By 2nd assignee';
-    var counts = {};
-    data.forEach(function(d) {
-      var name = idx === 0
-        ? ((d['Assignee'] && d['Assignee'].displayName) || d['Assignee.displayName'] || '')
-        : ((d['Assignee (2nd)'] && d['Assignee (2nd)'].displayName) || d['Assignee (2nd).displayName'] || '');
-      if (!name) return;
-      var fn = _firstName(name);
-      counts[fn] = (counts[fn] || 0) + 1;
-    });
-    var entries = Object.entries(counts).sort(function(a,b){ return b[1]-a[1]; });
-    var max = entries[0] ? entries[0][1] : 1;
-    var bars = entries.map(function(e) {
-      var pct = Math.round(e[1]/max*100);
-      return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'+
-        '<div style="font-size:10px;color:var(--text2);width:80px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+e[0]+'</div>'+
-        '<div style="flex:1;height:8px;background:var(--surface2);border-radius:3px;overflow:hidden">'+
-          '<div style="width:'+pct+'%;height:100%;background:var(--accent);opacity:0.7;border-radius:3px"></div>'+
-        '</div>'+
-        '<div style="font-size:10px;color:var(--text3);width:18px;text-align:right">'+e[1]+'</div>'+
-      '</div>';
-    }).join('');
-    el.innerHTML = '<div class="panel-head"><div><div class="panel-title">'+title+'</div><div class="panel-sub">Count per assignee</div></div></div>'+
-      '<div class="panel-body">'+
-        (bars || '<div style="color:var(--text3);font-size:12px">No data</div>')+
-      '</div>';
+  var el = document.getElementById('dash-assignee');
+  if (!el) return;
+
+  var prim = {}, sec = {};
+  data.forEach(function(d) {
+    var n1 = ((d['Assignee'] && d['Assignee'].displayName) || d['Assignee.displayName'] || '').trim();
+    var n2 = ((d['Assignee (2nd)'] && d['Assignee (2nd)'].displayName) || d['Assignee (2nd).displayName'] || '').trim();
+    if (n1) { var f1 = _firstName(n1); prim[f1] = (prim[f1] || 0) + 1; }
+    if (n2) { var f2 = _firstName(n2); sec[f2] = (sec[f2] || 0) + 1; }
   });
+
+  var names = [];
+  var seen = {};
+  Object.keys(prim).concat(Object.keys(sec)).forEach(function(n) {
+    if (!seen[n]) { seen[n] = true; names.push(n); }
+  });
+  names.sort(function(a, b) {
+    return ((prim[b] || 0) + (sec[b] || 0)) - ((prim[a] || 0) + (sec[a] || 0));
+  });
+
+  var maxVal = 0;
+  names.forEach(function(n) { var t = (prim[n] || 0) + (sec[n] || 0); if (t > maxVal) maxVal = t; });
+  if (!maxVal) { el.innerHTML = ''; return; }
+
+  var rows = names.map(function(n) {
+    var p = prim[n] || 0, s = sec[n] || 0;
+    var px = Math.round((p / maxVal) * 100);
+    var sx = Math.round((s / maxVal) * 100);
+    var lo = Math.min(px, sx), hi = Math.max(px, sx);
+    var connector = (p > 0 && s > 0)
+      ? '<div style="position:absolute;top:50%;left:'+lo+'%;width:'+(hi-lo)+'%;height:2px;transform:translateY(-50%);background:linear-gradient(to right,var(--accent),var(--teal));border-radius:2px"></div>'
+      : '';
+    var d1 = p > 0
+      ? '<div style="position:absolute;top:50%;left:'+px+'%;width:10px;height:10px;border-radius:50%;background:var(--accent);transform:translate(-50%,-50%)" title="Primary: '+p+'"></div>'
+      : '';
+    var d2 = s > 0
+      ? '<div style="position:absolute;top:50%;left:'+sx+'%;width:7px;height:7px;border-radius:50%;background:var(--teal);transform:translate(-50%,-50%)" title="2nd: '+s+'"></div>'
+      : '';
+    var label = '<span style="font-size:10px;white-space:nowrap">'+
+      (p > 0 ? '<span style="color:var(--accent)">P:'+p+'</span>' : '')+
+      (p > 0 && s > 0 ? '<span style="color:var(--border)"> · </span>' : '')+
+      (s > 0 ? '<span style="color:var(--teal)">2nd:'+s+'</span>' : '')+
+      '</span>';
+    return '<div style="display:flex;align-items:center;gap:8px;padding:3px 0">'+
+      '<div style="width:68px;flex-shrink:0;font-size:11px;color:var(--text2);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+n+'</div>'+
+      '<div style="flex:1;position:relative;height:18px;background:var(--surface2);border-radius:4px">'+
+        connector+d1+d2+
+      '</div>'+
+      '<div style="width:72px;flex-shrink:0">'+label+'</div>'+
+    '</div>';
+  }).join('');
+
+  el.innerHTML =
+    '<div class="panel-head"><div>'+
+      '<div class="panel-title">Assignee involvement</div>'+
+      '<div class="panel-sub">Primary · 2nd — initiatives per person</div>'+
+    '</div></div>'+
+    '<div class="panel-body">'+
+      '<div style="display:flex;gap:12px;align-items:center;margin-bottom:8px">'+
+        '<span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)">'+
+          '<span style="width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block"></span>Primary'+
+        '</span>'+
+        '<span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)">'+
+          '<span style="width:7px;height:7px;border-radius:50%;background:var(--teal);display:inline-block"></span>2nd assignee'+
+        '</span>'+
+      '</div>'+
+      rows+
+    '</div>';
 }
 
 /* Render initiatives */

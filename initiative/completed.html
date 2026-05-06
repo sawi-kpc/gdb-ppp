@@ -21,6 +21,11 @@
     <select class="list-filter-select" id="done-bu-select" onchange="onDoneBUChange(this.value)">
       <option value="all">All BU owners</option>
     </select>
+    <div class="fb-sep"></div>
+    <span class="fb-label">Component:</span>
+    <select class="list-filter-select" id="comp-done-select" onchange="onDoneComponentChange(this.value)">
+      <option value="all">All components</option>
+    </select>
   </div>
   <div style="font-size:11px;color:#aaa;margin-bottom:10px" id="done-count"></div>
   <div id="done-list-wrap"></div>

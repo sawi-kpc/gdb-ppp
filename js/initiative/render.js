@@ -7,6 +7,9 @@ var charts={};
 var sumYearFilter=['ROADMAP_2026'],initYearFilter=['all'],showNoYear=false,sumStage='all',hideNoDate=false;
 var listYearFilter=['ROADMAP_2026'];
 var listAssigneeFilter='all';
+var sumComponentFilter='all';
+var listComponentFilter='all';
+var doneComponentFilter='all';
 
 var MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 var FULL_MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -219,16 +222,42 @@ function buildAttention(filtered){
   el.innerHTML=alerts.length?alerts.map(function(a){return'<div class="alert-item '+a.t+'"><span style="font-weight:700;font-size:10px;color:'+(a.t==='danger'?'#A32D2D':a.t==='warn'?'#633806':'#0C447C')+';min-width:48px">'+jiraLink(a.key)+'</span><span style="font-size:11.5px;color:var(--text)">'+a.txt+'</span></div>';}).join(''):'<div style="color:var(--text3);font-size:12px;padding:4px 0">No items requiring attention.</div>';
 }
 
+/* ── Component filter helpers ─────────────────────────────── */
+function _buildCompSelect(elId, data, curVal) {
+  var opts = new Set();
+  data.forEach(function(d) {
+    (d['Components'] || '').split(';').forEach(function(c) {
+      var t = c.trim(); if (t) opts.add(t);
+    });
+  });
+  var sel = document.getElementById(elId); if (!sel) return;
+  sel.innerHTML = '<option value="all">All components</option>' +
+    Array.from(opts).sort().map(function(c) {
+      return '<option value="' + c + '"' + (curVal === c ? ' selected' : '') + '>' + c + '</option>';
+    }).join('');
+  sel.value = curVal;
+}
+
+function _filterComp(data, val) {
+  if (!val || val === 'all') return data;
+  return data.filter(function(d) {
+    return (d['Components'] || '').split(';').map(function(c) { return c.trim(); }).indexOf(val) >= 0;
+  });
+}
+
 /* Render summary */
 function renderSummary(){
   var filtered=filterYear(allData,sumYearFilter);
   renderYF('yf-sum',sumYearFilter,function(btn,val){sumYearFilter=toggleYF(sumYearFilter,val);renderSummary();});
+  _buildCompSelect('comp-sum-select', allData, sumComponentFilter);
+  filtered=_filterComp(filtered, sumComponentFilter);
   buildMetrics(filtered,'sum-metrics');
   var sumStageEl=document.getElementById('sum-stage-filter');
   if(sumStageEl)sumStageEl.innerHTML=['all'].concat(STAGES).map(function(s){return'<button class="fb-btn '+(sumStage===s?'active':'')+'" onclick="sumStage=\''+s+'\';renderSummary()">'+(s==='all'?'All stages':s)+'</button>';}).join('');
   var tlData=sumStage==='all'?filtered:filtered.filter(function(d){return d.Status===sumStage;});
   renderTimeline(tlData);
 }
+function onSumComponentChange(val){ sumComponentFilter=val||'all'; renderSummary(); }
 
 /* ── Done initiatives list ────────────────── */
 var doneYearFilter=['all'];
@@ -257,6 +286,9 @@ function renderCompleted(){
     buSel.value=doneBUFilter;
   }
 
+  /* Component dropdown */
+  _buildCompSelect('comp-done-select', allData, doneComponentFilter);
+
   /* Filter */
   var filtered=filterYear(allData,doneYearFilter);
   var done=filtered.filter(function(d){return d.Status==='Done';});
@@ -265,6 +297,7 @@ function renderCompleted(){
       return(d['BU Owner']||'').replace(/@.+/,'').trim()===doneBUFilter;
     });
   }
+  done=_filterComp(done, doneComponentFilter);
 
   /* Sort by Go-live date DESC, fallback Actual End, Target End */
   done.sort(function(a,b){
@@ -328,10 +361,8 @@ function renderCompleted(){
   }).join('');
 }
 
-function onDoneBUChange(val){
-  doneBUFilter=val;
-  renderCompleted();
-}
+function onDoneBUChange(val){ doneBUFilter=val; renderCompleted(); }
+function onDoneComponentChange(val){ doneComponentFilter=val||'all'; renderCompleted(); }
 
 /* ══════════════════════════════════════════════════════════════
    DASHBOARD BUILD  —  initiative/dashboard.html
@@ -799,6 +830,9 @@ function renderList(){
     sel.value=listAssigneeFilter;
   }
 
+  /* Component dropdown */
+  _buildCompSelect('comp-list-select', allData, listComponentFilter);
+
   /* Filter data */
   var filtered=filterYear(allData,listYearFilter);
   if(listAssigneeFilter!=='all'){
@@ -808,6 +842,7 @@ function renderList(){
       return a1===listAssigneeFilter||a2===listAssigneeFilter;
     });
   }
+  filtered=_filterComp(filtered, listComponentFilter);
 
   /* Sort by Key asc: PPP-1, PPP-2, ... */
   filtered=filtered.slice().sort(function(a,b){
@@ -863,7 +898,5 @@ function renderList(){
     :'<tr><td colspan="11" style="text-align:center;color:var(--text3);padding:24px">No initiatives match this filter.</td></tr>';
 }
 
-function onAssigneeChange(val){
-  listAssigneeFilter = (val !== undefined && val !== null) ? val : 'all';
-  renderList();
-}
+function onAssigneeChange(val){ listAssigneeFilter=(val!==undefined&&val!==null)?val:'all'; renderList(); }
+function onListComponentChange(val){ listComponentFilter=val||'all'; renderList(); }

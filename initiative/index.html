@@ -31,7 +31,11 @@
       <div class="fb-sep"></div>
       <button class="fb-btn" id="btn-hide-nodate" onclick="toggleHideNoDate(this)">Hide no-date items</button>
       <div class="fb-sep"></div>
-      
+      <span class="fb-label">Component:</span>
+      <select class="list-filter-select" id="comp-sum-select" onchange="onSumComponentChange(this.value)">
+        <option value="all">All components</option>
+      </select>
+
     </div>
     <div class="tl-container"><div class="tl-inner" id="tl-inner"></div></div>
   </div>

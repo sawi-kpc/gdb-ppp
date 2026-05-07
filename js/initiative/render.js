@@ -717,27 +717,26 @@ function _buildConfHeatmap(data) {
 function _buildImpactCoverage(data) {
   var el = document.getElementById('dash-impact'); if (!el) return;
   var active = data.filter(function(d){ return d.Status !== 'Parking Lot'; });
-  if (!active.length) { el.innerHTML = '<div class="panel-head"><div><div class="panel-title">Business impact coverage</div></div></div><div class="panel-body"><div style="color:var(--text3);font-size:12px;padding:20px">No data</div></div>'; return; }
+  if (!active.length) { el.innerHTML = '<div class="panel-head"><div><div class="panel-title">Business impact (score) coverage</div></div></div><div class="panel-body"><div style="color:var(--text3);font-size:12px;padding:20px">No data</div></div>'; return; }
 
   var bars = GOAL_FIELDS.map(function(goal) {
     var contributors = active.filter(function(d){ return (parseFloat(d[goal])||0) > 0; });
     var pct = Math.round(contributors.length / active.length * 100);
     var avg = contributors.length ? contributors.reduce(function(s,d){ return s+(parseFloat(d[goal])||0); },0)/contributors.length : 0;
     var col = GOAL_COLORS[goal] || 'var(--accent)';
-    return '<div style="margin-bottom:14px">'+
-      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px">'+
-        '<div style="font-size:11px;color:var(--text);font-weight:500;max-width:60%;line-height:1.4">'+goal+'</div>'+
-        '<div style="font-size:10px;color:var(--text2);text-align:right">'+pct+'% <span style="color:var(--text3)">('+contributors.length+' / '+active.length+')</span></div>'+
+    return '<div style="margin-bottom:8px">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">'+
+        '<div style="font-size:11px;color:var(--text);font-weight:500;line-height:1.3">'+goal+'</div>'+
+        '<div style="font-size:10px;color:var(--text2);white-space:nowrap;margin-left:8px">'+pct+'% <span style="color:var(--text3)">('+contributors.length+'/'+active.length+')</span> <span style="color:var(--text3);margin-left:4px">avg '+avg.toFixed(0)+'%</span></div>'+
       '</div>'+
-      '<div style="height:14px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-bottom:3px">'+
+      '<div style="height:10px;background:var(--surface2);border-radius:3px;overflow:hidden">'+
         '<div style="width:'+pct+'%;height:100%;background:'+col+';border-radius:3px;transition:width .4s"></div>'+
       '</div>'+
-      '<div style="font-size:10px;color:var(--text3)">Avg weight: '+avg.toFixed(0)+'%</div>'+
     '</div>';
   }).join('');
 
-  el.innerHTML = '<div class="panel-head"><div><div class="panel-title">Business impact coverage</div><div class="panel-sub">% of active initiatives contributing to each goal</div></div></div>'+
-    '<div class="panel-body">'+bars+'</div>';
+  el.innerHTML = '<div class="panel-head"><div><div class="panel-title">Business impact (score) coverage</div><div class="panel-sub">% of active initiatives contributing to each goal</div></div></div>'+
+    '<div class="panel-body" style="padding-top:10px">'+bars+'</div>';
 }
 
 /* ── Section 4B: BAU vs Strategic ── */

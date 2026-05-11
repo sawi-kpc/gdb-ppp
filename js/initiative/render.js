@@ -4,12 +4,12 @@
 ══════════════════════════════════════════════ */
 
 var charts={};
-var sumYearFilter=['ROADMAP_2026'],initYearFilter=['all'],showNoYear=false,sumStage='all',hideNoDate=false;
+var sumYearFilter=['ROADMAP_2026'],initYearFilter=['all'],showNoYear=false,sumStageFilter=[],hideNoDate=false;
 var listYearFilter=['ROADMAP_2026'];
 var listAssigneeFilter='all';
 var listSearchQuery='';
 var listRoadmapFilter=[];
-var sumComponentFilter='all';
+var sumComponentFilter=[];
 var listComponentFilter='all';
 var doneComponentFilter='all';
 
@@ -248,18 +248,70 @@ function _filterComp(data, val) {
 }
 
 /* Render summary */
+function _buildCheckDropdown(wrapperId, btnLabelId, panelId, listId, values, activeArr, colorMap, toggleFn, clearFn) {
+  var listEl = document.getElementById(listId); if (!listEl) return;
+  listEl.innerHTML = values.map(function(v) {
+    var checked = activeArr.indexOf(v) >= 0;
+    var dot = (colorMap && colorMap[v])
+      ? '<span style="width:8px;height:8px;border-radius:50%;background:'+colorMap[v]+';display:inline-block;flex-shrink:0"></span>'
+      : '';
+    return '<label style="display:flex;align-items:center;gap:8px;padding:5px 12px;cursor:pointer;font-size:12px;color:var(--text)" '+
+      'onmouseover="this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'\'">'+
+      '<input type="checkbox"'+(checked?' checked':'')+' onchange="'+toggleFn+'(\''+v+'\')" style="accent-color:var(--accent);width:13px;height:13px;flex-shrink:0">'+
+      dot+'<span>'+v+'</span></label>';
+  }).join('');
+  /* button label */
+  var btnLabel = document.getElementById(btnLabelId);
+  if (btnLabel) btnLabel.textContent = activeArr.length === 0 ? 'All' : activeArr.length === 1 ? activeArr[0] : activeArr.length+' selected';
+  var btn = document.getElementById(wrapperId) && document.getElementById(wrapperId).querySelector('button');
+  if (btn) btn.style.borderColor = activeArr.length > 0 ? 'var(--accent)' : 'var(--border)';
+}
+
 function renderSummary(){
   var filtered=filterYear(allData,sumYearFilter);
   renderYF('yf-sum',sumYearFilter,function(btn,val){sumYearFilter=toggleYF(sumYearFilter,val);renderSummary();});
-  _buildCompSelect('comp-sum-select', allData, sumComponentFilter);
-  filtered=_filterComp(filtered, sumComponentFilter);
+
+  /* Stage dropdown */
+  _buildCheckDropdown('stage-dropdown-wrap','stage-btn-label','stage-dropdown-panel','stage-checkbox-list',
+    STAGES, sumStageFilter, SC, 'onSumStageToggle', 'clearSumStageFilter');
+
+  /* Component dropdown */
+  var compVals=[];
+  allData.forEach(function(d){
+    (d['Components']||'').split(';').forEach(function(c){ var t=c.trim(); if(t&&compVals.indexOf(t)<0)compVals.push(t); });
+  });
+  compVals.sort();
+  _buildCheckDropdown('comp-dropdown-wrap','comp-btn-label','comp-dropdown-panel','comp-checkbox-list',
+    compVals, sumComponentFilter, null, 'onSumCompToggle', 'clearSumCompFilter');
+
+  /* Apply filters */
+  if(sumStageFilter.length>0) filtered=filtered.filter(function(d){return sumStageFilter.indexOf(d.Status)>=0;});
+  if(sumComponentFilter.length>0){
+    filtered=filtered.filter(function(d){
+      var comps=(d['Components']||'').split(';').map(function(c){return c.trim();});
+      return sumComponentFilter.some(function(f){return comps.indexOf(f)>=0;});
+    });
+  }
+
   buildMetrics(filtered,'sum-metrics');
-  var sumStageEl=document.getElementById('sum-stage-filter');
-  if(sumStageEl)sumStageEl.innerHTML=['all'].concat(STAGES).map(function(s){return'<button class="fb-btn '+(sumStage===s?'active':'')+'" onclick="sumStage=\''+s+'\';renderSummary()">'+(s==='all'?'All stages':s)+'</button>';}).join('');
-  var tlData=sumStage==='all'?filtered:filtered.filter(function(d){return d.Status===sumStage;});
-  renderTimeline(tlData);
+  renderTimeline(filtered);
 }
-function onSumComponentChange(val){ sumComponentFilter=val||'all'; renderSummary(); }
+
+function onSumStageToggle(val){
+  var idx=sumStageFilter.indexOf(val);
+  if(idx>=0)sumStageFilter.splice(idx,1); else sumStageFilter.push(val);
+  renderSummary();
+  var panel=document.getElementById('stage-dropdown-panel'); if(panel)panel.style.display='block';
+}
+function clearSumStageFilter(){ sumStageFilter=[]; document.getElementById('stage-dropdown-panel').style.display='none'; renderSummary(); }
+
+function onSumCompToggle(val){
+  var idx=sumComponentFilter.indexOf(val);
+  if(idx>=0)sumComponentFilter.splice(idx,1); else sumComponentFilter.push(val);
+  renderSummary();
+  var panel=document.getElementById('comp-dropdown-panel'); if(panel)panel.style.display='block';
+}
+function clearSumCompFilter(){ sumComponentFilter=[]; document.getElementById('comp-dropdown-panel').style.display='none'; renderSummary(); }
 
 /* ── Done initiatives list ────────────────── */
 var doneYearFilter=['all'];

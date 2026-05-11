@@ -27,15 +27,34 @@
       <select class="tl-ctrl-select" id="tl-end" onchange="renderSummary()"></select>
       <div class="fb-sep"></div>
       <span class="tl-ctrl-label">Stage:</span>
-      <div id="sum-stage-filter" style="display:flex;gap:6px;flex-wrap:wrap"></div>
-      <div class="fb-sep"></div>
-      <button class="fb-btn" id="btn-hide-nodate" onclick="toggleHideNoDate(this)">Hide no-date items</button>
+      <div style="position:relative" id="stage-dropdown-wrap">
+        <button onclick="toggleDropdown('stage-dropdown-panel')"
+          style="height:26px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);font-size:11.5px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap">
+          <span id="stage-btn-label">All</span><span style="font-size:9px;color:var(--text3)">▾</span>
+        </button>
+        <div id="stage-dropdown-panel" style="display:none;position:absolute;top:30px;left:0;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.18);padding:8px 0;min-width:170px">
+          <div id="stage-checkbox-list"></div>
+          <div style="border-top:1px solid var(--border);margin-top:6px;padding:6px 12px 2px">
+            <button onclick="clearSumStageFilter()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Clear all</button>
+          </div>
+        </div>
+      </div>
       <div class="fb-sep"></div>
       <span class="fb-label">Component:</span>
-      <select class="list-filter-select" id="comp-sum-select" onchange="onSumComponentChange(this.value)">
-        <option value="all">All components</option>
-      </select>
-
+      <div style="position:relative" id="comp-dropdown-wrap">
+        <button onclick="toggleDropdown('comp-dropdown-panel')"
+          style="height:26px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);font-size:11.5px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap">
+          <span id="comp-btn-label">All</span><span style="font-size:9px;color:var(--text3)">▾</span>
+        </button>
+        <div id="comp-dropdown-panel" style="display:none;position:absolute;top:30px;left:0;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.18);padding:8px 0;min-width:170px">
+          <div id="comp-checkbox-list"></div>
+          <div style="border-top:1px solid var(--border);margin-top:6px;padding:6px 12px 2px">
+            <button onclick="clearSumCompFilter()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Clear all</button>
+          </div>
+        </div>
+      </div>
+      <div class="fb-sep"></div>
+      <button class="fb-btn" id="btn-hide-nodate" onclick="toggleHideNoDate(this)">Hide no-date items</button>
     </div>
     <div class="tl-container"><div class="tl-inner" id="tl-inner"></div></div>
   </div>
@@ -82,6 +101,22 @@ window.addEventListener('DOMContentLoaded', function() {
       document.getElementById('gdb-loading').style.display = 'flex';
       document.getElementById('init-content').style.display = 'none';
       loadData();
+    }
+  });
+});
+</script>
+<script>
+function toggleDropdown(panelId) {
+  var panel = document.getElementById(panelId);
+  if (!panel) return;
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', function(e) {
+  ['stage-dropdown-wrap','comp-dropdown-wrap'].forEach(function(id) {
+    var wrap = document.getElementById(id);
+    if (wrap && !wrap.contains(e.target)) {
+      var panel = wrap.querySelector('[id$="-dropdown-panel"]');
+      if (panel) panel.style.display = 'none';
     }
   });
 });

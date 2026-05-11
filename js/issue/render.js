@@ -7,7 +7,7 @@
 var _filterStatuses = {};   /* multi-select: {} = show all */
 var _filterPriority = 'all';
 var _filterSeverity = 'all';
-var _filterComp     = 'all';
+var _filterComp     = [];   /* multi-select array */
 var _filterGroup    = 'all';
 var _searchQ        = '';
 var _sortCol        = 'FailureOccurs';
@@ -656,9 +656,35 @@ function buildPerfHeatmap(data) {
 }
 
 
+/* ── Shared checkbox-dropdown builder ───────────────────── */
+var STATUS_COLORS = {
+  'Open': 'var(--down)', 'Investigating': 'var(--amber)',
+  'In Progress': 'var(--accent)', 'Resolved': 'var(--teal)', 'Done': 'var(--up)'
+};
+function _buildIssueDropdown(listId, labelId, btnId, vals, colorMap, isCheckedFn) {
+  var listEl = document.getElementById(listId); if (!listEl) return;
+  listEl.innerHTML = vals.map(function(v) {
+    var dot = (colorMap && colorMap[v])
+      ? '<span style="width:8px;height:8px;border-radius:50%;background:'+colorMap[v]+';display:inline-block;flex-shrink:0"></span>'
+      : '';
+    return '<label style="display:flex;align-items:center;gap:8px;padding:5px 12px;cursor:pointer;font-size:12px;color:var(--text)" '+
+      'onmouseover="this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'\'">'+
+      '<input type="checkbox"'+(isCheckedFn(v)?' checked':'')+' onchange="'+listEl.dataset.togglefn+'(\''+v+'\')" style="accent-color:var(--accent);width:13px;height:13px;flex-shrink:0">'+
+      dot+'<span>'+v+'</span></label>';
+  }).join('');
+  /* update button label */
+  var active = vals.filter(isCheckedFn);
+  var lbl = document.getElementById(labelId);
+  if (lbl) lbl.textContent = active.length === 0 ? lbl.dataset.empty||'All'
+    : active.length === 1 ? active[0] : active.length+' selected';
+  var btn = document.getElementById(btnId);
+  if (btn) btn.style.borderColor = active.length > 0 ? 'var(--accent)' : 'var(--border)';
+}
+
 /* ── Populate filter dropdowns ───────────────────────────── */
 function populateFilters(data) {
   var priorities = [], severities = [], comps = [], groups = [];
+  var allStatuses = ['Open','Investigating','In Progress','Resolved','Done'];
   data.forEach(function(d) {
     if (d.Priority && priorities.indexOf(d.Priority) < 0) priorities.push(d.Priority);
     if (d.Severity && severities.indexOf(d.Severity) < 0) severities.push(d.Severity);
@@ -669,6 +695,23 @@ function populateFilters(data) {
     var g = _getGroupSafe(d);
     if (g && groups.indexOf(g) < 0) groups.push(g);
   });
+
+  /* Status checkbox dropdown */
+  var statusListEl = document.getElementById('status-checkbox-list');
+  if (statusListEl) {
+    statusListEl.dataset.togglefn = 'onIssueStatusToggle';
+    _buildIssueDropdown('status-checkbox-list','status-btn-label','status-dropdown-btn',
+      allStatuses, STATUS_COLORS, function(v){ return !!_filterStatuses[v]; });
+  }
+
+  /* Component checkbox dropdown */
+  comps.sort();
+  var compListEl = document.getElementById('comp-checkbox-list');
+  if (compListEl) {
+    compListEl.dataset.togglefn = 'onIssueCompToggle';
+    _buildIssueDropdown('comp-checkbox-list','comp-btn-label','comp-dropdown-btn',
+      comps, null, function(v){ return _filterComp.indexOf(v) >= 0; });
+  }
 
   function fillSelect(id, values) {
     var sel = document.getElementById(id);
@@ -682,10 +725,9 @@ function populateFilters(data) {
     });
     if (cur) sel.value = cur;
   }
-  fillSelect('filter-priority',  priorities);
-  fillSelect('filter-severity',  severities);
-  fillSelect('filter-component', comps);
-  fillSelect('filter-group',     groups);
+  fillSelect('filter-priority', priorities);
+  fillSelect('filter-severity', severities);
+  fillSelect('filter-group',    groups);
 }
 
 /* ── Filter + sort pipeline ──────────────────────────────── */
@@ -704,9 +746,9 @@ function applyFilters() {
     if (activeStatuses.length > 0 && activeStatuses.indexOf(d.Status) < 0) return false;
     if (_filterPriority !== 'all' && d.Priority !== _filterPriority) return false;
     if (_filterSeverity !== 'all' && d.Severity !== _filterSeverity) return false;
-    if (_filterComp !== 'all') {
+    if (_filterComp.length > 0) {
       var comps = (d.Components||'').split(';').map(function(c){return c.trim();});
-      if (comps.indexOf(_filterComp) < 0) return false;
+      if (!_filterComp.some(function(f){ return comps.indexOf(f) >= 0; })) return false;
     }
     if (_filterGroup !== 'all') {
       if (_getGroupSafe(d) !== _filterGroup) return false;
@@ -732,30 +774,35 @@ function applyFilters() {
   else                         buildTable(out);
 }
 
-function onStatusFilter(status) {
-  if (status === 'all') {
-    _filterStatuses = {};
-  } else {
-    _filterStatuses[status] = !_filterStatuses[status];
-    if (!_filterStatuses[status]) delete _filterStatuses[status];
-  }
-  /* update button active states */
-  var active = Object.keys(_filterStatuses).filter(function(k){ return _filterStatuses[k]; });
-  document.querySelectorAll('.status-btn').forEach(function(btn){
-    var s = btn.dataset.status;
-    if (s === 'all') {
-      btn.classList.toggle('active', active.length === 0);
-    } else {
-      btn.classList.toggle('active', _filterStatuses[s] === true);
-    }
-  });
+function onIssueStatusToggle(v) {
+  if (_filterStatuses[v]) delete _filterStatuses[v]; else _filterStatuses[v] = true;
+  populateFilters(window.issueData || []);
+  var panel = document.getElementById('status-dropdown-panel'); if (panel) panel.style.display = 'block';
+  applyFilters();
+}
+function clearIssueStatus() {
+  _filterStatuses = {};
+  var panel = document.getElementById('status-dropdown-panel'); if (panel) panel.style.display = 'none';
+  populateFilters(window.issueData || []);
+  applyFilters();
+}
+function onIssueCompToggle(v) {
+  var i = _filterComp.indexOf(v);
+  if (i >= 0) _filterComp.splice(i, 1); else _filterComp.push(v);
+  populateFilters(window.issueData || []);
+  var panel = document.getElementById('comp-dropdown-panel'); if (panel) panel.style.display = 'block';
+  applyFilters();
+}
+function clearIssueComp() {
+  _filterComp = [];
+  var panel = document.getElementById('comp-dropdown-panel'); if (panel) panel.style.display = 'none';
+  populateFilters(window.issueData || []);
   applyFilters();
 }
 
 function onDropdownChange() {
   _filterPriority = (document.getElementById('filter-priority')||{}).value || 'all';
   _filterSeverity = (document.getElementById('filter-severity')||{}).value || 'all';
-  _filterComp     = (document.getElementById('filter-component')||{}).value || 'all';
   _filterGroup    = (document.getElementById('filter-group')||{}).value || 'all';
   applyFilters();
 }

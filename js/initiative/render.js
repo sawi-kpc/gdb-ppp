@@ -898,16 +898,33 @@ function renderList(){
   /* Component dropdown */
   _buildCompSelect('comp-list-select', allData, listComponentFilter);
 
-  /* Roadmap status pills (multi-select) */
-  var rsPills=document.getElementById('rs-list-pills');
-  if(rsPills){
+  /* Roadmap status dropdown checkboxes */
+  var rsCheckList=document.getElementById('rs-checkbox-list');
+  if(rsCheckList){
     var rsVals=[];
     allData.forEach(function(d){ var v=d['Roadmap Status']||''; if(v&&rsVals.indexOf(v)<0)rsVals.push(v); });
     rsVals.sort();
-    rsPills.innerHTML=rsVals.map(function(v){
-      var active=listRoadmapFilter.indexOf(v)>=0;
-      return '<button class="fb-btn'+(active?' active':'')+'" onclick="onListRoadmapToggle(\''+v+'\')">'+v+'</button>';
+    rsCheckList.innerHTML=rsVals.map(function(v){
+      var checked=listRoadmapFilter.indexOf(v)>=0;
+      var dot=RC[v]?'<span style="width:8px;height:8px;border-radius:50%;background:'+RC[v]+';display:inline-block;flex-shrink:0"></span>':'';
+      return '<label style="display:flex;align-items:center;gap:8px;padding:5px 12px;cursor:pointer;font-size:12px;color:var(--text);transition:background 0.1s" '+
+        'onmouseover="this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'\'">'+
+        '<input type="checkbox" '+(checked?'checked':'')+' onchange="onListRoadmapToggle(\''+v+'\')" style="accent-color:var(--accent);width:13px;height:13px;flex-shrink:0">'+
+        dot+
+        '<span>'+v+'</span>'+
+      '</label>';
     }).join('');
+  }
+  /* Update button label */
+  var rsBtnLabel=document.getElementById('rs-btn-label');
+  if(rsBtnLabel){
+    rsBtnLabel.textContent=listRoadmapFilter.length===0
+      ?'All statuses'
+      :listRoadmapFilter.length===1
+        ?listRoadmapFilter[0]
+        :listRoadmapFilter.length+' selected';
+    var rsBtn=document.getElementById('rs-dropdown-btn');
+    if(rsBtn) rsBtn.style.borderColor=listRoadmapFilter.length>0?'var(--accent)':'var(--border)';
   }
 
   /* Sync search box value */
@@ -995,4 +1012,7 @@ function onListRoadmapToggle(val){
   var idx=listRoadmapFilter.indexOf(val);
   if(idx>=0)listRoadmapFilter.splice(idx,1); else listRoadmapFilter.push(val);
   renderList();
+  /* keep panel open after toggling */
+  var panel=document.getElementById('rs-dropdown-panel');
+  if(panel) panel.style.display='block';
 }

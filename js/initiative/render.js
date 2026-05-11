@@ -11,7 +11,7 @@ var listSearchQuery='';
 var listRoadmapFilter=[];
 var sumComponentFilter=[];
 var listComponentFilter='all';
-var doneComponentFilter='all';
+var doneComponentFilter=[];
 
 var MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 var FULL_MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -325,7 +325,8 @@ function clearSumCompFilter(){ sumComponentFilter=[]; document.getElementById('c
 
 /* ── Done initiatives list ────────────────── */
 var doneYearFilter=['all'];
-var doneBUFilter='all';
+var doneBUFilter=[];
+var doneSearchQuery='';
 
 function renderCompleted(){
   /* Year filter */
@@ -335,33 +336,46 @@ function renderCompleted(){
   });
 
   /* BU Owner dropdown */
-  var buOwners=new Set();
+  var buOwnerVals=[];
   allData.filter(function(d){return d.Status==='Done';}).forEach(function(d){
     var bu=(d['BU Owner']||'').replace(/@.+/,'').trim();
-    if(bu)buOwners.add(bu);
+    if(bu&&buOwnerVals.indexOf(bu)<0)buOwnerVals.push(bu);
   });
-  var buSel=document.getElementById('done-bu-select');
-  if(buSel){
-    var curBU=buSel.value||'all';
-    buSel.innerHTML='<option value="all">All BU owners</option>'+
-      Array.from(buOwners).sort().map(function(bu){
-        return'<option value="'+bu+'"'+(curBU===bu?' selected':'')+'>'+bu+'</option>';
-      }).join('');
-    buSel.value=doneBUFilter;
-  }
+  buOwnerVals.sort();
+  _buildCheckDropdown('done-bu-wrap','done-bu-label','done-bu-panel','done-bu-list',
+    buOwnerVals, doneBUFilter, null, 'onDoneBUToggle', 'clearDoneBUFilter');
 
   /* Component dropdown */
-  _buildCompSelect('comp-done-select', allData, doneComponentFilter);
+  var doneCompVals=[];
+  allData.forEach(function(d){
+    (d['Components']||'').split(';').forEach(function(c){ var t=c.trim(); if(t&&doneCompVals.indexOf(t)<0)doneCompVals.push(t); });
+  });
+  doneCompVals.sort();
+  _buildCheckDropdown('done-comp-wrap','done-comp-label','done-comp-panel','done-comp-list',
+    doneCompVals, doneComponentFilter, null, 'onDoneCompToggle', 'clearDoneCompFilter');
+
+  /* Sync search */
+  var doneSearchEl=document.getElementById('done-search');
+  if(doneSearchEl&&doneSearchEl.value!==doneSearchQuery)doneSearchEl.value=doneSearchQuery;
 
   /* Filter */
   var filtered=filterYear(allData,doneYearFilter);
   var done=filtered.filter(function(d){return d.Status==='Done';});
-  if(doneBUFilter!=='all'){
+  if(doneBUFilter.length>0){
     done=done.filter(function(d){
-      return(d['BU Owner']||'').replace(/@.+/,'').trim()===doneBUFilter;
+      return doneBUFilter.indexOf((d['BU Owner']||'').replace(/@.+/,'').trim())>=0;
     });
   }
-  done=_filterComp(done, doneComponentFilter);
+  if(doneComponentFilter.length>0){
+    done=done.filter(function(d){
+      var comps=(d['Components']||'').split(';').map(function(c){return c.trim();});
+      return doneComponentFilter.some(function(f){return comps.indexOf(f)>=0;});
+    });
+  }
+  if(doneSearchQuery.trim()){
+    var q=doneSearchQuery.trim().toLowerCase();
+    done=done.filter(function(d){return(d.Summary||'').toLowerCase().indexOf(q)>=0;});
+  }
 
   /* Sort by Go-live date DESC, fallback Actual End, Target End */
   done.sort(function(a,b){
@@ -425,8 +439,11 @@ function renderCompleted(){
   }).join('');
 }
 
-function onDoneBUChange(val){ doneBUFilter=val; renderCompleted(); }
-function onDoneComponentChange(val){ doneComponentFilter=val||'all'; renderCompleted(); }
+function onDoneBUToggle(val){ var i=doneBUFilter.indexOf(val); if(i>=0)doneBUFilter.splice(i,1); else doneBUFilter.push(val); renderCompleted(); var p=document.getElementById('done-bu-panel'); if(p)p.style.display='block'; }
+function clearDoneBUFilter(){ doneBUFilter=[]; document.getElementById('done-bu-panel').style.display='none'; renderCompleted(); }
+function onDoneCompToggle(val){ var i=doneComponentFilter.indexOf(val); if(i>=0)doneComponentFilter.splice(i,1); else doneComponentFilter.push(val); renderCompleted(); var p=document.getElementById('done-comp-panel'); if(p)p.style.display='block'; }
+function clearDoneCompFilter(){ doneComponentFilter=[]; document.getElementById('done-comp-panel').style.display='none'; renderCompleted(); }
+function onDoneSearchChange(val){ doneSearchQuery=val||''; renderCompleted(); }
 
 /* ══════════════════════════════════════════════════════════════
    DASHBOARD BUILD  —  initiative/dashboard.html

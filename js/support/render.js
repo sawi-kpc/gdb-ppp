@@ -141,7 +141,7 @@ function _buildSupportDropdown(listId, labelId, btnId, vals, colorMap, activeArr
     var dot = (colorMap && colorMap[v])
       ? '<span style="width:8px;height:8px;border-radius:50%;background:'+colorMap[v]+';display:inline-block;flex-shrink:0"></span>'
       : '';
-    var label = colorMap ? v : fmtGroup(v);
+    var label = v;
     return '<label style="display:flex;align-items:center;gap:8px;padding:5px 12px;cursor:pointer;font-size:12px;color:var(--text);white-space:nowrap" '+
       'onmouseover="this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'\'">'+
       '<input type="checkbox"'+(activeArr.indexOf(v)>=0?' checked':'')+' onchange="'+toggleFn+'(\''+v+'\')" style="accent-color:var(--accent);width:13px;height:13px;flex-shrink:0">'+
@@ -149,7 +149,7 @@ function _buildSupportDropdown(listId, labelId, btnId, vals, colorMap, activeArr
   }).join('');
   var lbl = document.getElementById(labelId);
   if (lbl) lbl.textContent = activeArr.length === 0 ? lbl.dataset.empty||'All'
-    : activeArr.length === 1 ? (colorMap ? activeArr[0] : fmtGroup(activeArr[0]))
+    : activeArr.length === 1 ? activeArr[0]
     : activeArr.length+' selected';
   var btn = document.getElementById(btnId);
   if (btn) btn.style.borderColor = activeArr.length > 0 ? 'var(--accent)' : 'var(--border)';

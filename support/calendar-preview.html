@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Support Task Calendar — Preview</title>
+<style>
+/* ── Theme vars ── */
+:root {
+  --bg:#fdf6e3;--surface:#f5efe0;--surface2:#ede7d3;--border:#d5c9b0;
+  --text:#3a2e1e;--text2:#7a6a55;--text3:#a8967e;
+  --up:#2d6a3f;--down:#a63228;--accent:#7c5c1e;
+  --amber:#8a6200;--teal:#1a6b62;--purple:#6b4fa0;
+}
+[data-theme="dark"] {
+  --bg:#0d1117;--surface:#161b22;--surface2:#1c2330;--border:#30363d;
+  --text:#e6edf3;--text2:#8b949e;--text3:#484f58;
+  --up:#3fb950;--down:#f85149;--accent:#58a6ff;
+  --amber:#f59e0b;--teal:#22d3a4;--purple:#a78bfa;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;padding:20px 24px;min-height:100vh}
+
+/* ── Panel ── */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:visible}
+.panel-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);gap:12px;flex-wrap:wrap}
+.panel-title{font-size:15px;font-weight:700;color:var(--text)}
+.panel-sub{font-size:11.5px;color:var(--text2);margin-top:2px}
+.panel-body{padding:14px 18px}
+
+/* ── Filter bar ── */
+.filter-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 18px;border-bottom:1px solid var(--border)}
+.fb-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.fb-sep{width:1px;height:18px;background:var(--border);flex-shrink:0}
+
+/* ── Dropdown ── */
+.dd-wrap{position:relative}
+.dd-btn{height:26px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);font-size:11.5px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.dd-btn:hover{border-color:var(--text3)}
+.dd-arrow{font-size:9px;color:var(--text3)}
+.dd-panel{display:none;position:absolute;top:30px;left:0;z-index:300;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 20px rgba(0,0,0,.18);padding:8px 0;min-width:160px}
+.dd-panel.open{display:block}
+.dd-item{display:flex;align-items:center;gap:8px;padding:5px 12px;cursor:pointer;font-size:12px;color:var(--text);white-space:nowrap}
+.dd-item:hover{background:var(--surface2)}
+.dd-item input{accent-color:var(--accent);width:13px;height:13px;flex-shrink:0;cursor:pointer}
+.dd-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dd-clear{border-top:1px solid var(--border);margin-top:6px;padding:6px 12px 2px}
+.dd-clear button{font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0}
+.dd-clear button:hover{color:var(--text)}
+
+/* ── Search ── */
+.search-wrap{position:relative}
+.search-wrap::before{content:'⌕';position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px;pointer-events:none}
+.search-wrap input{height:26px;padding:0 10px 0 26px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);font-size:11.5px;width:180px;outline:none}
+.search-wrap input:focus{border-color:var(--accent)}
+
+/* ── Month nav ── */
+.month-nav{display:flex;align-items:center;gap:6px}
+.nav-btn{width:26px;height:26px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;line-height:1}
+.nav-btn:hover{background:var(--border)}
+.nav-month{font-size:13px;font-weight:700;color:var(--text);min-width:100px;text-align:center}
+.today-btn{height:26px;padding:0 12px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);font-size:11.5px;cursor:pointer;font-weight:600}
+.today-btn:hover{background:var(--border)}
+
+/* ── Calendar grid ── */
+.cal-grid{width:100%;border-collapse:collapse}
+.cal-grid th{padding:8px 10px;font-size:10.5px;font-weight:700;color:var(--text2);text-align:center;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid var(--border);background:var(--surface2)}
+.cal-grid th.weekend{color:var(--text3)}
+.cal-cell{vertical-align:top;border:1px solid var(--border);padding:6px;min-height:120px;width:calc(100%/7);background:var(--surface)}
+.cal-cell.other-month{background:var(--bg);opacity:.6}
+.cal-cell.weekend{background:var(--surface2)}
+.cal-cell.other-month.weekend{background:var(--bg)}
+.date-num{font-size:11px;font-weight:600;color:var(--text2);margin-bottom:4px;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%}
+.date-num.today{background:var(--accent);color:#fff}
+
+/* ── Task chip ── */
+.task-chip{display:flex;align-items:center;gap:4px;padding:3px 5px;border-radius:4px;margin-bottom:3px;cursor:pointer;background:var(--surface2);border:1px solid var(--border);border-left:3px solid transparent;min-width:0;transition:opacity .15s}
+.task-chip:hover{border-color:var(--text3)}
+.task-chip.overdue{border-left-color:var(--down)}
+.task-chip.done-chip{opacity:.6}
+.status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.task-key{font-size:10px;font-weight:700;color:var(--accent);white-space:nowrap;flex-shrink:0}
+.task-summary{font-size:10.5px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.task-summary.done-txt{text-decoration:line-through;color:var(--text3)}
+.group-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.more-link{font-size:10px;color:var(--accent);cursor:pointer;padding:2px 4px;display:inline-block}
+.more-link:hover{text-decoration:underline}
+
+/* ── Theme toggle ── */
+.theme-btn{width:30px;height:30px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.theme-btn:hover{background:var(--border)}
+
+/* ── Count label ── */
+.count-lbl{font-size:11px;color:var(--text3);margin-left:auto}
+</style>
+</head>
+<body>
+
+<div class="panel">
+
+  <!-- Header: title + month nav + theme toggle -->
+  <div class="panel-head">
+    <div>
+      <div class="panel-title">Support Task Calendar</div>
+      <div class="panel-sub">Tasks by due date</div>
+    </div>
+    <div class="month-nav">
+      <button class="nav-btn" onclick="changeMonth(-1)">&#8249;</button>
+      <div class="nav-month" id="month-label"></div>
+      <button class="nav-btn" onclick="changeMonth(1)">&#8250;</button>
+      <button class="today-btn" onclick="goToday()">Today</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+      <span class="count-lbl" id="count-lbl"></span>
+      <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle theme">☀</button>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="filter-bar">
+    <!-- Status -->
+    <span class="fb-label">Status</span>
+    <div class="dd-wrap" id="status-wrap">
+      <button class="dd-btn" id="status-btn" onclick="toggleDD('status-panel')">
+        <span id="status-lbl" data-empty="All Statuses">All Statuses</span>
+        <span class="dd-arrow">▾</span>
+      </button>
+      <div class="dd-panel" id="status-panel">
+        <div id="status-list"></div>
+        <div class="dd-clear"><button onclick="clearFilter('status')">Clear all</button></div>
+      </div>
+    </div>
+
+    <div class="fb-sep"></div>
+
+    <!-- Group -->
+    <span class="fb-label">Group</span>
+    <div class="dd-wrap" id="group-wrap">
+      <button class="dd-btn" id="group-btn" onclick="toggleDD('group-panel')">
+        <span id="group-lbl" data-empty="All Groups">All Groups</span>
+        <span class="dd-arrow">▾</span>
+      </button>
+      <div class="dd-panel" id="group-panel">
+        <div id="group-list"></div>
+        <div class="dd-clear"><button onclick="clearFilter('group')">Clear all</button></div>
+      </div>
+    </div>
+
+    <div class="fb-sep"></div>
+
+    <!-- Search -->
+    <div class="search-wrap">
+      <input type="search" id="search-input" placeholder="Search key or summary…" oninput="renderCalendar()">
+    </div>
+  </div>
+
+  <!-- Calendar -->
+  <div class="panel-body" style="padding:0">
+    <table class="cal-grid" id="cal-table">
+      <thead>
+        <tr>
+          <th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th>
+          <th class="weekend">Sat</th><th class="weekend">Sun</th>
+        </tr>
+      </thead>
+      <tbody id="cal-body"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+/* ── Sample data ── */
+var TASKS = [
+  {key:'GIT-44', summary:'Set Up Mailing Campaign - April', status:'To do',    group:'marketing_automation',  due:'2026-05-01'},
+  {key:'GIT-61', summary:'Set Up New Welcome Series',       status:'To do',    group:'marketing_automation',  due:'2026-05-01'},
+  {key:'GIT-62', summary:'Set Up Birthday Campaign',        status:'In Progress', group:'marketing_automation', due:'2026-05-05'},
+  {key:'GIT-63', summary:'Set Up NPD Automation',           status:'To do',    group:'marketing_automation',  due:'2026-05-11'},
+  {key:'GIT-66', summary:'Set Up SMS Promotion Flow',       status:'In Progress', group:'firster_tiktok_report', due:'2026-05-13'},
+  {key:'GIT-64', summary:'Set Up At-Risk Re-engagement',    status:'Done',     group:'marketing_automation',  due:'2026-05-16'},
+  {key:'GIT-65', summary:'Set Up May Seasonal Push',        status:'To do',    group:'firster_tiktok_report', due:'2026-05-18'},
+  {key:'GIT-70', summary:'Monthly Report Q2 Preparation',  status:'In Progress', group:'firster_tiktok_report', due:'2026-05-20'},
+  {key:'GIT-71', summary:'Content Calendar Sync',           status:'Done',     group:'marketing_automation',  due:'2026-05-22'},
+  {key:'GIT-72', summary:'Performance Review Meeting',      status:'To do',    group:'firster_tiktok_report', due:'2026-05-28'},
+];
+
+var STATUS_DOT = {'To do':'var(--amber)','In Progress':'var(--accent)','Done':'var(--up)'};
+var GROUP_DOT  = {'marketing_automation':'var(--teal)','firster_tiktok_report':'var(--purple)'};
+var STATUSES   = ['To do','In Progress','Done'];
+var GROUPS     = ['marketing_automation','firster_tiktok_report'];
+
+var TODAY      = new Date(2026, 4, 11); /* May 11 2026 for demo */
+var curYear    = TODAY.getFullYear();
+var curMonth   = TODAY.getMonth(); /* 0-based */
+
+var filterStatus = [];
+var filterGroup  = [];
+
+/* ── Filter dropdowns ── */
+function buildDropdowns() {
+  buildDD('status-list', STATUSES, filterStatus, 'onStatusToggle', STATUS_DOT);
+  buildDD('group-list',  GROUPS,   filterGroup,  'onGroupToggle',  GROUP_DOT);
+}
+
+function buildDD(listId, vals, arr, fn, colorMap) {
+  var el = document.getElementById(listId); if (!el) return;
+  el.innerHTML = vals.map(function(v) {
+    var dot = colorMap && colorMap[v]
+      ? '<span class="dd-dot" style="background:'+colorMap[v]+'"></span>' : '';
+    return '<label class="dd-item">' +
+      '<input type="checkbox"' + (arr.indexOf(v)>=0?' checked':'') + ' onchange="'+fn+'(\''+v+'\')">' +
+      dot + '<span>' + v + '</span></label>';
+  }).join('');
+  updateBtnLabel(listId.replace('-list',''), arr);
+}
+
+function updateBtnLabel(prefix, arr) {
+  var lbl = document.getElementById(prefix+'-lbl');
+  var btn = document.getElementById(prefix+'-btn');
+  if (!lbl) return;
+  lbl.textContent = arr.length===0 ? lbl.dataset.empty
+    : arr.length===1 ? arr[0] : arr.length+' selected';
+  if (btn) btn.style.borderColor = arr.length>0 ? 'var(--accent)' : 'var(--border)';
+}
+
+function onStatusToggle(v) {
+  var i = filterStatus.indexOf(v);
+  if (i>=0) filterStatus.splice(i,1); else filterStatus.push(v);
+  buildDropdowns(); renderCalendar();
+  document.getElementById('status-panel').classList.add('open');
+}
+function onGroupToggle(v) {
+  var i = filterGroup.indexOf(v);
+  if (i>=0) filterGroup.splice(i,1); else filterGroup.push(v);
+  buildDropdowns(); renderCalendar();
+  document.getElementById('group-panel').classList.add('open');
+}
+function clearFilter(type) {
+  if (type==='status') { filterStatus=[]; document.getElementById('status-panel').classList.remove('open'); }
+  else                 { filterGroup=[];  document.getElementById('group-panel').classList.remove('open'); }
+  buildDropdowns(); renderCalendar();
+}
+function toggleDD(panelId) {
+  document.getElementById(panelId).classList.toggle('open');
+}
+document.addEventListener('click', function(e) {
+  ['status-wrap','group-wrap'].forEach(function(id) {
+    var wrap = document.getElementById(id);
+    if (wrap && !wrap.contains(e.target)) {
+      var p = wrap.querySelector('.dd-panel');
+      if (p) p.classList.remove('open');
+    }
+  });
+});
+
+/* ── Filtering ── */
+function getFiltered() {
+  var q = (document.getElementById('search-input')||{}).value || '';
+  q = q.toLowerCase();
+  return TASKS.filter(function(t) {
+    if (filterStatus.length>0 && filterStatus.indexOf(t.status)<0) return false;
+    if (filterGroup.length>0  && filterGroup.indexOf(t.group)<0)   return false;
+    if (q && (t.key+' '+t.summary).toLowerCase().indexOf(q)<0)     return false;
+    return true;
+  });
+}
+
+/* ── Calendar rendering ── */
+function changeMonth(delta) {
+  curMonth += delta;
+  if (curMonth>11) { curMonth=0; curYear++; }
+  if (curMonth<0)  { curMonth=11; curYear--; }
+  renderCalendar();
+}
+function goToday() {
+  curYear = TODAY.getFullYear();
+  curMonth = TODAY.getMonth();
+  renderCalendar();
+}
+
+var MONTHS = ['January','February','March','April','May','June',
+              'July','August','September','October','November','December'];
+
+function renderCalendar() {
+  document.getElementById('month-label').textContent = MONTHS[curMonth]+' '+curYear;
+
+  var filtered = getFiltered();
+
+  /* Index tasks by date string yyyy-mm-dd */
+  var byDate = {};
+  filtered.forEach(function(t) {
+    if (!byDate[t.due]) byDate[t.due] = [];
+    byDate[t.due].push(t);
+  });
+
+  /* Build calendar weeks */
+  var firstDay = new Date(curYear, curMonth, 1);
+  /* Monday=0 offset */
+  var startDow = (firstDay.getDay()+6)%7; /* 0=Mon … 6=Sun */
+  var daysInMonth = new Date(curYear, curMonth+1, 0).getDate();
+  var prevDays = new Date(curYear, curMonth, 0).getDate();
+
+  var cells = [];
+  /* Pad previous month */
+  for (var i=startDow-1; i>=0; i--) {
+    cells.push({day: prevDays-i, month: curMonth-1, year: curYear, other: true});
+  }
+  /* Current month */
+  for (var d=1; d<=daysInMonth; d++) {
+    cells.push({day: d, month: curMonth, year: curYear, other: false});
+  }
+  /* Pad next month */
+  var rem = 7 - (cells.length % 7);
+  if (rem < 7) for (var n=1; n<=rem; n++) {
+    cells.push({day: n, month: curMonth+1, year: curYear, other: true});
+  }
+
+  /* Render weeks */
+  var rows = '';
+  for (var w=0; w<cells.length/7; w++) {
+    rows += '<tr>';
+    for (var col=0; col<7; col++) {
+      var cell = cells[w*7+col];
+      var isWeekend = col>=5;
+      var cls = 'cal-cell';
+      if (cell.other)   cls += ' other-month';
+      if (isWeekend)    cls += ' weekend';
+      /* Date key */
+      var mo = (cell.month+1+12)%12 || 12; /* handle month wrap */
+      var yr = cell.year;
+      if (cell.month < 0)  { mo=12; yr=curYear-1; }
+      if (cell.month > 11) { mo=1;  yr=curYear+1; }
+      var pad = function(n){ return n<10?'0'+n:n; };
+      var dateKey = yr+'-'+pad(mo)+'-'+pad(cell.day);
+
+      /* Is today */
+      var isToday = (cell.day===TODAY.getDate() && cell.month===TODAY.getMonth() && cell.year===TODAY.getFullYear());
+      var numCls  = 'date-num' + (isToday?' today':'');
+
+      var tasks = byDate[dateKey] || [];
+      var MAX = 3;
+      var shown = tasks.slice(0, MAX);
+      var more  = tasks.length - MAX;
+
+      var chipsHtml = shown.map(function(t) {
+        var isDone    = t.status === 'Done';
+        var isOverdue = !isDone && new Date(t.due) < TODAY;
+        var chipCls = 'task-chip' + (isOverdue?' overdue':'') + (isDone?' done-chip':'');
+        var sumCls  = 'task-summary' + (isDone?' done-txt':'');
+        return '<div class="'+chipCls+'">' +
+          '<span class="status-dot" style="background:'+STATUS_DOT[t.status]+'"></span>' +
+          '<span class="task-key">'+t.key+'</span>' +
+          '<span class="'+sumCls+'">'+t.summary+'</span>' +
+          (GROUP_DOT[t.group]?'<span class="group-dot" style="background:'+GROUP_DOT[t.group]+'" title="'+t.group+'"></span>':'') +
+        '</div>';
+      }).join('');
+
+      if (more > 0) {
+        chipsHtml += '<span class="more-link">+'+more+' more</span>';
+      }
+
+      rows += '<td class="'+cls+'">' +
+        '<div class="'+numCls+'">'+cell.day+'</div>' +
+        chipsHtml +
+        '</td>';
+    }
+    rows += '</tr>';
+  }
+
+  document.getElementById('cal-body').innerHTML = rows;
+
+  /* Update count */
+  var total = filtered.filter(function(t){
+    return t.due.startsWith(curYear+'-'+((curMonth+1)<10?'0':'')+(curMonth+1));
+  }).length;
+  document.getElementById('count-lbl').textContent = total+' task'+(total!==1?'s':'')+' this month';
+}
+
+/* ── Theme toggle ── */
+function toggleTheme() {
+  var html = document.documentElement;
+  var isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  document.getElementById('theme-btn').textContent = isDark ? '☀' : '🌙';
+}
+
+/* ── Init ── */
+buildDropdowns();
+renderCalendar();
+</script>
+</body>
+</html>

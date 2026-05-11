@@ -80,10 +80,12 @@ function buildGdbSupportSubNav() {
   var p = window.location.pathname;
   var dashActive = (p.endsWith('/support/') || p.endsWith('/support/index.html')) ? ' active' : '';
   var listActive = p.endsWith('/support/list.html') ? ' active' : '';
+  var calActive  = p.endsWith('/support/calendar.html') ? ' active' : '';
 
   var subNav = '<div class="gdb-init-subnav" id="gdb-support-subnav">' +
     '<a class="gdb-init-tab' + dashActive + '" href="/gdb-ppp/support/">Dashboard</a>' +
     '<a class="gdb-init-tab' + listActive + '" href="/gdb-ppp/support/list.html">List</a>' +
+    '<a class="gdb-init-tab' + calActive  + '" href="/gdb-ppp/support/calendar.html">Calendar</a>' +
   '</div>';
 
   document.body.insertAdjacentHTML('afterbegin', subNav);

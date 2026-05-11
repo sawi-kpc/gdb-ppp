@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Support Tasks — Calendar — GDB</title>
+<link rel="stylesheet" href="../css/shared.css">
+<link rel="stylesheet" href="../css/gdb-shared.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+/* ── Month nav ── */
+.month-nav{display:flex;align-items:center;gap:6px}
+.nav-btn{width:26px;height:26px;border:1px solid var(--border);border-radius:4px;
+  background:var(--surface2);color:var(--text);cursor:pointer;font-size:15px;
+  display:flex;align-items:center;justify-content:center;line-height:1;transition:background .15s}
+.nav-btn:hover{background:var(--border)}
+.nav-month{font-size:13px;font-weight:700;color:var(--text);min-width:110px;text-align:center}
+.today-btn{height:26px;padding:0 12px;border:1px solid var(--border);border-radius:4px;
+  background:var(--surface2);color:var(--text2);font-size:11.5px;cursor:pointer;
+  font-weight:600;transition:all .15s}
+.today-btn:hover{color:var(--text);border-color:var(--text3)}
+
+/* ── Filter bar ── */
+.cal-filter-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:10px 18px;border-bottom:1px solid var(--border)}
+.fb-sep{width:1px;height:18px;background:var(--border);flex-shrink:0}
+
+/* ── Dropdown ── */
+.dd-wrap{position:relative}
+.dd-btn{height:26px;padding:0 10px;border:1px solid var(--border);border-radius:4px;
+  background:var(--surface2);color:var(--text);font-size:11.5px;cursor:pointer;
+  display:flex;align-items:center;gap:6px;white-space:nowrap;transition:border-color .15s}
+.dd-btn:hover{border-color:var(--text3)}
+.dd-arrow{font-size:9px;color:var(--text3)}
+.dd-panel{display:none;position:absolute;top:30px;left:0;z-index:300;
+  background:var(--surface);border:1px solid var(--border);border-radius:6px;
+  box-shadow:0 4px 20px rgba(0,0,0,.18);padding:8px 0;min-width:160px}
+.dd-panel.open{display:block}
+.dd-item{display:flex;align-items:center;gap:8px;padding:5px 12px;
+  cursor:pointer;font-size:12px;color:var(--text);white-space:nowrap}
+.dd-item:hover{background:var(--surface2)}
+.dd-item input{accent-color:var(--accent);width:13px;height:13px;flex-shrink:0;cursor:pointer}
+.dd-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dd-clear{border-top:1px solid var(--border);margin-top:6px;padding:6px 12px 2px}
+.dd-clear button{font-size:10px;color:var(--text3);background:none;border:none;
+  cursor:pointer;padding:0}
+.dd-clear button:hover{color:var(--text)}
+
+/* ── Search ── */
+.cal-search-wrap{position:relative}
+.cal-search-wrap::before{content:'⌕';position:absolute;left:8px;top:50%;
+  transform:translateY(-50%);color:var(--text3);font-size:13px;pointer-events:none}
+.cal-search-wrap input{height:26px;padding:0 10px 0 26px;border:1px solid var(--border);
+  border-radius:4px;background:var(--surface2);color:var(--text);
+  font-size:11.5px;width:180px;outline:none;transition:border-color .15s}
+.cal-search-wrap input:focus{border-color:var(--accent)}
+
+/* ── Calendar grid ── */
+.cal-wrap{overflow-x:auto}
+.cal-grid{width:100%;border-collapse:collapse;min-width:700px;table-layout:fixed}
+.cal-grid th{padding:8px 10px;font-size:10.5px;font-weight:700;color:var(--text2);
+  text-align:center;text-transform:uppercase;letter-spacing:.05em;
+  border-bottom:2px solid var(--border);background:var(--surface2);width:calc(100%/7)}
+.cal-grid th.weekend{color:var(--text3)}
+.cal-cell{vertical-align:top;border:1px solid var(--border);padding:6px;
+  height:150px;width:calc(100%/7);background:var(--surface);overflow:hidden}
+.cal-cell.other-month{background:var(--bg);opacity:.55}
+.cal-cell.weekend{background:var(--surface2)}
+.cal-cell.other-month.weekend{background:var(--bg)}
+.date-num{font-size:11px;font-weight:600;color:var(--text2);margin-bottom:4px;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:22px;height:22px;border-radius:50%}
+.date-num.today{background:var(--accent);color:#fff}
+
+/* ── Task chip ── */
+.task-chip{display:flex;align-items:center;gap:4px;padding:3px 5px;border-radius:4px;
+  margin-bottom:3px;cursor:pointer;background:var(--surface2);
+  border:1px solid var(--border);border-left:3px solid transparent;
+  min-width:0;transition:opacity .15s}
+.task-chip:hover{border-color:var(--text3);opacity:.85}
+.task-chip.overdue{border-left-color:var(--down)}
+.task-chip.done-chip{opacity:.55}
+.status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.task-key{font-size:10px;font-weight:700;color:var(--accent);white-space:nowrap;flex-shrink:0}
+.task-summary{font-size:10.5px;color:var(--text);flex:1;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.task-summary.done-txt{text-decoration:line-through;color:var(--text3)}
+.group-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.more-link{font-size:10px;color:var(--accent);cursor:pointer;padding:2px 4px;
+  display:inline-block}
+.more-link:hover{text-decoration:underline}
+
+/* ── Count ── */
+.count-lbl{font-size:11px;color:var(--text3);margin-left:auto;white-space:nowrap}
+</style>
+</head>
+<body class="has-init-subnav">
+
+<div id="gdb-error" style="display:none;padding:12px 20px;background:rgba(248,81,73,.1);
+  border-bottom:1px solid rgba(248,81,73,.3);color:var(--down);font-size:12px"></div>
+
+<div id="gdb-loading" class="gdb-loading-state">
+  <div class="gdb-spinner-wrap"></div>Loading support tasks…
+</div>
+
+<div id="cal-content" style="display:none">
+
+  <div id="cal-error-state" class="gdb-error-state">
+    <div style="font-size:40px;opacity:.6">⚠</div>
+    <div style="font-size:16px;font-weight:700;color:var(--down)">Unable to load support data</div>
+    <div id="cal-error-msg" style="font-size:13px;color:var(--text2);max-width:420px;line-height:1.6"></div>
+    <div style="margin-top:8px">
+      <button onclick="location.reload()" style="padding:8px 20px;background:var(--surface2);
+        border:1px solid var(--border);border-radius:6px;color:var(--text);
+        font-size:12px;cursor:pointer">↺ Retry</button>
+    </div>
+  </div>
+
+  <div class="gdb-page-content">
+    <div class="panel">
+
+      <!-- Panel head: title + month nav -->
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">Support Task Calendar</div>
+          <div class="panel-sub">Tasks by due date</div>
+        </div>
+        <div class="month-nav">
+          <button class="nav-btn" onclick="calChangeMonth(-1)">&#8249;</button>
+          <div class="nav-month" id="cal-month-label"></div>
+          <button class="nav-btn" onclick="calChangeMonth(1)">&#8250;</button>
+          <button class="today-btn" onclick="calGoToday()">Today</button>
+        </div>
+        <span class="count-lbl" id="cal-count-lbl" style="margin-left:auto"></span>
+      </div>
+
+      <!-- Filter bar -->
+      <div class="cal-filter-bar">
+
+        <!-- Status dropdown -->
+        <div class="dd-wrap" id="cal-status-wrap">
+          <button class="dd-btn" id="cal-status-btn"
+            onclick="calToggleDD('cal-status-panel')">
+            <span id="cal-status-lbl" data-empty="All Statuses">All Statuses</span>
+            <span class="dd-arrow">▾</span>
+          </button>
+          <div class="dd-panel" id="cal-status-panel">
+            <div id="cal-status-list"></div>
+            <div class="dd-clear">
+              <button onclick="calClearFilter('status')">Clear all</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="fb-sep"></div>
+
+        <!-- Group dropdown -->
+        <div class="dd-wrap" id="cal-group-wrap">
+          <button class="dd-btn" id="cal-group-btn"
+            onclick="calToggleDD('cal-group-panel')">
+            <span id="cal-group-lbl" data-empty="All Groups">All Groups</span>
+            <span class="dd-arrow">▾</span>
+          </button>
+          <div class="dd-panel" id="cal-group-panel">
+            <div id="cal-group-list"></div>
+            <div class="dd-clear">
+              <button onclick="calClearFilter('group')">Clear all</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="fb-sep"></div>
+
+        <!-- Search -->
+        <div class="cal-search-wrap">
+          <input type="search" id="cal-search-input"
+            placeholder="Search key or summary…" oninput="calRender()">
+        </div>
+      </div>
+
+      <!-- Calendar -->
+      <div class="panel-body" style="padding:0">
+        <div class="cal-wrap">
+          <table class="cal-grid" id="cal-table">
+            <thead><tr>
+              <th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th>
+              <th class="weekend">Sat</th><th class="weekend">Sun</th>
+            </tr></thead>
+            <tbody id="cal-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /gdb-page-content -->
+</div><!-- /cal-content -->
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="../js/support/config.js"></script>
+<script src="../js/header.js"></script>
+<script src="../js/support/data.js"></script>
+<script src="../js/shared/gdb-utils.js"></script>
+<script>
+/* ══════════════════════════════════════════════
+   Support Calendar — calendar.html inline script
+   Reads from global supportData (set by data.js)
+══════════════════════════════════════════════ */
+
+var CAL_STATUS_DOT = {
+  'To do':      'var(--amber)',
+  'In Progress':'var(--accent)',
+  'Done':       'var(--up)'
+};
+var CAL_STATUSES = ['To do', 'In Progress', 'Done'];
+
+var calFilterStatus = [];
+var calFilterGroup  = [];
+
+var calToday   = new Date();
+var calYear    = calToday.getFullYear();
+var calMonth   = calToday.getMonth(); /* 0-based */
+
+var _calGroups = [];   /* populated from data */
+
+/* ── Build group colour map from data ── */
+var _GROUP_COLORS = [
+  'var(--teal)', 'var(--purple)', 'var(--accent)',
+  'var(--amber)', 'var(--up)', 'var(--down)'
+];
+var _groupColorMap = {};
+function _assignGroupColor(g) {
+  if (!_groupColorMap[g]) {
+    var idx = Object.keys(_groupColorMap).length % _GROUP_COLORS.length;
+    _groupColorMap[g] = _GROUP_COLORS[idx];
+  }
+  return _groupColorMap[g];
+}
+
+/* ── Dropdown helpers ── */
+function calBuildDropdowns() {
+  calBuildDD('cal-status-list', CAL_STATUSES, calFilterStatus, 'calOnStatusToggle', CAL_STATUS_DOT);
+  calBuildDD('cal-group-list',  _calGroups,   calFilterGroup,  'calOnGroupToggle',  _groupColorMap);
+}
+
+function calBuildDD(listId, vals, arr, fn, colorMap) {
+  var el = document.getElementById(listId); if (!el) return;
+  el.innerHTML = vals.map(function(v) {
+    var dot = (colorMap && colorMap[v])
+      ? '<span class="dd-dot" style="background:' + colorMap[v] + '"></span>' : '';
+    return '<label class="dd-item">' +
+      '<input type="checkbox"' + (arr.indexOf(v) >= 0 ? ' checked' : '') +
+      ' onchange="' + fn + '(\'' + v + '\')">' +
+      dot + '<span>' + v + '</span></label>';
+  }).join('');
+  calUpdateBtnLabel(listId.replace('cal-','').replace('-list',''), arr);
+}
+
+function calUpdateBtnLabel(prefix, arr) {
+  var lbl = document.getElementById('cal-' + prefix + '-lbl');
+  var btn = document.getElementById('cal-' + prefix + '-btn');
+  if (!lbl) return;
+  lbl.textContent = arr.length === 0 ? (lbl.dataset.empty || 'All')
+    : arr.length === 1 ? arr[0]
+    : arr.length + ' selected';
+  if (btn) btn.style.borderColor = arr.length > 0 ? 'var(--accent)' : 'var(--border)';
+}
+
+function calOnStatusToggle(v) {
+  var i = calFilterStatus.indexOf(v);
+  if (i >= 0) calFilterStatus.splice(i, 1); else calFilterStatus.push(v);
+  calBuildDropdowns(); calRender();
+  document.getElementById('cal-status-panel').classList.add('open');
+}
+function calOnGroupToggle(v) {
+  var i = calFilterGroup.indexOf(v);
+  if (i >= 0) calFilterGroup.splice(i, 1); else calFilterGroup.push(v);
+  calBuildDropdowns(); calRender();
+  document.getElementById('cal-group-panel').classList.add('open');
+}
+function calClearFilter(type) {
+  if (type === 'status') {
+    calFilterStatus = [];
+    document.getElementById('cal-status-panel').classList.remove('open');
+  } else {
+    calFilterGroup = [];
+    document.getElementById('cal-group-panel').classList.remove('open');
+  }
+  calBuildDropdowns(); calRender();
+}
+function calToggleDD(panelId) {
+  document.getElementById(panelId).classList.toggle('open');
+}
+document.addEventListener('click', function(e) {
+  ['cal-status-wrap', 'cal-group-wrap'].forEach(function(id) {
+    var wrap = document.getElementById(id);
+    if (wrap && !wrap.contains(e.target)) {
+      var p = wrap.querySelector('.dd-panel');
+      if (p) p.classList.remove('open');
+    }
+  });
+});
+
+/* ── Filtering ── */
+function calGetFiltered() {
+  var q = (document.getElementById('cal-search-input') || {}).value || '';
+  q = q.toLowerCase();
+  return (supportData || []).filter(function(d) {
+    if (!d.Due) return false;
+    if (calFilterStatus.length > 0 && calFilterStatus.indexOf(d.Status) < 0) return false;
+    if (calFilterGroup.length > 0) {
+      var g = (d.Group && d.Group.trim()) ? d.Group.trim() : 'other';
+      if (calFilterGroup.indexOf(g) < 0) return false;
+    }
+    if (q && (String(d.Key || '') + ' ' + String(d.Summary || '')).toLowerCase().indexOf(q) < 0) return false;
+    return true;
+  });
+}
+
+/* ── Month navigation ── */
+function calChangeMonth(delta) {
+  calMonth += delta;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0)  { calMonth = 11; calYear--; }
+  calRender();
+}
+function calGoToday() {
+  calYear  = calToday.getFullYear();
+  calMonth = calToday.getMonth();
+  calRender();
+}
+
+var _FULL_MONTHS_CAL = ['January','February','March','April','May','June',
+  'July','August','September','October','November','December'];
+
+/* ── Main render ── */
+function calRender() {
+  var monthLbl = document.getElementById('cal-month-label');
+  if (monthLbl) monthLbl.textContent = _FULL_MONTHS_CAL[calMonth] + ' ' + calYear;
+
+  var filtered = calGetFiltered();
+
+  /* Index tasks by date key yyyy-mm-dd */
+  var byDate = {};
+  filtered.forEach(function(d) {
+    var raw = String(d.Due || '').trim();
+    /* Normalise to yyyy-mm-dd */
+    var dateKey = '';
+    if (raw.match(/^\d{4}-\d{2}-\d{2}/)) {
+      dateKey = raw.substring(0, 10);
+    } else {
+      var dt = new Date(raw);
+      if (!isNaN(dt.getTime())) {
+        var mo = dt.getMonth() + 1;
+        var dy = dt.getDate();
+        dateKey = dt.getFullYear() + '-' + (mo < 10 ? '0' + mo : mo) + '-' + (dy < 10 ? '0' + dy : dy);
+      }
+    }
+    if (!dateKey) return;
+    if (!byDate[dateKey]) byDate[dateKey] = [];
+    byDate[dateKey].push(d);
+  });
+
+  /* Calendar grid */
+  var firstDay = new Date(calYear, calMonth, 1);
+  var startDow = (firstDay.getDay() + 6) % 7; /* Mon=0 … Sun=6 */
+  var daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  var prevDays = new Date(calYear, calMonth, 0).getDate();
+
+  var cells = [];
+  for (var i = startDow - 1; i >= 0; i--) {
+    cells.push({day: prevDays - i, month: calMonth - 1, year: calYear, other: true});
+  }
+  for (var d = 1; d <= daysInMonth; d++) {
+    cells.push({day: d, month: calMonth, year: calYear, other: false});
+  }
+  var rem = 7 - (cells.length % 7);
+  if (rem < 7) {
+    for (var n = 1; n <= rem; n++) {
+      cells.push({day: n, month: calMonth + 1, year: calYear, other: true});
+    }
+  }
+
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+
+  var rows = '';
+  for (var w = 0; w < cells.length / 7; w++) {
+    rows += '<tr>';
+    for (var col = 0; col < 7; col++) {
+      var cell = cells[w * 7 + col];
+      var isWeekend = col >= 5;
+
+      /* Resolve true month/year for cells crossing year boundaries */
+      var cellMo = cell.month;
+      var cellYr = cell.year;
+      if (cellMo < 0)  { cellMo = 11; cellYr = calYear - 1; }
+      if (cellMo > 11) { cellMo = 0;  cellYr = calYear + 1; }
+      var dateKey = cellYr + '-' + pad(cellMo + 1) + '-' + pad(cell.day);
+
+      var isToday = (cell.day === calToday.getDate() &&
+        cellMo === calToday.getMonth() && cellYr === calToday.getFullYear());
+
+      var cls = 'cal-cell';
+      if (cell.other) cls += ' other-month';
+      if (isWeekend)  cls += ' weekend';
+
+      var numCls = 'date-num' + (isToday ? ' today' : '');
+
+      var tasks = byDate[dateKey] || [];
+      var MAX   = 3;
+      var shown = tasks.slice(0, MAX);
+      var more  = tasks.length - MAX;
+
+      var chipsHtml = shown.map(function(t) {
+        var st     = t.Status || '';
+        var isDone = st === 'Done';
+        var dueDate = new Date(String(t.Due || '').trim());
+        var isOverdue = !isDone && !isNaN(dueDate.getTime()) && dueDate < calToday;
+
+        var chipCls = 'task-chip' + (isOverdue ? ' overdue' : '') + (isDone ? ' done-chip' : '');
+        var sumCls  = 'task-summary' + (isDone ? ' done-txt' : '');
+        var dot     = CAL_STATUS_DOT[st] || 'var(--text3)';
+        var g       = (t.Group && t.Group.trim()) ? t.Group.trim() : '';
+        var gDot    = g ? '<span class="group-dot" style="background:' + _assignGroupColor(g) + '" title="' + g + '"></span>' : '';
+
+        return '<a href="' + 'https://kingpower.atlassian.net/browse/' + (t.Key || '') + '" ' +
+          'target="_blank" rel="noopener" style="text-decoration:none;display:flex;' +
+          'align-items:center;gap:4px;padding:3px 5px;border-radius:4px;margin-bottom:3px;' +
+          'background:var(--surface2);border:1px solid var(--border);' +
+          'border-left:3px solid ' + (isOverdue ? 'var(--down)' : 'transparent') + ';' +
+          'opacity:' + (isDone ? '.55' : '1') + ';min-width:0;overflow:hidden;transition:opacity .15s"' +
+          ' onmouseover="this.style.borderColor=\'var(--text3)\'"' +
+          ' onmouseout="this.style.borderColor=\'var(--border)\'">' +
+          '<span class="status-dot" style="background:' + dot + '"></span>' +
+          '<span class="task-key">' + (t.Key || '') + '</span>' +
+          '<span style="font-size:10.5px;color:' + (isDone ? 'var(--text3)' : 'var(--text)') + ';' +
+          'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;' +
+          (isDone ? 'text-decoration:line-through;' : '') + '">' + (t.Summary || '') + '</span>' +
+          gDot +
+          '</a>';
+      }).join('');
+
+      if (more > 0) {
+        chipsHtml += '<span class="more-link">+' + more + ' more</span>';
+      }
+
+      rows += '<td class="' + cls + '">' +
+        '<div class="' + numCls + '">' + cell.day + '</div>' +
+        chipsHtml +
+        '</td>';
+    }
+    rows += '</tr>';
+  }
+
+  document.getElementById('cal-body').innerHTML = rows;
+
+  /* Update count label */
+  var moPfx = calYear + '-' + pad(calMonth + 1);
+  var total = filtered.filter(function(d) {
+    return String(d.Due || '').trim().startsWith(moPfx);
+  }).length;
+  var countLbl = document.getElementById('cal-count-lbl');
+  if (countLbl) countLbl.textContent = total + ' task' + (total !== 1 ? 's' : '') + ' this month';
+}
+
+/* ── Init (called after data loaded) ── */
+function initCalendar() {
+  /* Build unique group list from data */
+  var seen = {};
+  (supportData || []).forEach(function(d) {
+    var g = (d.Group && d.Group.trim()) ? d.Group.trim() : 'other';
+    if (!seen[g]) { seen[g] = true; _calGroups.push(g); _assignGroupColor(g); }
+  });
+  _calGroups.sort();
+
+  calBuildDropdowns();
+  calRender();
+}
+
+/* ── Bootstrap ── */
+window.addEventListener('DOMContentLoaded', function() {
+  buildGdbHeader({ showRefresh: true });
+  buildGdbSupportSubNav();
+
+  gdbAuthGuard(function() {
+    loadSupportData(
+      function() {
+        document.getElementById('gdb-loading').style.display = 'none';
+        document.getElementById('cal-content').style.display = 'block';
+        if (typeof setGdbUpdateTime === 'function') setGdbUpdateTime(new Date().toISOString());
+        initCalendar();
+      },
+      function(err) {
+        document.getElementById('gdb-loading').style.display = 'none';
+        document.getElementById('cal-content').style.display = 'block';
+        document.getElementById('cal-error-state').style.display = 'flex';
+        document.getElementById('cal-error-msg').textContent = err;
+      }
+    );
+  });
+
+  var rbtn = document.getElementById('gdb-refresh-btn');
+  if (rbtn) rbtn.addEventListener('click', function() {
+    clearSupportCache();
+    location.reload();
+  });
+});
+</script>
+</body>
+</html>

@@ -4,7 +4,7 @@
 ══════════════════════════════════════════════ */
 
 var charts={};
-var sumYearFilter=['ROADMAP_2026'],initYearFilter=['all'],showNoYear=false,sumStageFilter=[],hideNoDate=false;
+var sumYearFilter=['ROADMAP_2026'],initYearFilter=['all'],showNoYear=false,sumStageFilter=[],hideNoDate=false,sumSearchQuery='';
 var listYearFilter=['ROADMAP_2026'];
 var listAssigneeFilter='all';
 var listSearchQuery='';
@@ -262,7 +262,7 @@ function _buildCheckDropdown(wrapperId, btnLabelId, panelId, listId, values, act
   }).join('');
   /* button label */
   var btnLabel = document.getElementById(btnLabelId);
-  if (btnLabel) btnLabel.textContent = activeArr.length === 0 ? 'All' : activeArr.length === 1 ? activeArr[0] : activeArr.length+' selected';
+  if (btnLabel) btnLabel.textContent = activeArr.length === 0 ? btnLabel.dataset.empty||'All' : activeArr.length === 1 ? activeArr[0] : activeArr.length+' selected';
   var btn = document.getElementById(wrapperId) && document.getElementById(wrapperId).querySelector('button');
   if (btn) btn.style.borderColor = activeArr.length > 0 ? 'var(--accent)' : 'var(--border)';
 }
@@ -284,6 +284,10 @@ function renderSummary(){
   _buildCheckDropdown('comp-dropdown-wrap','comp-btn-label','comp-dropdown-panel','comp-checkbox-list',
     compVals, sumComponentFilter, null, 'onSumCompToggle', 'clearSumCompFilter');
 
+  /* Sync search box */
+  var sumSearchEl=document.getElementById('sum-search');
+  if(sumSearchEl&&sumSearchEl.value!==sumSearchQuery)sumSearchEl.value=sumSearchQuery;
+
   /* Apply filters */
   if(sumStageFilter.length>0) filtered=filtered.filter(function(d){return sumStageFilter.indexOf(d.Status)>=0;});
   if(sumComponentFilter.length>0){
@@ -292,10 +296,16 @@ function renderSummary(){
       return sumComponentFilter.some(function(f){return comps.indexOf(f)>=0;});
     });
   }
+  if(sumSearchQuery.trim()){
+    var q=sumSearchQuery.trim().toLowerCase();
+    filtered=filtered.filter(function(d){return(d.Summary||'').toLowerCase().indexOf(q)>=0;});
+  }
 
   buildMetrics(filtered,'sum-metrics');
   renderTimeline(filtered);
 }
+
+function onSumSearchChange(val){ sumSearchQuery=val||''; renderSummary(); }
 
 function onSumStageToggle(val){
   var idx=sumStageFilter.indexOf(val);

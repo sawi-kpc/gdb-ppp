@@ -7,6 +7,8 @@ var charts={};
 var sumYearFilter=['ROADMAP_2026'],initYearFilter=['all'],showNoYear=false,sumStage='all',hideNoDate=false;
 var listYearFilter=['ROADMAP_2026'];
 var listAssigneeFilter='all';
+var listSearchQuery='';
+var listRoadmapFilter=[];
 var sumComponentFilter='all';
 var listComponentFilter='all';
 var doneComponentFilter='all';
@@ -896,6 +898,22 @@ function renderList(){
   /* Component dropdown */
   _buildCompSelect('comp-list-select', allData, listComponentFilter);
 
+  /* Roadmap status pills (multi-select) */
+  var rsPills=document.getElementById('rs-list-pills');
+  if(rsPills){
+    var rsVals=[];
+    allData.forEach(function(d){ var v=d['Roadmap Status']||''; if(v&&rsVals.indexOf(v)<0)rsVals.push(v); });
+    rsVals.sort();
+    rsPills.innerHTML=rsVals.map(function(v){
+      var active=listRoadmapFilter.indexOf(v)>=0;
+      return '<button class="fb-btn'+(active?' active':'')+'" onclick="onListRoadmapToggle(\''+v+'\')">'+v+'</button>';
+    }).join('');
+  }
+
+  /* Sync search box value */
+  var searchEl=document.getElementById('list-search');
+  if(searchEl&&searchEl.value!==listSearchQuery)searchEl.value=listSearchQuery;
+
   /* Filter data */
   var filtered=filterYear(allData,listYearFilter);
   if(listAssigneeFilter!=='all'){
@@ -906,6 +924,15 @@ function renderList(){
     });
   }
   filtered=_filterComp(filtered, listComponentFilter);
+  /* Roadmap status filter */
+  if(listRoadmapFilter.length>0){
+    filtered=filtered.filter(function(d){ return listRoadmapFilter.indexOf(d['Roadmap Status']||'')>=0; });
+  }
+  /* Summary search */
+  if(listSearchQuery.trim()){
+    var q=listSearchQuery.trim().toLowerCase();
+    filtered=filtered.filter(function(d){ return (d.Summary||'').toLowerCase().indexOf(q)>=0; });
+  }
 
   /* Sort by Key asc: PPP-1, PPP-2, ... */
   filtered=filtered.slice().sort(function(a,b){
@@ -963,3 +990,9 @@ function renderList(){
 
 function onAssigneeChange(val){ listAssigneeFilter=(val!==undefined&&val!==null)?val:'all'; renderList(); }
 function onListComponentChange(val){ listComponentFilter=val||'all'; renderList(); }
+function onListSearchChange(val){ listSearchQuery=val||''; renderList(); }
+function onListRoadmapToggle(val){
+  var idx=listRoadmapFilter.indexOf(val);
+  if(idx>=0)listRoadmapFilter.splice(idx,1); else listRoadmapFilter.push(val);
+  renderList();
+}

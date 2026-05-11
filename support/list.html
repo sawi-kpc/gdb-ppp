@@ -67,33 +67,67 @@
 <div class="panel">
   <div class="panel-head">
     <div><div class="panel-title">All Tasks</div><div class="panel-sub" id="task-count-label"></div></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-      <div class="search-wrap"><input type="text" id="search" placeholder="Search…" oninput="applyFilters()"></div>
-    </div>
   </div>
   <div class="panel-body">
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
-      <span style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0">Status</span>
-      <div id="status-filter" style="display:contents">
-        <button class="pill-btn active" data-val="all" onclick="setFilter('status','all',this)">All</button>
-        <button class="pill-btn" data-val="To do" onclick="setFilter('status','To do',this)">⚠ Pending</button>
-        <button class="pill-btn" data-val="In Progress" onclick="setFilter('status','In Progress',this)">In Progress</button>
-        <button class="pill-btn" data-val="Done" onclick="setFilter('status','Done',this)">Done</button>
-        <span style="font-size:10px;color:var(--text3)">(multi)</span>
+    <!-- Filter bar -->
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+
+      <!-- Status dropdown -->
+      <div style="position:relative" id="status-dropdown-wrap">
+        <button id="status-dropdown-btn" onclick="toggleSupportDropdown('status-dropdown-panel')"
+          style="height:26px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);font-size:11.5px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap">
+          <span id="status-btn-label" data-empty="All Statuses">All Statuses</span>
+          <span style="font-size:9px;color:var(--text3)">▾</span>
+        </button>
+        <div id="status-dropdown-panel" style="display:none;position:absolute;top:30px;left:0;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.18);padding:8px 0;min-width:160px">
+          <div id="status-checkbox-list"></div>
+          <div style="border-top:1px solid var(--border);margin-top:6px;padding:6px 12px 2px">
+            <button onclick="clearSupportStatus()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Clear all</button>
+          </div>
+        </div>
       </div>
-      <div style="height:16px;width:1px;background:var(--border);flex-shrink:0"></div>
-      <span style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0">Priority</span>
-      <select class="ctrl-select" id="filter-priority" onchange="onDropdownChange()" style="padding:3px 8px;font-size:11px">
-        <option value="all">All</option>
+
+      <!-- Priority select (unchanged) -->
+      <select class="ctrl-select" id="filter-priority" onchange="onDropdownChange()" style="height:26px;padding:0 8px;font-size:11.5px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);outline:none">
+        <option value="all">All priorities</option>
       </select>
-    </div>
-    <div style="display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap;margin-bottom:6px">
-      <span style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;padding-top:5px;white-space:nowrap;flex-shrink:0">Group</span>
-      <div id="group-filter" style="display:flex;gap:4px;flex-wrap:wrap;flex:1"></div>
-    </div>
-    <div style="display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-      <span style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;padding-top:5px;white-space:nowrap;flex-shrink:0">Labels</span>
-      <div id="label-filter" style="display:flex;gap:4px;flex-wrap:wrap;flex:1"></div>
+
+      <div style="width:1px;height:20px;background:var(--border);flex-shrink:0"></div>
+
+      <!-- Group dropdown -->
+      <div style="position:relative" id="group-dropdown-wrap">
+        <button id="group-dropdown-btn" onclick="toggleSupportDropdown('group-dropdown-panel')"
+          style="height:26px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);font-size:11.5px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap">
+          <span id="group-btn-label" data-empty="All Groups">All Groups</span>
+          <span style="font-size:9px;color:var(--text3)">▾</span>
+        </button>
+        <div id="group-dropdown-panel" style="display:none;position:absolute;top:30px;left:0;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.18);padding:8px 0;min-width:200px">
+          <div id="group-checkbox-list"></div>
+          <div style="border-top:1px solid var(--border);margin-top:6px;padding:6px 12px 2px">
+            <button onclick="clearSupportGroup()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Clear all</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Labels dropdown -->
+      <div style="position:relative" id="label-dropdown-wrap">
+        <button id="label-dropdown-btn" onclick="toggleSupportDropdown('label-dropdown-panel')"
+          style="height:26px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);font-size:11.5px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap">
+          <span id="label-btn-label" data-empty="All Labels">All Labels</span>
+          <span style="font-size:9px;color:var(--text3)">▾</span>
+        </button>
+        <div id="label-dropdown-panel" style="display:none;position:absolute;top:30px;left:0;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.18);padding:8px 0;min-width:180px">
+          <div id="label-checkbox-list"></div>
+          <div style="border-top:1px solid var(--border);margin-top:6px;padding:6px 12px 2px">
+            <button onclick="clearSupportLabel()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Clear all</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="width:1px;height:20px;background:var(--border);flex-shrink:0"></div>
+
+      <!-- Search -->
+      <div class="search-wrap"><input type="text" id="search" placeholder="Search…" oninput="applyFilters()"></div>
     </div>
     <div class="tbl-scroll">
       <table class="ttbl">
@@ -127,6 +161,20 @@
 <script src="../js/support/render.js"></script>
 <script src="../js/support/render_patch.js"></script>
 <script>
+function toggleSupportDropdown(panelId) {
+  var panel = document.getElementById(panelId); if (!panel) return;
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', function(e) {
+  ['status-dropdown-wrap','group-dropdown-wrap','label-dropdown-wrap'].forEach(function(id) {
+    var wrap = document.getElementById(id);
+    if (wrap && !wrap.contains(e.target)) {
+      var panel = wrap.querySelector('[id$="-panel"]');
+      if (panel) panel.style.display = 'none';
+    }
+  });
+});
+
 window.addEventListener('DOMContentLoaded', function() {
   buildGdbHeader({ showRefresh: true });
   buildGdbSupportSubNav();

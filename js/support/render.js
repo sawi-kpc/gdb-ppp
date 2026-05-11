@@ -45,12 +45,12 @@ function isOverdue(due,status){
 }
 
 /* ── State ───────────────────────────────────────────────── */
-var activeStatuses=['all'];  /* multi-select */
+var activeStatuses=[];  /* multi-select; empty = all */
 var _taskPage = 1;
 var _taskPageSize = 20;
-var activeGroups  =['all'];  /* multi-select */
+var activeGroups  =[];  /* multi-select; empty = all */
 var activePriority='all';
-var activeLabels  =['all'];  /* multi-select */
+var activeLabels  =[];  /* multi-select; empty = all */
 var searchQ='', sortCol='Key', sortAsc=true;
 
 /* ── Build summary strip ─────────────────────────────────── */
@@ -132,31 +132,66 @@ function buildAssigneeTable(data){
   document.getElementById('assignee-tbl').innerHTML=html;
 }
 
-/* ── Build group filter pills ─────────────────────────────── */
+/* ── Shared dropdown builder ─────────────────────────────── */
+var SUPPORT_STATUS_COLORS = {'To do':'var(--amber)','In Progress':'var(--accent)','Done':'var(--up)'};
+
+function _buildSupportDropdown(listId, labelId, btnId, vals, colorMap, activeArr, toggleFn) {
+  var listEl = document.getElementById(listId); if (!listEl) return;
+  listEl.innerHTML = vals.map(function(v) {
+    var dot = (colorMap && colorMap[v])
+      ? '<span style="width:8px;height:8px;border-radius:50%;background:'+colorMap[v]+';display:inline-block;flex-shrink:0"></span>'
+      : '';
+    var label = colorMap ? v : fmtGroup(v);
+    return '<label style="display:flex;align-items:center;gap:8px;padding:5px 12px;cursor:pointer;font-size:12px;color:var(--text)" '+
+      'onmouseover="this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'\'">'+
+      '<input type="checkbox"'+(activeArr.indexOf(v)>=0?' checked':'')+' onchange="'+toggleFn+'(\''+v+'\')" style="accent-color:var(--accent);width:13px;height:13px;flex-shrink:0">'+
+      dot+'<span>'+label+'</span></label>';
+  }).join('');
+  var lbl = document.getElementById(labelId);
+  if (lbl) lbl.textContent = activeArr.length === 0 ? lbl.dataset.empty||'All'
+    : activeArr.length === 1 ? (colorMap ? activeArr[0] : fmtGroup(activeArr[0]))
+    : activeArr.length+' selected';
+  var btn = document.getElementById(btnId);
+  if (btn) btn.style.borderColor = activeArr.length > 0 ? 'var(--accent)' : 'var(--border)';
+}
+
+function buildStatusDropdown(data) {
+  _buildSupportDropdown('status-checkbox-list','status-btn-label','status-dropdown-btn',
+    ['To do','In Progress','Done'], SUPPORT_STATUS_COLORS, activeStatuses, 'onSupportStatusToggle');
+}
 function buildGroupFilter(data){
   var groups=Array.from(new Set(data.map(function(d){
     return (d.Group && d.Group.trim()) ? d.Group.trim() : 'other';
   }))).sort();
-  var el=document.getElementById('group-filter');
-  if(!el) return;
-  el.innerHTML='<button class="fb active" data-val="all" onclick="setFilter(\'group\',\'all\',this)">All groups</button>'+
-    groups.map(function(g){
-      return '<button class="fb" data-val="'+g+'" onclick="setFilter(\'group\',\''+g+'\',this)">'+fmtGroup(g)+'</button>';
-    }).join('');
+  _buildSupportDropdown('group-checkbox-list','group-btn-label','group-dropdown-btn',
+    groups, null, activeGroups, 'onSupportGroupToggle');
 }
-
 function buildLabelFilter(data){
   var labels=Array.from(new Set(
     data.reduce(function(acc,d){ return acc.concat((d.Labels||'').split(';').map(function(l){return l.trim();})); }, [])
         .filter(Boolean)
   )).sort();
-  var el=document.getElementById('label-filter');
-  if(!el) return;
-  el.innerHTML='<button class="fb active" data-val="all" onclick="setFilter(\'label\',\'all\',this)">All labels</button>'+
-    labels.map(function(l){
-      return '<button class="fb" data-val="'+l+'" onclick="setFilter(\'label\',\''+l+'\',this)">'+l+'</button>';
-    }).join('');
+  _buildSupportDropdown('label-checkbox-list','label-btn-label','label-dropdown-btn',
+    labels, null, activeLabels, 'onSupportLabelToggle');
 }
+
+function _supportToggle(arr, val, buildFn) {
+  var i = arr.indexOf(val); if (i >= 0) arr.splice(i,1); else arr.push(val);
+  buildFn(supportData);
+  applyFilters();
+}
+function _supportClear(arr, buildFn, panelId) {
+  arr.length = 0;
+  var p = document.getElementById(panelId); if (p) p.style.display = 'none';
+  buildFn(supportData);
+  applyFilters();
+}
+function onSupportStatusToggle(v){ _supportToggle(activeStatuses, v, buildStatusDropdown); var p=document.getElementById('status-dropdown-panel'); if(p)p.style.display='block'; }
+function clearSupportStatus(){ _supportClear(activeStatuses, buildStatusDropdown, 'status-dropdown-panel'); }
+function onSupportGroupToggle(v){ _supportToggle(activeGroups, v, buildGroupFilter); var p=document.getElementById('group-dropdown-panel'); if(p)p.style.display='block'; }
+function clearSupportGroup(){ _supportClear(activeGroups, buildGroupFilter, 'group-dropdown-panel'); }
+function onSupportLabelToggle(v){ _supportToggle(activeLabels, v, buildLabelFilter); var p=document.getElementById('label-dropdown-panel'); if(p)p.style.display='block'; }
+function clearSupportLabel(){ _supportClear(activeLabels, buildLabelFilter, 'label-dropdown-panel'); }
 
 function buildPriorityDropdown(data){
   var el=document.getElementById('filter-priority');
@@ -268,11 +303,11 @@ function buildPatterns(data){
 function getFiltered(){
   return supportData.filter(function(d){
     var _g = (d.Group && d.Group.trim()) ? d.Group.trim() : 'other';
-    var okStatus  = activeStatuses.indexOf('all')!=-1 || activeStatuses.indexOf(d.Status)!=-1;
-    var okGroup   = activeGroups.indexOf('all')!=-1   || activeGroups.indexOf(_g)!=-1;
-    var okPriority= activePriority==='all'            || d.Priority===activePriority;
-    var okLabels  = activeLabels.indexOf('all')!=-1   || activeLabels.some(function(l){
-                      return (d.Labels||'').split(';').map(function(x){return x.trim();}).indexOf(l)!=-1;
+    var okStatus  = activeStatuses.length===0 || activeStatuses.indexOf(d.Status)!==-1;
+    var okGroup   = activeGroups.length===0   || activeGroups.indexOf(_g)!==-1;
+    var okPriority= activePriority==='all'    || d.Priority===activePriority;
+    var okLabels  = activeLabels.length===0   || activeLabels.some(function(l){
+                      return (d.Labels||'').split(';').map(function(x){return x.trim();}).indexOf(l)!==-1;
                     });
     var q=searchQ.toLowerCase();
     var okSearch = !q||d.Key.toLowerCase().includes(q)||d.Summary.toLowerCase().includes(q)||
@@ -436,6 +471,7 @@ function init(){
   buildStrip(supportData);
   buildGroupChart(supportData);
   buildAssigneeTable(supportData);
+  buildStatusDropdown(supportData);
   buildGroupFilter(supportData);
   buildLabelFilter(supportData);
   buildPriorityDropdown(supportData);

@@ -251,7 +251,7 @@ function buildTaskTable(data){
       '<td><a href="'+JIRA_BASE+d.Key+'" target="_blank" style="color:var(--accent);font-weight:700;text-decoration:none;white-space:nowrap">'+d.Key+'↗</a></td>'+
       '<td style="min-width:260px;max-width:380px">'+d.Summary+'</td>'+
       '<td style="text-align:left">'+statusTag(d.Status)+'</td>'+
-      '<td style="text-align:left"><span style="font-size:11px;color:var(--text2)">'+fmtGroup(d.Group||'—')+'</span></td>'+
+      '<td style="text-align:left"><span style="font-size:11px;color:var(--text2)">'+( d.Group||'—')+'</span></td>'+
       '<td style="text-align:left"><span style="font-size:10px;color:var(--text3)">'+((d.Components||'').split(';')[0]||'—')+'</span></td>'+
       '<td style="font-size:11px;white-space:nowrap;text-align:left">'+(d.Assignee||'<span style="color:var(--down)">unassigned</span>')+'</td>'+
       '<td style="font-size:11px;white-space:nowrap;text-align:left">'+dueHtml+'</td>'+

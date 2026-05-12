@@ -14,7 +14,7 @@ var _sortCol        = 'FailureOccurs';
 var _sortAsc        = false;   /* desc — newest first */
 var _activeView     = 'board';
 var _tablePage      = 1;
-var _tablePageSize  = 10;
+var _tablePageSize  = 20;
 var _chartGroupBy   = 'week'; /* 'week' | 'month' */
 
 /* ── Status board columns ────────────────────────────────── */

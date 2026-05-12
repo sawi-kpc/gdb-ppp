@@ -11,7 +11,7 @@ var listSearchQuery='';
 var listRoadmapFilter=[];
 var sumComponentFilter=[];
 var listComponentFilter='all';
-var _listPage=1, _listPageSize=10, _lastListFiltered=[];
+var _listPage=1, _listPageSize=20, _lastListFiltered=[];
 var doneComponentFilter=[];
 
 var MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];

@@ -47,7 +47,7 @@ function isOverdue(due,status){
 /* ── State ───────────────────────────────────────────────── */
 var activeStatuses=[];  /* multi-select; empty = all */
 var _taskPage = 1;
-var _taskPageSize = 10;
+var _taskPageSize = 20;
 var activeGroups  =[];  /* multi-select; empty = all */
 var activePriority='all';
 var activeLabels  =[];  /* multi-select; empty = all */

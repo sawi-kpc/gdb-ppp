@@ -38,11 +38,7 @@ function buildHeatmapAC(data) {
   var MS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
   function sg(g) {
-    return (g || '').replace('marketing_automation', 'mktg_auto')
-      .replace('firster_tiktok_report', 'f1_tiktok_rpt')
-      .replace('firster_tiktok_update_stock', 'f1_stk')
-      .replace('firster_report', 'f1_rpt')
-      .replace('Unknown', 'unknown');
+    return g || '';
   }
 
   var vol = {}, eff = {};
@@ -104,7 +100,7 @@ function buildHeatmapAC(data) {
     var h = '<table style="border-collapse:separate;border-spacing:2px;width:100%;font-size:10px">' +
             '<thead><tr><th style="text-align:left;color:var(--text3);padding:2px 4px 2px 0;font-size:9px;white-space:nowrap">Month</th>';
     groups.forEach(function(g) {
-      h += '<th style="color:var(--text3);padding:2px 3px;font-size:9px;white-space:nowrap">' + sg(g) + '</th>';
+      h += '<th style="color:var(--text3);padding:2px 3px;font-size:9px;white-space:nowrap;text-transform:none;letter-spacing:0">' + sg(g) + '</th>';
     });
     h += '</tr></thead><tbody>';
     months.forEach(function(mo) {

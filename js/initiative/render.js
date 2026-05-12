@@ -1047,7 +1047,6 @@ function renderList(){
 function _listPgHtml() {
   var total = _lastListFiltered.length;
   var totalPages = Math.max(1, Math.ceil(total / _listPageSize));
-  if (!total) return '';
   var out = '<span style="font-size:11px;color:var(--text3);margin-right:8px">'+total+' initiatives</span>';
   if (totalPages > 1) {
     var p = _listPage;

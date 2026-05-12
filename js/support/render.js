@@ -213,7 +213,6 @@ function buildTaskTable(data){
 
   /* Build pagination HTML (shared between top & bottom) */
   function _taskPgHtml() {
-    if (!data.length) return '';
     var out = '<span style="font-size:11px;color:var(--text3);margin-right:8px">'+data.length+' tasks</span>';
     if (totalPages > 1) {
       var p = _taskPage;

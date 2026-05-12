@@ -956,7 +956,6 @@ function _goTablePage(n) {
 var _lastTableData = [];
 
 function _issuePgHtml(page, totalPages, total) {
-  if (!total) return '';
   var out = '<span style="font-size:11px;color:var(--text3);margin-right:8px">'+total+' issues</span>';
   if (totalPages > 1) {
     var p = page;
@@ -993,8 +992,6 @@ function buildTable(data) {
 
   if (!data.length) {
     tbody.innerHTML = '<tr><td colspan="7" class="empty">No issues match this filter.</td></tr>';
-    if (pgTop) pgTop.innerHTML = '';
-    if (pgBot) pgBot.innerHTML = '';
     return;
   }
 

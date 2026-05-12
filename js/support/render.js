@@ -47,7 +47,7 @@ function isOverdue(due,status){
 /* ── State ───────────────────────────────────────────────── */
 var activeStatuses=[];  /* multi-select; empty = all */
 var _taskPage = 1;
-var _taskPageSize = 20;
+var _taskPageSize = 10;
 var activeGroups  =[];  /* multi-select; empty = all */
 var activePriority='all';
 var activeLabels  =[];  /* multi-select; empty = all */
@@ -206,17 +206,42 @@ function buildTaskTable(data){
   var tbody=document.getElementById('task-tbody');
   if(!tbody) return;
   var cntEl=document.getElementById('task-count-label');
+  if(cntEl) cntEl.textContent='';
+
+  var totalPages = Math.max(1, Math.ceil(data.length / _taskPageSize));
+  _taskPage = Math.max(1, Math.min(_taskPage, totalPages));
+
+  /* Build pagination HTML (shared between top & bottom) */
+  function _taskPgHtml() {
+    if (!data.length) return '';
+    var out = '<span style="font-size:11px;color:var(--text3);margin-right:8px">'+data.length+' tasks</span>';
+    if (totalPages > 1) {
+      var p = _taskPage;
+      out += '<button class="pg-btn" onclick="_goPage(1)" '+(p<=1?'disabled':'')+'>«</button>';
+      out += '<button class="pg-btn" onclick="_goPage('+(p-1)+')" '+(p<=1?'disabled':'')+'>‹</button>';
+      var from=Math.max(1,p-2), to=Math.min(totalPages,from+4);
+      from=Math.max(1,to-4);
+      for(var pi=from;pi<=to;pi++){
+        out += '<button class="pg-btn'+(pi===p?' active':'')+'" onclick="_goPage('+pi+')">'+pi+'</button>';
+      }
+      out += '<button class="pg-btn" onclick="_goPage('+(p+1)+')" '+(p>=totalPages?'disabled':'')+'>›</button>';
+      out += '<button class="pg-btn" onclick="_goPage('+totalPages+')" '+(p>=totalPages?'disabled':'')+'>»</button>';
+    }
+    return out;
+  }
+
+  var pgHtml = _taskPgHtml();
+  var pgTop = document.getElementById('task-pg-top');
+  var pgBot = document.getElementById('task-pg-bot');
+  if (pgTop) pgTop.innerHTML = pgHtml;
+  if (pgBot) pgBot.innerHTML = pgHtml;
+
   if(!data.length){
     tbody.innerHTML='<tr><td colspan="8" class="empty">No tasks match this filter.</td></tr>';
-    if(cntEl) cntEl.textContent='0 tasks';
     return;
   }
-  var totalPages = Math.max(1, Math.ceil(data.length / _taskPageSize));
-  _taskPage = Math.min(_taskPage, totalPages);
+
   var pageData = data.slice((_taskPage-1)*_taskPageSize, _taskPage*_taskPageSize);
-  if(cntEl) cntEl.textContent=
-    'Showing '+pageData.length+' of '+data.length+' tasks (page '+_taskPage+'/'+totalPages+')';
-  var today=new Date();
   var html=pageData.map(function(d){
     var overdue=isOverdue(d.Due,d.Status);
     var dueHtml=d.Due
@@ -235,24 +260,6 @@ function buildTaskTable(data){
       '</tr>';
   }).join('');
   tbody.innerHTML=html;
-
-  /* Pagination controls */
-  var pgEl = document.getElementById('task-pagination');
-  if (pgEl) {
-    if (totalPages <= 1) { pgEl.innerHTML = ''; }
-    else {
-      var btns = '';
-      btns += '<button class="pg-btn" onclick="_goPage(1)" '+((_taskPage===1)?'disabled':'')+'>«</button>';
-      btns += '<button class="pg-btn" onclick="_goPage('+(_taskPage-1)+')" '+((_taskPage===1)?'disabled':'')+'>‹</button>';
-      var start = Math.max(1, _taskPage-2), end = Math.min(totalPages, _taskPage+2);
-      for (var pi=start;pi<=end;pi++) {
-        btns += '<button class="pg-btn'+(pi===_taskPage?' active':'')+'" onclick="_goPage('+pi+')">'+pi+'</button>';
-      }
-      btns += '<button class="pg-btn" onclick="_goPage('+(_taskPage+1)+')" '+((_taskPage===totalPages)?'disabled':'')+'>›</button>';
-      btns += '<button class="pg-btn" onclick="_goPage('+totalPages+')" '+((_taskPage===totalPages)?'disabled':'')+'>»</button>';
-      pgEl.innerHTML = btns;
-    }
-  }
 }
 
 /* ── Patterns analysis (dynamic) ───────────────────────────── */

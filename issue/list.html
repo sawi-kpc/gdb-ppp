@@ -24,6 +24,7 @@
 .count-label { font-size: 11px; color: var(--text3); margin-left: auto; }
 
 /* ── Pagination ── */
+.pg-bar{display:flex;align-items:center;justify-content:flex-end;gap:4px;padding:7px 0}
 .pg-btn { padding: 3px 9px; font-size: 11px; font-weight: 600; border-radius: 5px; cursor: pointer; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); transition: all .15s; }
 .pg-btn:hover:not(:disabled) { background: var(--accent); border-color: var(--accent); color: #fff; }
 .pg-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
@@ -124,6 +125,7 @@
 
       <!-- Table view -->
       <div id="table-view-wrap">
+        <div class="pg-bar" id="issue-pg-top"></div>
         <div class="tbl-scroll">
           <table class="itbl">
             <thead><tr>
@@ -138,7 +140,7 @@
             <tbody id="issue-tbody"></tbody>
           </table>
         </div>
-        <div id="issue-pagination" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 4px 4px"></div>
+        <div class="pg-bar" id="issue-pg-bot"></div>
       </div>
 
     </div>

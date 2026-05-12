@@ -14,7 +14,7 @@ var _sortCol        = 'FailureOccurs';
 var _sortAsc        = false;   /* desc — newest first */
 var _activeView     = 'board';
 var _tablePage      = 1;
-var _tablePageSize  = 20;
+var _tablePageSize  = 10;
 var _chartGroupBy   = 'week'; /* 'week' | 'month' */
 
 /* ── Status board columns ────────────────────────────────── */
@@ -732,6 +732,7 @@ function populateFilters(data) {
 
 /* ── Filter + sort pipeline ──────────────────────────────── */
 function applyFilters() {
+  _tablePage = 1; /* reset to page 1 on filter change */
   var raw = (window.issueData || []).map(function(d){
     var copy = Object.assign({}, d);
     copy.Status = _normaliseStatus(copy.Status);
@@ -954,40 +955,47 @@ function _goTablePage(n) {
 }
 var _lastTableData = [];
 
+function _issuePgHtml(page, totalPages, total) {
+  if (!total) return '';
+  var out = '<span style="font-size:11px;color:var(--text3);margin-right:8px">'+total+' issues</span>';
+  if (totalPages > 1) {
+    var p = page;
+    out += '<button class="pg-btn" onclick="_goTablePage(1)" '+(p<=1?'disabled':'')+'>«</button>';
+    out += '<button class="pg-btn" onclick="_goTablePage('+(p-1)+')" '+(p<=1?'disabled':'')+'>‹</button>';
+    var from=Math.max(1,p-2), to=Math.min(totalPages,from+4);
+    from=Math.max(1,to-4);
+    for(var i=from;i<=to;i++){
+      out += '<button class="pg-btn'+(i===p?' active':'')+'" onclick="_goTablePage('+i+')">'+i+'</button>';
+    }
+    out += '<button class="pg-btn" onclick="_goTablePage('+(p+1)+')" '+(p>=totalPages?'disabled':'')+'>›</button>';
+    out += '<button class="pg-btn" onclick="_goTablePage('+totalPages+')" '+(p>=totalPages?'disabled':'')+'>»</button>';
+  }
+  return out;
+}
+
 function buildTable(data) {
   _lastTableData = data;
   var totalPages = Math.max(1, Math.ceil(data.length / _tablePageSize));
   _tablePage = Math.max(1, Math.min(_tablePage, totalPages));
   var pageData = data.slice((_tablePage - 1) * _tablePageSize, _tablePage * _tablePageSize);
 
+  var pgHtml = _issuePgHtml(_tablePage, totalPages, data.length);
+  var pgTop = document.getElementById('issue-pg-top');
+  var pgBot = document.getElementById('issue-pg-bot');
+  if (pgTop) pgTop.innerHTML = pgHtml;
+  if (pgBot) pgBot.innerHTML = pgHtml;
+
   var countEl = document.getElementById('count-label');
-  if (countEl) countEl.textContent = 'Showing ' + pageData.length + ' of ' + data.length + ' issues (page ' + _tablePage + '/' + totalPages + ')';
+  if (countEl) countEl.textContent = '';
 
   var tbody = document.getElementById('issue-tbody');
   if (!tbody) return;
 
   if (!data.length) {
     tbody.innerHTML = '<tr><td colspan="7" class="empty">No issues match this filter.</td></tr>';
-    var pg = document.getElementById('issue-pagination');
-    if (pg) pg.innerHTML = '';
+    if (pgTop) pgTop.innerHTML = '';
+    if (pgBot) pgBot.innerHTML = '';
     return;
-  }
-
-  var pgEl = document.getElementById('issue-pagination');
-  if (pgEl) {
-    if (totalPages <= 1) {
-      pgEl.innerHTML = '';
-    } else {
-      var p = _tablePage, html = '';
-      html += '<button class="pg-btn" ' + (p <= 1 ? 'disabled' : '') + ' onclick="_goTablePage(' + (p - 1) + ')">‹</button>';
-      var from = Math.max(1, p - 2), to = Math.min(totalPages, from + 4);
-      from = Math.max(1, to - 4);
-      for (var i = from; i <= to; i++) {
-        html += '<button class="pg-btn' + (i === p ? ' active' : '') + '" onclick="_goTablePage(' + i + ')">' + i + '</button>';
-      }
-      html += '<button class="pg-btn" ' + (p >= totalPages ? 'disabled' : '') + ' onclick="_goTablePage(' + (p + 1) + ')">›</button>';
-      pgEl.innerHTML = html;
-    }
   }
 
   tbody.innerHTML = pageData.map(function(d){

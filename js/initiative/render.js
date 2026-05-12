@@ -11,6 +11,7 @@ var listSearchQuery='';
 var listRoadmapFilter=[];
 var sumComponentFilter=[];
 var listComponentFilter='all';
+var _listPage=1, _listPageSize=10, _lastListFiltered=[];
 var doneComponentFilter=[];
 
 var MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -1037,10 +1038,50 @@ function renderList(){
     return na-nb;
   });
 
-  var listCountEl=document.getElementById('list-count');
-  if(listCountEl)listCountEl.textContent='Showing '+filtered.length+' of '+allData.length+' initiatives';
+  /* Store filtered and reset to page 1, then render */
+  _lastListFiltered = filtered;
+  _listPage = 1;
+  _renderListPage();
+}
 
-  /* Render rows */
+function _listPgHtml() {
+  var total = _lastListFiltered.length;
+  var totalPages = Math.max(1, Math.ceil(total / _listPageSize));
+  if (!total) return '';
+  var out = '<span style="font-size:11px;color:var(--text3);margin-right:8px">'+total+' initiatives</span>';
+  if (totalPages > 1) {
+    var p = _listPage;
+    out += '<button class="pg-btn" onclick="_goListPage(1)" '+(p<=1?'disabled':'')+'>«</button>';
+    out += '<button class="pg-btn" onclick="_goListPage('+(p-1)+')" '+(p<=1?'disabled':'')+'>‹</button>';
+    var from=Math.max(1,p-2), to=Math.min(totalPages,from+4);
+    from=Math.max(1,to-4);
+    for(var i=from;i<=to;i++){
+      out += '<button class="pg-btn'+(i===p?' active':'')+'" onclick="_goListPage('+i+')">'+i+'</button>';
+    }
+    out += '<button class="pg-btn" onclick="_goListPage('+(p+1)+')" '+(p>=totalPages?'disabled':'')+'>›</button>';
+    out += '<button class="pg-btn" onclick="_goListPage('+totalPages+')" '+(p>=totalPages?'disabled':'')+'>»</button>';
+  }
+  return out;
+}
+
+function _goListPage(n) {
+  var totalPages = Math.max(1, Math.ceil(_lastListFiltered.length / _listPageSize));
+  _listPage = Math.max(1, Math.min(n, totalPages));
+  _renderListPage();
+}
+
+function _renderListPage() {
+  var data = _lastListFiltered;
+  var totalPages = Math.max(1, Math.ceil(data.length / _listPageSize));
+  _listPage = Math.max(1, Math.min(_listPage, totalPages));
+  var pageData = data.slice((_listPage-1)*_listPageSize, _listPage*_listPageSize);
+
+  var pgHtml = _listPgHtml();
+  var top = document.getElementById('list-pg-top');
+  var bot = document.getElementById('list-pg-bot');
+  if (top) top.innerHTML = pgHtml;
+  if (bot) bot.innerHTML = pgHtml;
+
   var _MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   function fd(raw){
     var p=raw?(function(){try{return JSON.parse(raw)}catch(e){return null}})():null;
@@ -1051,8 +1092,8 @@ function renderList(){
 
   var listBody=document.getElementById('list-body');
   if(!listBody)return;
-  listBody.innerHTML=filtered.length
-    ?filtered.map(function(d){
+  listBody.innerHTML=pageData.length
+    ?pageData.map(function(d){
         var mon=d['Project Monitoring Status']||'';
         var isD=mon.toLowerCase().includes('delay');
         var isR=mon.toLowerCase().includes('risk');

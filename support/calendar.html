@@ -457,9 +457,10 @@ function calRender() {
 
   /* Update count label */
   var moPfx = calYear + '-' + pad(calMonth + 1);
-  var total = filtered.filter(function(d) {
-    return String(d.Due || '').trim().startsWith(moPfx);
-  }).length;
+  var total = 0;
+  Object.keys(byDate).forEach(function(k) {
+    if (k.startsWith(moPfx)) total += byDate[k].length;
+  });
   var countLbl = document.getElementById('cal-count-lbl');
   if (countLbl) countLbl.textContent = total + ' task' + (total !== 1 ? 's' : '') + ' this month';
 }

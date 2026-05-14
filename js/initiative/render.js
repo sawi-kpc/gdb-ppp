@@ -10,7 +10,7 @@ var listAssigneeFilter='all';
 var listSearchQuery='';
 var listRoadmapFilter=[];
 var sumComponentFilter=[];
-var listComponentFilter='all';
+var listComponentFilter=[];
 var _listPage=1, _listPageSize=20, _lastListFiltered=[];
 var doneComponentFilter=[];
 
@@ -256,7 +256,7 @@ function _buildCheckDropdown(wrapperId, btnLabelId, panelId, listId, values, act
     var dot = (colorMap && colorMap[v])
       ? '<span style="width:8px;height:8px;border-radius:50%;background:'+colorMap[v]+';display:inline-block;flex-shrink:0"></span>'
       : '';
-    return '<label style="display:flex;align-items:center;gap:8px;padding:5px 12px;cursor:pointer;font-size:12px;color:var(--text)" '+
+    return '<label style="display:flex;align-items:center;gap:8px;padding:5px 12px;cursor:pointer;font-size:12px;color:var(--text);white-space:nowrap" '+
       'onmouseover="this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'\'">'+
       '<input type="checkbox"'+(checked?' checked':'')+' onchange="'+toggleFn+'(\''+v+'\')" style="accent-color:var(--accent);width:13px;height:13px;flex-shrink:0">'+
       dot+'<span>'+v+'</span></label>';
@@ -976,7 +976,13 @@ function renderList(){
   }
 
   /* Component dropdown */
-  _buildCompSelect('comp-list-select', allData, listComponentFilter);
+  var listCompVals=[];
+  allData.forEach(function(d){
+    (d['Components']||'').split(';').forEach(function(c){ var t=c.trim(); if(t&&listCompVals.indexOf(t)<0)listCompVals.push(t); });
+  });
+  listCompVals.sort();
+  _buildCheckDropdown('comp-list-dropdown-wrap','comp-list-btn-label','comp-list-dropdown-panel','comp-list-checkbox-list',
+    listCompVals, listComponentFilter, null, 'onListCompToggle', 'clearListCompFilter');
 
   /* Roadmap status dropdown checkboxes */
   var rsCheckList=document.getElementById('rs-checkbox-list');
@@ -1020,7 +1026,12 @@ function renderList(){
       return a1===listAssigneeFilter||a2===listAssigneeFilter;
     });
   }
-  filtered=_filterComp(filtered, listComponentFilter);
+  if(listComponentFilter.length>0){
+    filtered=filtered.filter(function(d){
+      var comps=(d['Components']||'').split(';').map(function(c){return c.trim();});
+      return listComponentFilter.some(function(f){return comps.indexOf(f)>=0;});
+    });
+  }
   /* Roadmap status filter */
   if(listRoadmapFilter.length>0){
     filtered=filtered.filter(function(d){ return listRoadmapFilter.indexOf(d['Roadmap Status']||'')>=0; });
@@ -1125,7 +1136,13 @@ function _renderListPage() {
 }
 
 function onAssigneeChange(val){ listAssigneeFilter=(val!==undefined&&val!==null)?val:'all'; renderList(); }
-function onListComponentChange(val){ listComponentFilter=val||'all'; renderList(); }
+function onListCompToggle(val){
+  var idx=listComponentFilter.indexOf(val);
+  if(idx>=0)listComponentFilter.splice(idx,1); else listComponentFilter.push(val);
+  renderList();
+  var panel=document.getElementById('comp-list-dropdown-panel'); if(panel)panel.style.display='block';
+}
+function clearListCompFilter(){ listComponentFilter=[]; document.getElementById('comp-list-dropdown-panel').style.display='none'; renderList(); }
 function onListSearchChange(val){ listSearchQuery=val||''; renderList(); }
 function onListRoadmapToggle(val){
   var idx=listRoadmapFilter.indexOf(val);

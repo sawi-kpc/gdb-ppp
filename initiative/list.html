@@ -28,6 +28,20 @@
     <span class="fb-label">Roadmap year:</span>
     <div id="yf-list" style="display:flex;gap:6px;flex-wrap:wrap"></div>
     <div class="fb-sep"></div>
+    <span class="fb-label">Status:</span>
+    <div style="position:relative" id="list-status-dropdown-wrap">
+      <button onclick="toggleDropdown('list-status-dropdown-panel')"
+        style="height:26px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);font-size:11.5px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap">
+        <span id="list-status-btn-label" data-empty="All Statuses">All Statuses</span><span style="font-size:9px;color:var(--text3)">▾</span>
+      </button>
+      <div id="list-status-dropdown-panel" style="display:none;position:absolute;top:30px;left:0;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.18);padding:8px 0;min-width:180px">
+        <div id="list-status-checkbox-list"></div>
+        <div style="border-top:1px solid var(--border);margin-top:6px;padding:6px 12px 2px">
+          <button onclick="clearListStatusFilter()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Clear all</button>
+        </div>
+      </div>
+    </div>
+    <div class="fb-sep"></div>
     <span class="fb-label">Assignee:</span>
     <select class="list-filter-select" id="af-list-select" onchange="onAssigneeChange(this.value)">
       <option value="all">All assignees</option>
@@ -151,7 +165,7 @@ function clearRsFilter() {
 }
 /* Close dropdowns when clicking outside */
 document.addEventListener('click', function(e) {
-  ['rs-dropdown-wrap', 'comp-list-dropdown-wrap'].forEach(function(wrapId) {
+  ['rs-dropdown-wrap', 'comp-list-dropdown-wrap', 'list-status-dropdown-wrap'].forEach(function(wrapId) {
     var wrap = document.getElementById(wrapId);
     if (wrap && !wrap.contains(e.target)) {
       var panel = wrap.querySelector('[id$="-dropdown-panel"]');

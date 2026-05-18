@@ -9,6 +9,7 @@ var listYearFilter=['ROADMAP_2026'];
 var listAssigneeFilter='all';
 var listSearchQuery='';
 var listRoadmapFilter=[];
+var listStatusFilter=[];
 var sumComponentFilter=[];
 var listComponentFilter=[];
 var _listPage=1, _listPageSize=20, _lastListFiltered=[];
@@ -976,6 +977,14 @@ function renderList(){
     sel.value=listAssigneeFilter;
   }
 
+  /* Status dropdown */
+  var LIST_STATUS_COLORS={'Parking Lot':'var(--text3)','Budget Approval':'var(--amber)','Discovery':'var(--purple)','Ready for Delivery':'var(--teal)','Delivery':'var(--accent)','Done':'var(--up)'};
+  var listStatusVals=[];
+  allData.forEach(function(d){ var v=d.Status||''; if(v&&listStatusVals.indexOf(v)<0)listStatusVals.push(v); });
+  listStatusVals.sort();
+  _buildCheckDropdown('list-status-dropdown-wrap','list-status-btn-label','list-status-dropdown-panel','list-status-checkbox-list',
+    listStatusVals, listStatusFilter, LIST_STATUS_COLORS, 'onListStatusToggle', 'clearListStatusFilter');
+
   /* Component dropdown */
   var listCompVals=[];
   allData.forEach(function(d){
@@ -1020,6 +1029,9 @@ function renderList(){
 
   /* Filter data */
   var filtered=filterYear(allData,listYearFilter);
+  if(listStatusFilter.length>0){
+    filtered=filtered.filter(function(d){ return listStatusFilter.indexOf(d.Status||'')>=0; });
+  }
   if(listAssigneeFilter!=='all'){
     filtered=filtered.filter(function(d){
       var a1=(d['Assignee.displayName']||'').trim().split(' ')[0];
@@ -1161,6 +1173,13 @@ function listSortBy(col){
     th.style.color=active?'var(--accent)':'';
   });
 }
+function onListStatusToggle(val){
+  var idx=listStatusFilter.indexOf(val);
+  if(idx>=0)listStatusFilter.splice(idx,1); else listStatusFilter.push(val);
+  renderList();
+  var panel=document.getElementById('list-status-dropdown-panel'); if(panel)panel.style.display='block';
+}
+function clearListStatusFilter(){ listStatusFilter=[]; document.getElementById('list-status-dropdown-panel').style.display='none'; renderList(); }
 function onAssigneeChange(val){ listAssigneeFilter=(val!==undefined&&val!==null)?val:'all'; renderList(); }
 function onListCompToggle(val){
   var idx=listComponentFilter.indexOf(val);

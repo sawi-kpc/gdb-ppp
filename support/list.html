@@ -19,7 +19,7 @@
   text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);
   white-space:nowrap;cursor:pointer;user-select:none}
 .ttbl th:hover{color:var(--text)}
-.ttbl th.sorted{color:var(--accent)}
+.ttbl th.sorted{background:rgba(88,166,255,.1);color:var(--accent)}
 .ttbl td{padding:8px 10px;border-bottom:1px solid rgba(48,54,61,.35);vertical-align:top;text-align:left}
 .ttbl tr:hover td{background:var(--surface2)}
 .ttbl tr:last-child td{border-bottom:none}
@@ -133,15 +133,15 @@
     <div class="pg-bar" id="task-pg-top"></div>
     <div class="tbl-scroll">
       <table class="ttbl">
-        <thead><tr>
-          <th onclick="sortBy('Key')">Key ↕</th>
-          <th onclick="sortBy('Summary')">Summary ↕</th>
-          <th onclick="sortBy('Status')">Status</th>
-          <th onclick="sortBy('Group')">Group</th>
+        <thead id="task-thead"><tr>
+          <th data-col="Key"      onclick="sortBy('Key')">Key</th>
+          <th data-col="Summary"  onclick="sortBy('Summary')">Summary</th>
+          <th data-col="Status"   onclick="sortBy('Status')">Status</th>
+          <th data-col="Group"    onclick="sortBy('Group')">Group</th>
           <th>Component</th>
-          <th onclick="sortBy('Assignee')">Assignee</th>
-          <th onclick="sortBy('Due date')">Due date ↕</th>
-          <th onclick="sortBy('Hours')">Hours spent ↕</th>
+          <th data-col="Assignee" onclick="sortBy('Assignee')">Assignee</th>
+          <th data-col="Due date" onclick="sortBy('Due date')">Due date</th>
+          <th data-col="Hours"    onclick="sortBy('Hours')">Hours spent</th>
         </tr></thead>
         <tbody id="task-tbody"></tbody>
       </table>

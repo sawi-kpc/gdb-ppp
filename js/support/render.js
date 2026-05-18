@@ -381,6 +381,11 @@ function setFilter(type, val, btn) {
 function sortBy(col){
   if(sortCol===col) sortAsc=!sortAsc; else { sortCol=col; sortAsc=true; }
   applyFilters();
+  document.querySelectorAll('#task-thead th[data-col]').forEach(function(th){
+    var active=th.getAttribute('data-col')===col;
+    th.style.background=active?'rgba(88,166,255,.1)':'';
+    th.style.color=active?'var(--accent)':'';
+  });
 }
 
 /* ══════════════════════════════════════════════════════════════

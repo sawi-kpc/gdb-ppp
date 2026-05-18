@@ -128,14 +128,14 @@
         <div class="pg-bar" id="issue-pg-top"></div>
         <div class="tbl-scroll">
           <table class="itbl">
-            <thead><tr>
-              <th onclick="sortIssueBy('Key')" style="white-space:nowrap">Key</th>
-              <th onclick="sortIssueBy('Summary')">Summary</th>
-              <th onclick="sortIssueBy('Status')">Status</th>
-              <th onclick="sortIssueBy('Priority')" style="white-space:nowrap">Priority</th>
-              <th onclick="sortIssueBy('Severity')" style="white-space:nowrap">Severity</th>
-              <th onclick="sortIssueBy('Assignee')">Assignee</th>
-              <th onclick="sortIssueBy('Due')" style="white-space:nowrap">Due date</th>
+            <thead id="issue-list-thead"><tr>
+              <th data-col="Key"      onclick="sortIssueBy('Key')" style="white-space:nowrap">Key</th>
+              <th data-col="Summary"  onclick="sortIssueBy('Summary')">Summary</th>
+              <th data-col="Status"   onclick="sortIssueBy('Status')">Status</th>
+              <th data-col="Priority" onclick="sortIssueBy('Priority')" style="white-space:nowrap">Priority</th>
+              <th data-col="Severity" onclick="sortIssueBy('Severity')" style="white-space:nowrap">Severity</th>
+              <th data-col="Assignee" onclick="sortIssueBy('Assignee')">Assignee</th>
+              <th data-col="Due"      onclick="sortIssueBy('Due')" style="white-space:nowrap">Due date</th>
             </tr></thead>
             <tbody id="issue-tbody"></tbody>
           </table>

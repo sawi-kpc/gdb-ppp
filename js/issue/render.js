@@ -812,6 +812,11 @@ function sortIssueBy(col) {
   if (_sortCol === col) _sortAsc = !_sortAsc;
   else { _sortCol = col; _sortAsc = true; }
   applyFilters();
+  document.querySelectorAll('#issue-list-thead th[data-col]').forEach(function(th){
+    var active=th.getAttribute('data-col')===col;
+    th.style.background=active?'rgba(88,166,255,.1)':'';
+    th.style.color=active?'var(--accent)':'';
+  });
 }
 
 function switchView(view) {

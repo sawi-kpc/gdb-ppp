@@ -1153,16 +1153,13 @@ function _renderListPage() {
 
 function listSortBy(col){
   if(_listSortCol===col){ _listSortAsc=!_listSortAsc; } else { _listSortCol=col; _listSortAsc=true; }
-  /* Update header indicators */
-  var ths=document.querySelectorAll('#list-thead th');
-  ths.forEach(function(th){
-    var c=th.getAttribute('data-col');
-    th.style.color=c===_listSortCol?'var(--accent)':'';
-    var ind=th.querySelector('.sort-ind');
-    if(ind) ind.textContent=c===_listSortCol?(_listSortAsc?' ↑':' ↓'):' ↕';
-  });
   _listPage=1;
   renderList();
+  document.querySelectorAll('#list-thead th[data-col]').forEach(function(th){
+    var active=th.getAttribute('data-col')===_listSortCol;
+    th.style.background=active?'rgba(88,166,255,.1)':'';
+    th.style.color=active?'var(--accent)':'';
+  });
 }
 function onAssigneeChange(val){ listAssigneeFilter=(val!==undefined&&val!==null)?val:'all'; renderList(); }
 function onListCompToggle(val){

@@ -12,6 +12,7 @@ var listRoadmapFilter=[];
 var sumComponentFilter=[];
 var listComponentFilter=[];
 var _listPage=1, _listPageSize=20, _lastListFiltered=[];
+var _listSortCol='Key', _listSortAsc=true;
 var doneComponentFilter=[];
 
 var MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -1042,11 +1043,26 @@ function renderList(){
     filtered=filtered.filter(function(d){ return (d.Summary||'').toLowerCase().indexOf(q)>=0; });
   }
 
-  /* Sort by Key asc: PPP-1, PPP-2, ... */
+  /* Dynamic sort */
   filtered=filtered.slice().sort(function(a,b){
-    var na=parseInt((a.Key||'').replace('PPP-',''))||0;
-    var nb=parseInt((b.Key||'').replace('PPP-',''))||0;
-    return na-nb;
+    var col=_listSortCol, asc=_listSortAsc;
+    var va, vb;
+    if(col==='Key'){
+      va=parseInt((a.Key||'').replace(/[^0-9]/g,''))||0;
+      vb=parseInt((b.Key||'').replace(/[^0-9]/g,''))||0;
+    } else if(col==='Start'||col==='End'){
+      var fk=col==='Start'?'Target Project Start':'Target Project End';
+      va=new Date((function(r){try{var p=JSON.parse(r);return p&&p.start?p.start:r;}catch(e){return r;}})( a[fk]||'')).getTime()||0;
+      vb=new Date((function(r){try{var p=JSON.parse(r);return p&&p.start?p.start:r;}catch(e){return r;}})( b[fk]||'')).getTime()||0;
+    } else {
+      var map={'Summary':'Summary','Status':'Status','Roadmap':'Roadmap Status','Goal':'Project Goal','Type':'Project Type','Assignee':'Assignee.displayName','Assignee2':'Assignee (2nd).displayName','Monitor':'Project Monitoring Status'};
+      var fld=map[col]||col;
+      va=(a[fld]||'').toLowerCase();
+      vb=(b[fld]||'').toLowerCase();
+    }
+    if(va<vb) return asc?-1:1;
+    if(va>vb) return asc?1:-1;
+    return 0;
   });
 
   /* Store filtered and reset to page 1, then render */
@@ -1135,6 +1151,19 @@ function _renderListPage() {
     :'<tr><td colspan="11" style="text-align:center;color:var(--text3);padding:24px">No initiatives match this filter.</td></tr>';
 }
 
+function listSortBy(col){
+  if(_listSortCol===col){ _listSortAsc=!_listSortAsc; } else { _listSortCol=col; _listSortAsc=true; }
+  /* Update header indicators */
+  var ths=document.querySelectorAll('#list-thead th');
+  ths.forEach(function(th){
+    var c=th.getAttribute('data-col');
+    th.style.color=c===_listSortCol?'var(--accent)':'';
+    var ind=th.querySelector('.sort-ind');
+    if(ind) ind.textContent=c===_listSortCol?(_listSortAsc?' ↑':' ↓'):' ↕';
+  });
+  _listPage=1;
+  renderList();
+}
 function onAssigneeChange(val){ listAssigneeFilter=(val!==undefined&&val!==null)?val:'all'; renderList(); }
 function onListCompToggle(val){
   var idx=listComponentFilter.indexOf(val);

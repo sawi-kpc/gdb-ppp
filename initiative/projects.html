@@ -75,8 +75,8 @@
   border:1px solid var(--border);border-radius:10px;padding:1px 8px;white-space:nowrap}
 
 /* ── Initiative table ── */
-.proj-body{padding:0}
-.ini-table{width:100%;border-collapse:collapse;font-size:11.5px}
+.proj-body{padding:0;overflow-x:auto}
+.ini-table{width:100%;border-collapse:collapse;font-size:11.5px;table-layout:fixed}
 .ini-table th{padding:7px 12px;text-align:left;font-size:10px;font-weight:600;
   color:var(--text3);text-transform:uppercase;letter-spacing:.04em;
   border-bottom:1px solid var(--border);background:var(--surface2);white-space:nowrap}
@@ -355,8 +355,21 @@ function projRender() {
       return y ? '<span class="p-year pill">' + y + '</span>' : '';
     }).join('');
 
+    /* Sort initiatives by Target Project Start asc */
+    var sortedLinks = (p.initiatives || []).slice().sort(function(a, b) {
+      function _getTs(link) {
+        var ini = _getIni(link.issueKey); if (!ini) return 9999999999999;
+        var raw = ini['Target Project Start'] || '';
+        var d = null;
+        try { var pj = JSON.parse(raw); d = pj && pj.start ? new Date(pj.start) : null; } catch(e) {}
+        if (!d) { var m = raw.match(/(\d{4}-\d{2}-\d{2})/); d = m ? new Date(m[1]) : null; }
+        return d && !isNaN(d) ? d.getTime() : 9999999999999;
+      }
+      return _getTs(a) - _getTs(b);
+    });
+
     /* Initiative rows */
-    var iniRows = (p.initiatives || []).map(function(link) {
+    var iniRows = sortedLinks.map(function(link) {
       var ini = _getIni(link.issueKey);
       if (!ini) {
         /* fallback: no detail found */
@@ -416,16 +429,27 @@ function projRender() {
       '</div>' +
       '<div class="proj-body" id="proj-body-' + p.Key + '" style="display:' + (collapsed ? 'none' : 'block') + '">' +
         '<table class="ini-table">' +
+          '<colgroup>' +
+            '<col style="width:80px">' +
+            '<col>' +
+            '<col style="width:110px">' +
+            '<col style="width:68px">' +
+            '<col style="width:120px">' +
+            '<col style="width:162px">' +
+            '<col style="width:150px">' +
+            '<col style="width:88px">' +
+            '<col style="width:88px">' +
+          '</colgroup>' +
           '<thead><tr>' +
-            '<th style="width:80px">Key</th>' +
+            '<th>Key</th>' +
             '<th>Summary</th>' +
-            '<th style="width:110px">Status</th>' +
-            '<th style="width:60px">Roadmap</th>' +
-            '<th style="width:110px">Monitor</th>' +
-            '<th style="width:160px">Target timeline</th>' +
-            '<th style="width:160px">Actual timeline</th>' +
-            '<th style="width:80px">Assignee</th>' +
-            '<th style="width:80px">Assignee 2nd</th>' +
+            '<th>Status</th>' +
+            '<th>Roadmap</th>' +
+            '<th>Monitor</th>' +
+            '<th>Target timeline</th>' +
+            '<th>Actual timeline</th>' +
+            '<th>Assignee</th>' +
+            '<th>Assignee 2nd</th>' +
           '</tr></thead>' +
           '<tbody>' + (iniRows || '<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:16px;font-size:11px">No linked initiatives</td></tr>') + '</tbody>' +
         '</table>' +
@@ -480,6 +504,8 @@ function _checkReady() {
   document.getElementById('gdb-loading').style.display = 'none';
   document.getElementById('proj-content').style.display = 'block';
   if (typeof setGdbUpdateTime === 'function') setGdbUpdateTime(new Date().toISOString());
+  /* Default: collapse all projects */
+  _allProjects.forEach(function(p) { _collapsedCards[p.Key] = true; });
   projBuildStatusDD();
   projRender();
 }

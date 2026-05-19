@@ -263,16 +263,19 @@ document.addEventListener('click', function(e) {
   }
 });
 
-/* ── Toggle card expand/collapse ── */
+/* ── Collapse state: persists across re-renders ── */
+var _collapsedCards = {};
+
 function projToggleCard(key) {
+  _collapsedCards[key] = !_collapsedCards[key];
   var body = document.getElementById('proj-body-' + key);
   var chev = document.getElementById('proj-chev-' + key);
   var head = document.getElementById('proj-head-' + key);
   if (!body) return;
-  var isOpen = body.style.display !== 'none';
-  body.style.display = isOpen ? 'none' : 'block';
-  if (chev) chev.classList.toggle('open', !isOpen);
-  if (head) head.classList.toggle('expanded', !isOpen);
+  var collapsed = _collapsedCards[key];
+  body.style.display = collapsed ? 'none' : 'block';
+  if (chev) chev.classList.toggle('open', !collapsed);
+  if (head) head.classList.toggle('expanded', !collapsed);
 }
 
 /* ── Look up initiative detail by key ── */
@@ -315,6 +318,13 @@ function _iniStatusPill(s) {
              : '<span style="font-size:11px;color:var(--text2)">' + (s||'—') + '</span>';
 }
 
+var ROADMAP_STATUS_COLOR = { 'Now':'var(--accent)', 'Next':'var(--teal)', 'Later':'var(--amber)' };
+function _roadmapStatusPill(s) {
+  if (!s) return '<span style="color:var(--text3)">—</span>';
+  var c = ROADMAP_STATUS_COLOR[s] || 'var(--text2)';
+  return '<span style="font-size:10px;font-weight:600;color:' + c + '">' + s + '</span>';
+}
+
 /* ── Main render ── */
 function projRender() {
   var q = (document.getElementById('proj-search') || {}).value || '';
@@ -352,35 +362,48 @@ function projRender() {
         /* fallback: no detail found */
         return '<tr>' +
           '<td><a class="ini-key-link" href="' + (CONFIG.JIRA_BASE||'https://kingpowerclick.atlassian.net/browse/') + link.issueKey + '" target="_blank" rel="noopener">' + link.issueKey + '</a></td>' +
-          '<td colspan="5" style="color:var(--text3);font-size:11px;font-style:italic">Details not loaded</td>' +
+          '<td colspan="8" style="color:var(--text3);font-size:11px;font-style:italic">Details not loaded</td>' +
         '</tr>';
       }
       var now  = new Date();
+      /* Target timeline */
       var endRaw = ini['Target Project End'] || '';
       var endStr = null;
       try { var ep = JSON.parse(endRaw); endStr = ep && ep.start ? ep.start : null; } catch(e) { endStr = /\d{4}-\d{2}-\d{2}/.test(endRaw) ? endRaw.match(/(\d{4}-\d{2}-\d{2})/)[1] : null; }
       var isOverdue = endStr && ini.Status !== 'Done' && new Date(endStr) < now;
-      var startFmt = _fd(ini['Target Project Start']);
-      var endFmt   = _fd(ini['Target Project End']);
-      var dateCell = (startFmt || endFmt)
-        ? '<span class="ini-date">' + (startFmt||'?') + '<span class="ini-date-arrow">→</span>' + (endFmt||'?') + (isOverdue ? '<span class="ini-overdue">Overdue</span>' : '') + '</span>'
+      var tgtStart = _fd(ini['Target Project Start']);
+      var tgtEnd   = _fd(ini['Target Project End']);
+      var tgtCell  = (tgtStart || tgtEnd)
+        ? '<span class="ini-date">' + (tgtStart||'?') + '<span class="ini-date-arrow">→</span>' + (tgtEnd||'?') + (isOverdue ? '<span class="ini-overdue">Overdue</span>' : '') + '</span>'
         : '<span style="color:var(--text3)">—</span>';
+      /* Actual timeline */
+      var actStart = _fd(ini['Actual Project Start']);
+      var actEnd   = _fd(ini['Actual Project End']);
+      var actCell  = (actStart || actEnd)
+        ? '<span class="ini-date">' + (actStart||'?') + '<span class="ini-date-arrow">→</span>' + (actEnd||'?') + '</span>'
+        : '<span style="color:var(--text3)">—</span>';
+      /* Assignees */
       var a1 = (ini['Assignee.displayName'] || '').split(' ')[0] || '—';
+      var a2 = (ini['Assignee (2nd).displayName'] || '').split(' ')[0] || '—';
 
       return '<tr>' +
         '<td><a class="ini-key-link" href="' + (CONFIG.JIRA_BASE||'https://kingpowerclick.atlassian.net/browse/') + ini.Key + '" target="_blank" rel="noopener">' + ini.Key + '</a></td>' +
         '<td><span class="ini-summary" title="' + (ini.Summary||'') + '">' + (ini.Summary||'—') + '</span></td>' +
         '<td>' + _iniStatusPill(ini.Status) + '</td>' +
+        '<td>' + _roadmapStatusPill(ini['Roadmap Status']) + '</td>' +
         '<td>' + _monBadge(ini['Project Monitoring Status']) + '</td>' +
-        '<td>' + dateCell + '</td>' +
+        '<td>' + tgtCell + '</td>' +
+        '<td>' + actCell + '</td>' +
         '<td><span class="ini-assignee">' + a1 + '</span></td>' +
+        '<td><span class="ini-assignee" style="color:var(--text3)">' + a2 + '</span></td>' +
       '</tr>';
     }).join('');
 
     var iniCount = (p.initiatives || []).length;
 
+    var collapsed = !!_collapsedCards[p.Key];
     return '<div class="proj-card">' +
-      '<div class="proj-card-head expanded" id="proj-head-' + p.Key + '" onclick="projToggleCard(\'' + p.Key + '\')">' +
+      '<div class="proj-card-head' + (collapsed ? '' : ' expanded') + '" id="proj-head-' + p.Key + '" onclick="projToggleCard(\'' + p.Key + '\')">' +
         '<a class="proj-key" href="' + (CONFIG.JIRA_BASE||'https://kingpowerclick.atlassian.net/browse/') + p.Key + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">' + p.Key + '</a>' +
         '<span class="proj-title">' + (p.Summary||'') + '</span>' +
         '<div class="proj-meta">' +
@@ -389,19 +412,22 @@ function projRender() {
           yearTags +
           '<span class="ini-count">' + iniCount + ' initiative' + (iniCount !== 1 ? 's' : '') + '</span>' +
         '</div>' +
-        '<span class="proj-chevron open" id="proj-chev-' + p.Key + '">▾</span>' +
+        '<span class="proj-chevron' + (collapsed ? '' : ' open') + '" id="proj-chev-' + p.Key + '">▾</span>' +
       '</div>' +
-      '<div class="proj-body" id="proj-body-' + p.Key + '">' +
+      '<div class="proj-body" id="proj-body-' + p.Key + '" style="display:' + (collapsed ? 'none' : 'block') + '">' +
         '<table class="ini-table">' +
           '<thead><tr>' +
             '<th style="width:80px">Key</th>' +
             '<th>Summary</th>' +
-            '<th style="width:120px">Status</th>' +
+            '<th style="width:110px">Status</th>' +
+            '<th style="width:60px">Roadmap</th>' +
             '<th style="width:110px">Monitor</th>' +
-            '<th style="width:180px">Target timeline</th>' +
-            '<th style="width:90px">Assignee</th>' +
+            '<th style="width:160px">Target timeline</th>' +
+            '<th style="width:160px">Actual timeline</th>' +
+            '<th style="width:80px">Assignee</th>' +
+            '<th style="width:80px">Assignee 2nd</th>' +
           '</tr></thead>' +
-          '<tbody>' + (iniRows || '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:16px;font-size:11px">No linked initiatives</td></tr>') + '</tbody>' +
+          '<tbody>' + (iniRows || '<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:16px;font-size:11px">No linked initiatives</td></tr>') + '</tbody>' +
         '</table>' +
       '</div>' +
     '</div>';

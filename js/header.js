@@ -21,12 +21,14 @@ function buildGdbInitiativeSubNav() {
   var dashActive      = p.endsWith('/initiative/dashboard.html') ? ' active' : '';
   var listActive      = p.endsWith('/initiative/list.html') ? ' active' : '';
   var compActive      = p.endsWith('/initiative/completed.html') ? ' active' : '';
+  var projActive      = p.endsWith('/initiative/projects.html') ? ' active' : '';
 
   var subNav = '<div class="gdb-init-subnav" id="gdb-init-subnav">' +
     '<a class="gdb-init-tab' + timelineActive + '" href="/gdb-ppp/initiative/index.html">Timeline</a>' +
     '<a class="gdb-init-tab' + dashActive + '" href="/gdb-ppp/initiative/dashboard.html">Dashboard</a>' +
     '<a class="gdb-init-tab' + listActive + '" href="/gdb-ppp/initiative/list.html">List</a>' +
     '<a class="gdb-init-tab' + compActive + '" href="/gdb-ppp/initiative/completed.html">Completed</a>' +
+    '<a class="gdb-init-tab' + projActive + '" href="/gdb-ppp/initiative/projects.html">Projects</a>' +
   '</div>';
 
   document.body.insertAdjacentHTML('afterbegin', subNav);

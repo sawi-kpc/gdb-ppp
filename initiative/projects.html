@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Initiative Projects — GDB Dashboard</title>
+<link rel="stylesheet" href="../css/shared.css">
+<link rel="stylesheet" href="../css/gdb-shared.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+/* ── Filter bar ── */
+.proj-filter-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.fb-sep{width:1px;height:20px;background:var(--border);flex-shrink:0}
+
+/* ── Dropdown (reuse same pattern) ── */
+.dd-wrap{position:relative}
+.dd-btn{height:26px;padding:0 10px;border:1px solid var(--border);border-radius:4px;
+  background:var(--surface2);color:var(--text);font-size:11.5px;cursor:pointer;
+  display:flex;align-items:center;gap:6px;white-space:nowrap;transition:border-color .15s}
+.dd-btn:hover{border-color:var(--text3)}
+.dd-panel{display:none;position:absolute;top:30px;left:0;z-index:200;
+  background:var(--surface);border:1px solid var(--border);border-radius:6px;
+  box-shadow:0 4px 16px rgba(0,0,0,.18);padding:8px 0;min-width:180px}
+.dd-item{display:flex;align-items:center;gap:8px;padding:5px 12px;cursor:pointer;
+  font-size:12px;color:var(--text);white-space:nowrap}
+.dd-item:hover{background:var(--surface2)}
+.dd-item input{accent-color:var(--accent);width:13px;height:13px;flex-shrink:0}
+.dd-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dd-clear{border-top:1px solid var(--border);margin-top:6px;padding:6px 12px 2px}
+.dd-clear button{font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0}
+.dd-clear button:hover{color:var(--text)}
+
+/* ── Search ── */
+.proj-search-wrap{position:relative}
+.proj-search-wrap::before{content:'⌕';position:absolute;left:8px;top:50%;
+  transform:translateY(-50%);color:var(--text3);font-size:13px;pointer-events:none}
+.proj-search-wrap input{height:26px;padding:0 10px 0 26px;border:1px solid var(--border);
+  border-radius:4px;background:var(--surface2);color:var(--text);
+  font-size:11.5px;width:200px;outline:none;transition:border-color .15s}
+.proj-search-wrap input:focus{border-color:var(--accent)}
+
+/* ── Project card ── */
+.proj-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  margin-bottom:12px;overflow:hidden}
+.proj-card-head{display:flex;align-items:center;gap:10px;padding:12px 16px;
+  cursor:pointer;user-select:none;transition:background .15s;flex-wrap:wrap}
+.proj-card-head:hover{background:var(--surface2)}
+.proj-card-head.expanded{border-bottom:1px solid var(--border)}
+.proj-key{font-size:11px;font-weight:700;color:var(--accent);white-space:nowrap;
+  text-decoration:none}
+.proj-key:hover{text-decoration:underline}
+.proj-title{font-size:13px;font-weight:700;color:var(--text);flex:1;min-width:0}
+.proj-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex-shrink:0}
+.proj-chevron{font-size:11px;color:var(--text3);transition:transform .2s;flex-shrink:0}
+.proj-chevron.open{transform:rotate(180deg)}
+
+/* ── Status / monitor pills ── */
+.pill{display:inline-flex;align-items:center;font-size:10px;font-weight:600;
+  padding:2px 8px;border-radius:4px;white-space:nowrap}
+.p-delivery  {background:rgba(88,166,255,.12); color:var(--accent);  border:1px solid rgba(88,166,255,.25)}
+.p-discovery {background:rgba(167,139,250,.12);color:var(--purple);  border:1px solid rgba(167,139,250,.25)}
+.p-rfd       {background:rgba(34,211,164,.12); color:var(--teal);    border:1px solid rgba(34,211,164,.25)}
+.p-budget    {background:rgba(245,158,11,.12); color:var(--amber);   border:1px solid rgba(245,158,11,.25)}
+.p-parking   {background:rgba(139,148,158,.12);color:var(--text3);   border:1px solid rgba(139,148,158,.25)}
+.p-done      {background:rgba(63,185,80,.10);  color:var(--up);      border:1px solid rgba(63,185,80,.2)}
+.p-ontrack   {background:rgba(63,185,80,.10);  color:var(--up);      border:1px solid rgba(63,185,80,.2)}
+.p-atrisk    {background:rgba(245,158,11,.12); color:var(--amber);   border:1px solid rgba(245,158,11,.25)}
+.p-delayed   {background:rgba(248,81,73,.1);   color:var(--down);    border:1px solid rgba(248,81,73,.2)}
+.p-year      {background:var(--surface2);color:var(--text3);border:1px solid var(--border);
+  font-size:9px;font-weight:600;padding:1px 6px;border-radius:3px}
+
+/* ── Initiatives count badge ── */
+.ini-count{font-size:10px;color:var(--text3);background:var(--surface2);
+  border:1px solid var(--border);border-radius:10px;padding:1px 8px;white-space:nowrap}
+
+/* ── Initiative table ── */
+.proj-body{padding:0}
+.ini-table{width:100%;border-collapse:collapse;font-size:11.5px}
+.ini-table th{padding:7px 12px;text-align:left;font-size:10px;font-weight:600;
+  color:var(--text3);text-transform:uppercase;letter-spacing:.04em;
+  border-bottom:1px solid var(--border);background:var(--surface2);white-space:nowrap}
+.ini-table td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+.ini-table tr:last-child td{border-bottom:none}
+.ini-table tr:hover td{background:rgba(88,166,255,.04)}
+.ini-key-link{font-size:11px;font-weight:700;color:var(--accent);
+  text-decoration:none;white-space:nowrap}
+.ini-key-link:hover{text-decoration:underline}
+.ini-summary{color:var(--text);font-size:11.5px;max-width:300px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ini-date{font-size:11px;color:var(--text2);white-space:nowrap}
+.ini-date-arrow{color:var(--text3);margin:0 3px}
+.ini-assignee{font-size:11px;color:var(--text2);white-space:nowrap}
+.ini-overdue{font-size:9px;font-weight:700;color:var(--down);margin-left:4px}
+
+/* ── Monitor badge ── */
+.mon-badge{display:inline-flex;align-items:center;font-size:10px;font-weight:600;
+  padding:2px 7px;border-radius:3px;white-space:nowrap}
+.mon-badge.ontrack {background:rgba(63,185,80,.1); color:var(--up);    border:1px solid rgba(63,185,80,.2)}
+.mon-badge.atrisk  {background:rgba(245,158,11,.12);color:var(--amber); border:1px solid rgba(245,158,11,.25)}
+.mon-badge.delayed {background:rgba(248,81,73,.1);  color:var(--down);  border:1px solid rgba(248,81,73,.2)}
+
+/* ── Empty / count label ── */
+.count-lbl{font-size:11px;color:var(--text3);margin-left:auto}
+.proj-empty{text-align:center;padding:48px;color:var(--text3);font-size:13px}
+</style>
+</head>
+<body class="has-init-subnav">
+
+<div id="gdb-error" style="display:none;padding:12px 20px;background:rgba(248,81,73,.1);
+  border-bottom:1px solid rgba(248,81,73,.3);color:var(--down);font-size:12px"></div>
+
+<div id="gdb-loading" class="gdb-loading-state">
+  <div class="gdb-spinner-wrap"></div>Loading projects…
+</div>
+
+<div id="proj-content" style="display:none">
+
+  <div id="proj-error-state" class="gdb-error-state" style="display:none">
+    <div style="font-size:40px;opacity:.6">⚠</div>
+    <div style="font-size:16px;font-weight:700;color:var(--down)">Unable to load projects data</div>
+    <div id="proj-error-msg" style="font-size:13px;color:var(--text2);max-width:420px;line-height:1.6"></div>
+    <div style="margin-top:8px">
+      <button onclick="location.reload()" style="padding:8px 20px;background:var(--surface2);
+        border:1px solid var(--border);border-radius:6px;color:var(--text);
+        font-size:12px;cursor:pointer">↺ Retry</button>
+    </div>
+  </div>
+
+  <div class="gdb-page-content">
+    <div class="panel">
+
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">Initiative Projects</div>
+          <div class="panel-sub">Projects and their linked initiatives — tracking status &amp; timeline</div>
+        </div>
+        <span class="count-lbl" id="proj-count-lbl"></span>
+      </div>
+
+      <div class="panel-body">
+        <!-- Filter bar -->
+        <div class="proj-filter-bar">
+          <!-- Status -->
+          <div class="dd-wrap" id="ps-wrap">
+            <button class="dd-btn" id="ps-btn" onclick="projToggleDD('ps-panel')">
+              <span id="ps-lbl" data-empty="All Statuses">All Statuses</span>
+              <span style="font-size:9px;color:var(--text3)">▾</span>
+            </button>
+            <div class="dd-panel" id="ps-panel">
+              <div id="ps-list"></div>
+              <div class="dd-clear"><button onclick="projClearStatus()">Clear all</button></div>
+            </div>
+          </div>
+
+          <div class="fb-sep"></div>
+
+          <!-- Search -->
+          <div class="proj-search-wrap">
+            <input type="search" id="proj-search" placeholder="Search project…" oninput="projRender()">
+          </div>
+
+          <span class="count-lbl" id="proj-showing-lbl"></span>
+        </div>
+
+        <!-- Project cards -->
+        <div id="proj-cards"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="../js/initiative/config.js"></script>
+<script src="../js/header.js"></script>
+<!-- stub so data.js renderAll() call is harmless -->
+<script>function renderAll(){}</script>
+<script src="../js/initiative/data.js"></script>
+<script src="../js/shared/gdb-utils.js"></script>
+<script>
+/* ══════════════════════════════════════════════════════
+   Initiative Projects page — projects.html inline JS
+   Loads:
+     allData   → data.js (initiatives detail, for cross-ref)
+     projData  → ?sheet=projects (project + linked ini keys)
+══════════════════════════════════════════════════════ */
+
+var _allInitiatives = [];   /* from data.js via onDataReady */
+var _allProjects    = [];   /* from ?sheet=projects */
+var _iniReady       = false;
+var _projReady      = false;
+
+/* ── Status colour map ── */
+var PROJ_STATUS_COLORS = {
+  'Delivery':          'var(--accent)',
+  'Discovery':         'var(--purple)',
+  'Ready for Delivery':'var(--teal)',
+  'Budget Approval':   'var(--amber)',
+  'Parking Lot':       'var(--text3)',
+  'Done':              'var(--up)'
+};
+var PROJ_STATUS_CLS = {
+  'Delivery':          'delivery',
+  'Discovery':         'discovery',
+  'Ready for Delivery':'rfd',
+  'Budget Approval':   'budget',
+  'Parking Lot':       'parking',
+  'Done':              'done'
+};
+
+/* filter state */
+var _projStatusFilter = [];
+
+/* ── Dropdown helpers ── */
+function projBuildStatusDD() {
+  var statuses = [];
+  _allProjects.forEach(function(p) {
+    if (p.Status && statuses.indexOf(p.Status) < 0) statuses.push(p.Status);
+  });
+  statuses.sort();
+
+  var el = document.getElementById('ps-list'); if (!el) return;
+  el.innerHTML = statuses.map(function(v) {
+    var c = PROJ_STATUS_COLORS[v] || 'var(--text2)';
+    return '<label class="dd-item">' +
+      '<input type="checkbox"' + (_projStatusFilter.indexOf(v)>=0?' checked':'') +
+      ' onchange="projToggleStatus(\'' + v + '\')">' +
+      '<span class="dd-dot" style="background:' + c + '"></span>' +
+      '<span>' + v + '</span></label>';
+  }).join('');
+
+  var lbl = document.getElementById('ps-lbl');
+  var btn = document.getElementById('ps-btn');
+  if (lbl) lbl.textContent = _projStatusFilter.length === 0 ? (lbl.dataset.empty || 'All Statuses')
+    : _projStatusFilter.length === 1 ? _projStatusFilter[0]
+    : _projStatusFilter.length + ' selected';
+  if (btn) btn.style.borderColor = _projStatusFilter.length > 0 ? 'var(--accent)' : 'var(--border)';
+}
+
+function projToggleStatus(v) {
+  var i = _projStatusFilter.indexOf(v);
+  if (i >= 0) _projStatusFilter.splice(i,1); else _projStatusFilter.push(v);
+  projBuildStatusDD(); projRender();
+  document.getElementById('ps-panel').style.display = 'block';
+}
+function projClearStatus() {
+  _projStatusFilter = [];
+  document.getElementById('ps-panel').style.display = 'none';
+  projBuildStatusDD(); projRender();
+}
+function projToggleDD(id) {
+  var p = document.getElementById(id); if (!p) return;
+  var isOpen = p.style.display !== 'none';
+  document.querySelectorAll('.dd-panel').forEach(function(x){ x.style.display='none'; });
+  p.style.display = isOpen ? 'none' : 'block';
+}
+document.addEventListener('click', function(e) {
+  var wrap = document.getElementById('ps-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    var p = document.getElementById('ps-panel'); if (p) p.style.display = 'none';
+  }
+});
+
+/* ── Toggle card expand/collapse ── */
+function projToggleCard(key) {
+  var body = document.getElementById('proj-body-' + key);
+  var chev = document.getElementById('proj-chev-' + key);
+  var head = document.getElementById('proj-head-' + key);
+  if (!body) return;
+  var isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  if (chev) chev.classList.toggle('open', !isOpen);
+  if (head) head.classList.toggle('expanded', !isOpen);
+}
+
+/* ── Look up initiative detail by key ── */
+function _getIni(key) {
+  for (var i = 0; i < _allInitiatives.length; i++) {
+    if (_allInitiatives[i].Key === key) return _allInitiatives[i];
+  }
+  return null;
+}
+
+/* ── Format date from initiative date JSON or string ── */
+var _MTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function _fd(raw) {
+  if (!raw) return null;
+  var p = null;
+  try { p = JSON.parse(raw); } catch(e) {}
+  var d = p && p.start ? p.start : (typeof raw === 'string' && /\d{4}-\d{2}-\d{2}/.test(raw) ? raw.match(/(\d{4}-\d{2}-\d{2})/)[1] : null);
+  if (!d) return null;
+  var parts = d.split('-');
+  return _MTHS[+parts[1]-1] + ' ' + parts[0];
+}
+
+function _monBadge(mon) {
+  if (!mon) return '';
+  var lc = mon.toLowerCase();
+  var cls = lc.includes('delay') ? 'delayed' : lc.includes('risk') ? 'atrisk' : lc.includes('track') ? 'ontrack' : '';
+  var icon = lc.includes('delay') ? '🆘 ' : lc.includes('risk') ? '⚠️ ' : lc.includes('track') ? '✅ ' : '';
+  return cls ? '<span class="mon-badge ' + cls + '">' + icon + mon + '</span>' : '<span style="color:var(--text3);font-size:11px">—</span>';
+}
+
+function _statusPill(s) {
+  var cls = PROJ_STATUS_CLS[s] || '';
+  return cls ? '<span class="pill p-' + cls + '">' + s + '</span>'
+             : '<span style="font-size:11px;color:var(--text2)">' + (s||'—') + '</span>';
+}
+
+function _iniStatusPill(s) {
+  var cls = PROJ_STATUS_CLS[s] || '';
+  return cls ? '<span class="pill p-' + cls + '" style="font-size:9.5px;padding:1px 6px">' + s + '</span>'
+             : '<span style="font-size:11px;color:var(--text2)">' + (s||'—') + '</span>';
+}
+
+/* ── Main render ── */
+function projRender() {
+  var q = (document.getElementById('proj-search') || {}).value || '';
+  q = q.toLowerCase();
+
+  var filtered = _allProjects.filter(function(p) {
+    if (_projStatusFilter.length > 0 && _projStatusFilter.indexOf(p.Status) < 0) return false;
+    if (q && (p.Key + ' ' + p.Summary).toLowerCase().indexOf(q) < 0) return false;
+    return true;
+  });
+
+  var countLbl = document.getElementById('proj-count-lbl');
+  var showLbl  = document.getElementById('proj-showing-lbl');
+  if (countLbl) countLbl.textContent = _allProjects.length + ' project' + (_allProjects.length !== 1 ? 's' : '');
+  if (showLbl) showLbl.textContent = filtered.length !== _allProjects.length ? filtered.length + ' shown' : '';
+
+  var container = document.getElementById('proj-cards'); if (!container) return;
+
+  if (!filtered.length) {
+    container.innerHTML = '<div class="proj-empty">No projects match this filter.</div>';
+    return;
+  }
+
+  container.innerHTML = filtered.map(function(p) {
+    /* Roadmap year tags */
+    var yearTags = (p.RoadmapYearPlan || '').split(';').map(function(y) {
+      y = y.trim().replace('ROADMAP_','');
+      return y ? '<span class="p-year pill">' + y + '</span>' : '';
+    }).join('');
+
+    /* Initiative rows */
+    var iniRows = (p.initiatives || []).map(function(link) {
+      var ini = _getIni(link.issueKey);
+      if (!ini) {
+        /* fallback: no detail found */
+        return '<tr>' +
+          '<td><a class="ini-key-link" href="' + (CONFIG.JIRA_BASE||'https://kingpowerclick.atlassian.net/browse/') + link.issueKey + '" target="_blank" rel="noopener">' + link.issueKey + '</a></td>' +
+          '<td colspan="5" style="color:var(--text3);font-size:11px;font-style:italic">Details not loaded</td>' +
+        '</tr>';
+      }
+      var now  = new Date();
+      var endRaw = ini['Target Project End'] || '';
+      var endStr = null;
+      try { var ep = JSON.parse(endRaw); endStr = ep && ep.start ? ep.start : null; } catch(e) { endStr = /\d{4}-\d{2}-\d{2}/.test(endRaw) ? endRaw.match(/(\d{4}-\d{2}-\d{2})/)[1] : null; }
+      var isOverdue = endStr && ini.Status !== 'Done' && new Date(endStr) < now;
+      var startFmt = _fd(ini['Target Project Start']);
+      var endFmt   = _fd(ini['Target Project End']);
+      var dateCell = (startFmt || endFmt)
+        ? '<span class="ini-date">' + (startFmt||'?') + '<span class="ini-date-arrow">→</span>' + (endFmt||'?') + (isOverdue ? '<span class="ini-overdue">Overdue</span>' : '') + '</span>'
+        : '<span style="color:var(--text3)">—</span>';
+      var a1 = (ini['Assignee.displayName'] || '').split(' ')[0] || '—';
+
+      return '<tr>' +
+        '<td><a class="ini-key-link" href="' + (CONFIG.JIRA_BASE||'https://kingpowerclick.atlassian.net/browse/') + ini.Key + '" target="_blank" rel="noopener">' + ini.Key + '</a></td>' +
+        '<td><span class="ini-summary" title="' + (ini.Summary||'') + '">' + (ini.Summary||'—') + '</span></td>' +
+        '<td>' + _iniStatusPill(ini.Status) + '</td>' +
+        '<td>' + _monBadge(ini['Project Monitoring Status']) + '</td>' +
+        '<td>' + dateCell + '</td>' +
+        '<td><span class="ini-assignee">' + a1 + '</span></td>' +
+      '</tr>';
+    }).join('');
+
+    var iniCount = (p.initiatives || []).length;
+
+    return '<div class="proj-card">' +
+      '<div class="proj-card-head expanded" id="proj-head-' + p.Key + '" onclick="projToggleCard(\'' + p.Key + '\')">' +
+        '<a class="proj-key" href="' + (CONFIG.JIRA_BASE||'https://kingpowerclick.atlassian.net/browse/') + p.Key + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">' + p.Key + '</a>' +
+        '<span class="proj-title">' + (p.Summary||'') + '</span>' +
+        '<div class="proj-meta">' +
+          _statusPill(p.Status) +
+          _monBadge(p.MonitoringStatus) +
+          yearTags +
+          '<span class="ini-count">' + iniCount + ' initiative' + (iniCount !== 1 ? 's' : '') + '</span>' +
+        '</div>' +
+        '<span class="proj-chevron open" id="proj-chev-' + p.Key + '">▾</span>' +
+      '</div>' +
+      '<div class="proj-body" id="proj-body-' + p.Key + '">' +
+        '<table class="ini-table">' +
+          '<thead><tr>' +
+            '<th style="width:80px">Key</th>' +
+            '<th>Summary</th>' +
+            '<th style="width:120px">Status</th>' +
+            '<th style="width:110px">Monitor</th>' +
+            '<th style="width:180px">Target timeline</th>' +
+            '<th style="width:90px">Assignee</th>' +
+          '</tr></thead>' +
+          '<tbody>' + (iniRows || '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:16px;font-size:11px">No linked initiatives</td></tr>') + '</tbody>' +
+        '</table>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+/* ── Data loading ── */
+var _projCacheKey = 'gdb_ini_projects';
+var _projCacheTTL = 180; /* minutes */
+
+function _projCacheGet() {
+  try {
+    var raw = localStorage.getItem(_projCacheKey);
+    if (!raw) return null;
+    var obj = JSON.parse(raw);
+    if (!obj || !obj.ts || !obj.data) return null;
+    if (Date.now() - obj.ts > _projCacheTTL * 60000) return null;
+    return obj.data;
+  } catch(e) { return null; }
+}
+function _projCacheSet(data) {
+  try { localStorage.setItem(_projCacheKey, JSON.stringify({ ts: Date.now(), data: data })); } catch(e) {}
+}
+function clearProjectsCache() {
+  try { localStorage.removeItem(_projCacheKey); } catch(e) {}
+}
+
+function _loadProjects(onSuccess, onError) {
+  var cached = _projCacheGet();
+  if (cached) { onSuccess(cached); return; }
+  fetch(CONFIG.APPS_SCRIPT_URL + '?sheet=projects')
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function(j) {
+      var projects = j.projects || [];
+      _projCacheSet(projects);
+      onSuccess(projects);
+    })
+    .catch(function(e) { onError(e.message || 'Failed to load projects'); });
+}
+
+/* ── Bootstrap: wait for both data sources ── */
+window.onDataReady = function(iniData) {
+  _allInitiatives = iniData || [];
+  _iniReady = true;
+  _checkReady();
+};
+
+function _checkReady() {
+  if (!_iniReady || !_projReady) return;
+  document.getElementById('gdb-loading').style.display = 'none';
+  document.getElementById('proj-content').style.display = 'block';
+  if (typeof setGdbUpdateTime === 'function') setGdbUpdateTime(new Date().toISOString());
+  projBuildStatusDD();
+  projRender();
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+  buildGdbHeader({ showRefresh: true });
+  buildGdbInitiativeSubNav();
+
+  gdbAuthGuard(function() {
+    /* Load projects from Apps Script */
+    _loadProjects(
+      function(projects) {
+        _allProjects = projects;
+        _projReady = true;
+        _checkReady();
+      },
+      function(err) {
+        _projReady = true;
+        /* Show error but still render with empty projects */
+        _allProjects = [];
+        _checkReady();
+        document.getElementById('proj-error-state').style.display = 'flex';
+        document.getElementById('proj-error-msg').textContent = err;
+      }
+    );
+    /* data.js loadData() triggers window.onDataReady when done */
+    if (typeof loadData === 'function') loadData();
+  });
+
+  var rbtn = document.getElementById('gdb-refresh-btn');
+  if (rbtn) rbtn.addEventListener('click', function() {
+    clearProjectsCache();
+    if (typeof clearAllCache === 'function') clearAllCache();
+    location.reload();
+  });
+});
+</script>
+</body>
+</html>

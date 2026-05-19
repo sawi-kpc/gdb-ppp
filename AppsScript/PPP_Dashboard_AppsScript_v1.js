@@ -12,6 +12,7 @@ var SPREADSHEET_ID = '1dEBSAcmkT5tQmzaQDQEieex3WMCyPBi1JjQdOpVH8Nc';
 var GID_PPP      = 660147076;  /* initiatives — original GID */
 var GID_ISSUES   = 894050881;  /* issues sheet */
 var GID_SUPPORTS = 791347021;  /* supports sheet */
+var GID_PROJECTS = 799662633;  /* initiative_projects sheet */
 
 /* ── DEBUG ───────────────────────────────────────────────── */
 function getDebugInfo() {
@@ -29,6 +30,7 @@ function doGet(e) {
   try {
     var result = sheet === 'issues'   ? getIssues()   :
                  sheet === 'supports' ? getSupports() :
+                 sheet === 'projects' ? getProjects() :
                  sheet === 'debug'    ? getDebugInfo():
                                         getInitiatives();
     return _respond(result, callback);
@@ -99,6 +101,52 @@ function getInitiatives() {
       return obj;
     });
   return { data: rows, count: rows.length, updated: new Date().toISOString() };
+}
+
+/* ── PROJECTS (initiative_projects sheet) ────────────────── */
+/*   Cols: A=Key B=IssueType C=Summary D=RoadmapYearPlan      */
+/*         E=Status F=RoadmapStatus G=MonitoringStatus        */
+/*         H=Linked Issues.linkType I=Linked Issues.issueKey  */
+/*   1 Project : N Initiatives — grouped by project Key       */
+function getProjects() {
+  var ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheet = _sheetByGid(ss, GID_PROJECTS) || ss.getSheetByName('initiative_projects');
+  if (!sheet) throw new Error('initiative_projects sheet (GID ' + GID_PROJECTS + ') not found');
+  var data    = sheet.getDataRange().getValues();
+  var headers = data[0].map(function(h) { return _s(h); });
+
+  var projectMap   = {};
+  var projectOrder = [];
+
+  data.slice(1).forEach(function(r) {
+    var key = _s(r[0]);
+    if (!key) return;
+    if (!projectMap[key]) {
+      projectMap[key] = {
+        Key:               key,
+        Summary:           _s(r[2]),
+        RoadmapYearPlan:   _s(r[3]),
+        Status:            _s(r[4]),
+        RoadmapStatus:     _s(r[5]),
+        MonitoringStatus:  _s(r[6]),
+        initiatives:       []
+      };
+      projectOrder.push(key);
+    }
+    var initiativeKey = _s(r[8]);
+    if (initiativeKey) {
+      projectMap[key].initiatives.push({
+        linkType: _s(r[7]),
+        issueKey: initiativeKey
+      });
+    }
+  });
+
+  return {
+    projects: projectOrder.map(function(k) { return projectMap[k]; }),
+    count:    projectOrder.length,
+    updated:  new Date().toISOString()
+  };
 }
 
 /* ── ISSUES ──────────────────────────────────────────────── */

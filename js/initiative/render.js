@@ -206,7 +206,7 @@ function renderTimeline(data){
     '</div>'+
   '</div>';
   var noDateBtnHtml='<div style="display:flex;align-items:center;justify-content:center;height:100%;padding:0 6px">'+
-    '<button class="fb-btn'+(hideNoDate?' active':'')+'" onclick="toggleHideNoDate()" style="font-size:10.5px;padding:3px 7px;white-space:nowrap">No-date</button>'+
+    '<button class="fb-btn'+(hideNoDate?' active':'')+'" onclick="toggleHideNoDate()" style="font-size:10.5px;padding:3px 7px;white-space:nowrap">Hide no-date</button>'+
   '</div>';
   if(tlInner)tlInner.innerHTML='<div class="tl-header"><div class="tl-label-head">'+focusHtml+'</div><div class="tl-grid-head"><div class="tl-qtr-row">'+qtrHtml+'</div><div class="tl-month-row">'+monHtml+'</div></div><div class="tl-status-head">'+noDateBtnHtml+'</div></div>'+rowsHtml;
 }

@@ -280,10 +280,10 @@ function renderSummary(){
     STAGES, sumStageFilter, SC, 'onSumStageToggle', 'clearSumStageFilter');
 
   /* Roadmap Status dropdown */
-  var RS_COLORS={'Now':'var(--accent)','Next':'var(--teal)','Later':'var(--amber)','Completed':'var(--up)',"Won't do":'var(--text3)'};
-  var rsTlVals=[]; allData.forEach(function(d){ var v=d['Roadmap Status']||''; if(v&&rsTlVals.indexOf(v)<0)rsTlVals.push(v); }); rsTlVals.sort();
+  var RS_COLORS={'New':'var(--text2)','Next':'var(--teal)','Now':'var(--accent)','Later':'var(--amber)',"Won't do":'var(--text3)','Completed':'var(--up)'};
+  var RS_ORDER=['New','Next','Now','Later',"Won't do",'Completed'];
   _buildCheckDropdown('rs-tl-dropdown-wrap','rs-tl-btn-label','rs-tl-dropdown-panel','rs-tl-checkbox-list',
-    rsTlVals, sumRoadmapFilter, RS_COLORS, 'onSumRoadmapToggle', 'clearSumRoadmapFilter');
+    RS_ORDER, sumRoadmapFilter, RS_COLORS, 'onSumRoadmapToggle', 'clearSumRoadmapFilter');
 
   /* Component dropdown */
   var compVals=[];
@@ -993,13 +993,10 @@ function renderList(){
     sel.value=listAssigneeFilter;
   }
 
-  /* Status dropdown */
+  /* Status dropdown — fixed order matching lifecycle stages */
   var LIST_STATUS_COLORS={'Parking Lot':'var(--text3)','Budget Approval':'var(--amber)','Discovery':'var(--purple)','Ready for Delivery':'var(--teal)','Delivery':'var(--accent)','Done':'var(--up)'};
-  var listStatusVals=[];
-  allData.forEach(function(d){ var v=d.Status||''; if(v&&listStatusVals.indexOf(v)<0)listStatusVals.push(v); });
-  listStatusVals.sort();
   _buildCheckDropdown('list-status-dropdown-wrap','list-status-btn-label','list-status-dropdown-panel','list-status-checkbox-list',
-    listStatusVals, listStatusFilter, LIST_STATUS_COLORS, 'onListStatusToggle', 'clearListStatusFilter');
+    STAGES, listStatusFilter, LIST_STATUS_COLORS, 'onListStatusToggle', 'clearListStatusFilter');
 
   /* Component dropdown */
   var listCompVals=[];

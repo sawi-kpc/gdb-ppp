@@ -38,11 +38,9 @@ function _tlOptHtml(sel){
 
 /* ── Filter state persistence (localStorage) ─────────────── */
 var _filtersLoadedList=false, _filtersLoadedSum=false;
-function _saveFilterState(key,state){try{localStorage.setItem(key,JSON.stringify(state));}catch(e){}}
-function _loadFilterState(key){try{var s=localStorage.getItem(key);return s?JSON.parse(s):null;}catch(e){return null;}}
 
 function _saveListFilters(){
-  _saveFilterState('gdb_filter_initiative_list',{
+  GDB.saveFilters('gdb_filter_initiative_list',{
     listYearFilter:listYearFilter, listStatusFilter:listStatusFilter,
     listRoadmapFilter:listRoadmapFilter, listComponentFilter:listComponentFilter,
     listAssigneeFilter:listAssigneeFilter, listSearchQuery:listSearchQuery,
@@ -51,7 +49,7 @@ function _saveListFilters(){
 }
 function _loadListFilters(){
   if(_filtersLoadedList)return; _filtersLoadedList=true;
-  var f=_loadFilterState('gdb_filter_initiative_list'); if(!f)return;
+  var f=GDB.loadFilters('gdb_filter_initiative_list'); if(!f)return;
   if(Array.isArray(f.listYearFilter)&&f.listYearFilter.length) listYearFilter=f.listYearFilter;
   if(Array.isArray(f.listStatusFilter))    listStatusFilter=f.listStatusFilter;
   if(Array.isArray(f.listRoadmapFilter))   listRoadmapFilter=f.listRoadmapFilter;
@@ -63,7 +61,7 @@ function _loadListFilters(){
   if(f._listPage>0)                        _listPage=f._listPage;
 }
 function _saveSumFilters(){
-  _saveFilterState('gdb_filter_initiative_timeline',{
+  GDB.saveFilters('gdb_filter_initiative_timeline',{
     sumYearFilter:sumYearFilter, sumStageFilter:sumStageFilter,
     sumRoadmapFilter:sumRoadmapFilter, sumComponentFilter:sumComponentFilter,
     sumSearchQuery:sumSearchQuery, hideNoDate:hideNoDate,
@@ -72,7 +70,7 @@ function _saveSumFilters(){
 }
 function _loadSumFilters(){
   if(_filtersLoadedSum)return; _filtersLoadedSum=true;
-  var f=_loadFilterState('gdb_filter_initiative_timeline'); if(!f)return;
+  var f=GDB.loadFilters('gdb_filter_initiative_timeline'); if(!f)return;
   if(Array.isArray(f.sumYearFilter)&&f.sumYearFilter.length) sumYearFilter=f.sumYearFilter;
   if(Array.isArray(f.sumStageFilter))     sumStageFilter=f.sumStageFilter;
   if(Array.isArray(f.sumRoadmapFilter))   sumRoadmapFilter=f.sumRoadmapFilter;
@@ -83,8 +81,6 @@ function _loadSumFilters(){
   if(f._tlEnd)                            _tlEnd=f._tlEnd;
 }
 
-var MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-var FULL_MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
 var STAGES=['Parking Lot','Budget Approval','Discovery','Ready for Delivery','Delivery','Done'];
 var SC={'Parking Lot':'#9E9890','Budget Approval':'#E07878','Discovery':'#D4A850','Ready for Delivery':'#9B8FE0','Delivery':'#6BAED4','Done':'#6DBF9A'};
 var RC={'New':'#6BAED4','Next':'#D4A850','Now':'#82B8D8','Completed':'#88C470','Completed With':'#6DBF9A'};
@@ -112,19 +108,19 @@ function fmtDate(d){
   if(!d)return'—';
   if(d.startsWith('{'))try{var o=JSON.parse(d);d=o.start||d;}catch(e){}
   var dt=new Date(d);
-  if(isNaN(dt.getTime())){var p=d.split('-');return p.length>=3?parseInt(p[2])+' '+FULL_MONTHS[+p[1]-1]+' '+p[0]:'—';}
-  return dt.getDate()+' '+FULL_MONTHS[dt.getMonth()]+' '+dt.getFullYear();
+  if(isNaN(dt.getTime())){var p=d.split('-');return p.length>=3?parseInt(p[2])+' '+GDB.FULL_MONTHS[+p[1]-1]+' '+p[0]:'—';}
+  return dt.getDate()+' '+GDB.FULL_MONTHS[dt.getMonth()]+' '+dt.getFullYear();
 }
 /* fmtMonYear: short format "Oct 2025" — for timeline target/actual dates */
 function fmtMonYear(d){
   if(!d)return'—';
   if(d.startsWith('{'))try{var o=JSON.parse(d);d=o.start||d;}catch(e){}
   var dt=new Date(d);
-  if(isNaN(dt.getTime())){var p=d.split('-');return p.length>=2?MONTHS[+p[1]-1]+' '+p[0]:'—';}
-  return MONTHS[dt.getMonth()]+' '+dt.getFullYear();
+  if(isNaN(dt.getTime())){var p=d.split('-');return p.length>=2?GDB.MONTHS[+p[1]-1]+' '+p[0]:'—';}
+  return GDB.MONTHS[dt.getMonth()]+' '+dt.getFullYear();
 }
 function cl(v){return String(v||'').replace(/^"|"$/g,'').trim()}
-function jiraLink(k){return '<a class="jira-link" href="'+CONFIG.JIRA_BASE+k+'" target="_blank">'+k+' ↗</a>';}
+function jiraLink(k){ return GDB.jiraLink(k, CONFIG.JIRA_BASE); }
 function monBadge(v){if(!v)return'<span style="color:var(--text3);font-size:10px">—</span>';var d=v.toLowerCase();if(d.includes('track'))return'<span class="mon-badge mon-ontrack">✅ On track</span>';if(d.includes('risk'))return'<span class="mon-badge mon-atrisk">⚠️ At risk</span>';if(d.includes('delay'))return'<span class="mon-badge mon-delayed">🆘 Delayed</span>';return'<span style="font-size:10px;color:var(--text2)">'+v+'</span>';}
 function monEmoji(v){if(!v)return'';var d=v.toLowerCase();if(d.includes('delay'))return'🆘 ';if(d.includes('risk'))return'⚠️ ';if(d.includes('track'))return'✅ ';return'';}
 function sPill(v){var m={'Parking Lot':'parking','Budget Approval':'budget','Discovery':'discovery','Ready for Delivery':'rfd','Delivery':'delivery','Done':'done'};var c=m[v]||'';return c?'<span class="pill p-'+c+'">'+v+'</span>':'<span style="font-size:10px;color:var(--text2)">'+(v||'—')+'</span>';}
@@ -184,7 +180,7 @@ function renderTimeline(data){
   var todayMonIdx=mCols.findIndex(function(mc){return mc.year===today.getFullYear()&&mc.month===today.getMonth();});
   var todayColBg=todayMonIdx>=0?'<div class="tl-col-bg" style="left:'+(todayMonIdx/nM*100).toFixed(2)+'%;width:'+(100/nM).toFixed(2)+'%"></div>':'';
   var qtrHtml=qtrs.map(function(q){return'<div class="tl-qtr" style="flex:'+q.count+'">'+q.label+'</div>';}).join('');
-  var monHtml=mCols.map(function(mc){return'<div class="tl-month-cell'+(today.getFullYear()===mc.year&&today.getMonth()===mc.month?' cur-month':'')+'">'+MONTHS[mc.month]+'</div>';}).join('');
+  var monHtml=mCols.map(function(mc){return'<div class="tl-month-cell'+(today.getFullYear()===mc.year&&today.getMonth()===mc.month?' cur-month':'')+'">'+GDB.MONTHS[mc.month]+'</div>';}).join('');
   var rowsHtml=tlData.map(function(d){
     var mon=d['Project Monitoring Status']||'';
     var isD=mon.toLowerCase().includes('delay'),isR=mon.toLowerCase().includes('risk'),isT=mon.toLowerCase().includes('track');
@@ -213,7 +209,7 @@ function renderTimeline(data){
 }
 
 /* Charts */
-function _chartTextColor(){return getComputedStyle(document.documentElement).getPropertyValue('--text2').trim()||'#8b949e';}
+function _chartTextColor(){ return GDB.cssVar('--text2') || '#8b949e'; }
 function mkVBar(id,labels,data,colors){
   if(charts[id])charts[id].destroy();
   var ctx=document.getElementById(id);if(!ctx)return;
@@ -305,26 +301,6 @@ function _filterComp(data, val) {
   });
 }
 
-/* Render summary */
-function _buildCheckDropdown(wrapperId, btnLabelId, panelId, listId, values, activeArr, colorMap, toggleFn, clearFn) {
-  var listEl = document.getElementById(listId); if (!listEl) return;
-  listEl.innerHTML = values.map(function(v) {
-    var checked = activeArr.indexOf(v) >= 0;
-    var dot = (colorMap && colorMap[v])
-      ? '<span style="width:8px;height:8px;border-radius:50%;background:'+colorMap[v]+';display:inline-block;flex-shrink:0"></span>'
-      : '';
-    return '<label style="display:flex;align-items:center;gap:8px;padding:5px 12px;cursor:pointer;font-size:12px;color:var(--text);white-space:nowrap" '+
-      'onmouseover="this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'\'">'+
-      '<input type="checkbox"'+(checked?' checked':'')+' onchange="'+toggleFn+'(\''+v+'\')" style="accent-color:var(--accent);width:13px;height:13px;flex-shrink:0">'+
-      dot+'<span>'+v+'</span></label>';
-  }).join('');
-  /* button label */
-  var btnLabel = document.getElementById(btnLabelId);
-  if (btnLabel) btnLabel.textContent = activeArr.length === 0 ? btnLabel.dataset.empty||'All' : activeArr.length === 1 ? activeArr[0] : activeArr.length+' selected';
-  var btn = document.getElementById(wrapperId) && document.getElementById(wrapperId).querySelector('button');
-  if (btn) btn.style.borderColor = activeArr.length > 0 ? 'var(--accent)' : 'var(--border)';
-}
-
 function renderSummary(){
   _loadSumFilters();
   _saveSumFilters();
@@ -334,14 +310,12 @@ function renderSummary(){
   renderYF('yf-sum',sumYearFilter,function(btn,val){sumYearFilter=toggleYF(sumYearFilter,val);renderSummary();});
 
   /* Stage dropdown */
-  _buildCheckDropdown('stage-dropdown-wrap','stage-btn-label','stage-dropdown-panel','stage-checkbox-list',
-    STAGES, sumStageFilter, SC, 'onSumStageToggle', 'clearSumStageFilter');
+  GDB.buildCheckDropdown({wrapperId:'stage-dropdown-wrap', btnLabelId:'stage-btn-label', listId:'stage-checkbox-list', values:STAGES, activeArr:sumStageFilter, colorMap:SC, toggleFn:'onSumStageToggle'});
 
   /* Roadmap Status dropdown */
   var RS_COLORS={'New':'var(--text2)','Next':'var(--teal)','Now':'var(--accent)','Later':'var(--amber)',"Won't do":'var(--text3)','Completed':'var(--up)'};
   var RS_ORDER=['New','Next','Now','Later',"Won't do",'Completed'];
-  _buildCheckDropdown('rs-tl-dropdown-wrap','rs-tl-btn-label','rs-tl-dropdown-panel','rs-tl-checkbox-list',
-    RS_ORDER, sumRoadmapFilter, RS_COLORS, 'onSumRoadmapToggle', 'clearSumRoadmapFilter');
+  GDB.buildCheckDropdown({wrapperId:'rs-tl-dropdown-wrap', btnLabelId:'rs-tl-btn-label', listId:'rs-tl-checkbox-list', values:RS_ORDER, activeArr:sumRoadmapFilter, colorMap:RS_COLORS, toggleFn:'onSumRoadmapToggle'});
 
   /* Component dropdown */
   var compVals=[];
@@ -349,8 +323,7 @@ function renderSummary(){
     (d['Components']||'').split(';').forEach(function(c){ var t=c.trim(); if(t&&compVals.indexOf(t)<0)compVals.push(t); });
   });
   compVals.sort();
-  _buildCheckDropdown('comp-dropdown-wrap','comp-btn-label','comp-dropdown-panel','comp-checkbox-list',
-    compVals, sumComponentFilter, null, 'onSumCompToggle', 'clearSumCompFilter');
+  GDB.buildCheckDropdown({wrapperId:'comp-dropdown-wrap', btnLabelId:'comp-btn-label', listId:'comp-checkbox-list', values:compVals, activeArr:sumComponentFilter, colorMap:null, toggleFn:'onSumCompToggle'});
 
   /* Sync search box */
   var sumSearchEl=document.getElementById('sum-search');
@@ -419,8 +392,7 @@ function renderCompleted(){
     if(bu&&buOwnerVals.indexOf(bu)<0)buOwnerVals.push(bu);
   });
   buOwnerVals.sort();
-  _buildCheckDropdown('done-bu-wrap','done-bu-label','done-bu-panel','done-bu-list',
-    buOwnerVals, doneBUFilter, null, 'onDoneBUToggle', 'clearDoneBUFilter');
+  GDB.buildCheckDropdown({wrapperId:'done-bu-wrap', btnLabelId:'done-bu-label', listId:'done-bu-list', values:buOwnerVals, activeArr:doneBUFilter, colorMap:null, toggleFn:'onDoneBUToggle'});
 
   /* Component dropdown */
   var doneCompVals=[];
@@ -428,8 +400,7 @@ function renderCompleted(){
     (d['Components']||'').split(';').forEach(function(c){ var t=c.trim(); if(t&&doneCompVals.indexOf(t)<0)doneCompVals.push(t); });
   });
   doneCompVals.sort();
-  _buildCheckDropdown('done-comp-wrap','done-comp-label','done-comp-panel','done-comp-list',
-    doneCompVals, doneComponentFilter, null, 'onDoneCompToggle', 'clearDoneCompFilter');
+  GDB.buildCheckDropdown({wrapperId:'done-comp-wrap', btnLabelId:'done-comp-label', listId:'done-comp-list', values:doneCompVals, activeArr:doneComponentFilter, colorMap:null, toggleFn:'onDoneCompToggle'});
 
   /* Sync search */
   var doneSearchEl=document.getElementById('done-search');
@@ -1055,8 +1026,7 @@ function renderList(){
 
   /* Status dropdown — fixed order matching lifecycle stages */
   var LIST_STATUS_COLORS={'Parking Lot':'var(--text3)','Budget Approval':'var(--amber)','Discovery':'var(--purple)','Ready for Delivery':'var(--teal)','Delivery':'var(--accent)','Done':'var(--up)'};
-  _buildCheckDropdown('list-status-dropdown-wrap','list-status-btn-label','list-status-dropdown-panel','list-status-checkbox-list',
-    STAGES, listStatusFilter, LIST_STATUS_COLORS, 'onListStatusToggle', 'clearListStatusFilter');
+  GDB.buildCheckDropdown({wrapperId:'list-status-dropdown-wrap', btnLabelId:'list-status-btn-label', listId:'list-status-checkbox-list', values:STAGES, activeArr:listStatusFilter, colorMap:LIST_STATUS_COLORS, toggleFn:'onListStatusToggle'});
 
   /* Component dropdown */
   var listCompVals=[];
@@ -1064,8 +1034,7 @@ function renderList(){
     (d['Components']||'').split(';').forEach(function(c){ var t=c.trim(); if(t&&listCompVals.indexOf(t)<0)listCompVals.push(t); });
   });
   listCompVals.sort();
-  _buildCheckDropdown('comp-list-dropdown-wrap','comp-list-btn-label','comp-list-dropdown-panel','comp-list-checkbox-list',
-    listCompVals, listComponentFilter, null, 'onListCompToggle', 'clearListCompFilter');
+  GDB.buildCheckDropdown({wrapperId:'comp-list-dropdown-wrap', btnLabelId:'comp-list-btn-label', listId:'comp-list-checkbox-list', values:listCompVals, activeArr:listComponentFilter, colorMap:null, toggleFn:'onListCompToggle'});
 
   /* Roadmap status dropdown checkboxes */
   var rsCheckList=document.getElementById('rs-checkbox-list');
@@ -1193,12 +1162,11 @@ function _renderListPage() {
   if (top) top.innerHTML = pgHtml;
   if (bot) bot.innerHTML = pgHtml;
 
-  var _MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   function fd(raw){
     var p=raw?(function(){try{return JSON.parse(raw)}catch(e){return null}})():null;
     var d=p?p.start:(raw&&/\d{4}-\d{2}-\d{2}/.test(raw)?raw.match(/(\d{4}-\d{2}-\d{2})/)[1]:null);
     if(!d)return '—';
-    var parts=d.split('-');return _MONTHS[+parts[1]-1]+' '+parts[0];
+    var parts=d.split('-');return GDB.MONTHS[+parts[1]-1]+' '+parts[0];
   }
 
   var listBody=document.getElementById('list-body');
@@ -1240,11 +1208,7 @@ function listSortBy(col){
   if(_listSortCol===col){ _listSortAsc=!_listSortAsc; } else { _listSortCol=col; _listSortAsc=true; }
   _listPage=1;
   renderList();
-  document.querySelectorAll('#list-thead th[data-col]').forEach(function(th){
-    var active=th.getAttribute('data-col')===_listSortCol;
-    th.style.background=active?'rgba(88,166,255,.1)':'';
-    th.style.color=active?'var(--accent)':'';
-  });
+  GDB.highlightSortCol('list-thead', _listSortCol);
 }
 function onListStatusToggle(val){
   var idx=listStatusFilter.indexOf(val);

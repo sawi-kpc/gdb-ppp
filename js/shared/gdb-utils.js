@@ -421,5 +421,71 @@
     return chart;
   };
 
+  /* ── Expose month arrays ───────────────────────────────────── */
+  GDB.MONTHS      = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  GDB.FULL_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  /* ── localStorage filter persistence ──────────────────────── */
+  GDB.saveFilters = function(key, state) {
+    try { localStorage.setItem(key, JSON.stringify(state)); } catch(e) {}
+  };
+  GDB.loadFilters = function(key) {
+    try { var s = localStorage.getItem(key); return s ? JSON.parse(s) : null; } catch(e) { return null; }
+  };
+
+  /* ── Checkbox dropdown builder ─────────────────────────────── */
+  /* opts: { wrapperId, btnLabelId, listId, values, activeArr,
+             isChecked (fn, alt to activeArr), colorMap, toggleFn } */
+  GDB.buildCheckDropdown = function(opts) {
+    var listEl = document.getElementById(opts.listId); if (!listEl) return;
+    var isChk = opts.isChecked || function(v) { return (opts.activeArr||[]).indexOf(v) >= 0; };
+    listEl.innerHTML = (opts.values||[]).map(function(v) {
+      var dot = (opts.colorMap && opts.colorMap[v])
+        ? '<span style="width:8px;height:8px;border-radius:50%;background:'+opts.colorMap[v]+';display:inline-block;flex-shrink:0"></span>'
+        : '';
+      return '<label style="display:flex;align-items:center;gap:8px;padding:5px 12px;cursor:pointer;font-size:12px;color:var(--text);white-space:nowrap" '+
+        'onmouseover="this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'\'">'+
+        '<input type="checkbox"'+(isChk(v)?' checked':'')+' onchange="'+opts.toggleFn+'(\''+v+'\')" style="accent-color:var(--accent);width:13px;height:13px;flex-shrink:0">'+
+        dot+'<span>'+v+'</span></label>';
+    }).join('');
+    var active = opts.activeArr ? opts.activeArr : (opts.values||[]).filter(isChk);
+    var lbl = document.getElementById(opts.btnLabelId);
+    if (lbl) lbl.textContent = active.length === 0 ? (lbl.dataset.empty||'All') : active.length === 1 ? active[0] : active.length+' selected';
+    var wrap = opts.wrapperId && document.getElementById(opts.wrapperId);
+    var btn = wrap && wrap.querySelector('button');
+    if (btn) btn.style.borderColor = active.length > 0 ? 'var(--accent)' : 'var(--border)';
+  };
+
+  /* ── Pagination bar HTML ───────────────────────────────────── */
+  /* Returns HTML string. goFn: string name of global function(pageNum) */
+  GDB.pgHtml = function(page, totalPages, total, goFn, itemLabel) {
+    var p = page, tp = totalPages, lbl = itemLabel || 'records';
+    var out = '<span style="font-size:11px;color:var(--text3);margin-right:8px">'+total+' '+lbl+'</span>';
+    out += '<button class="pg-btn" onclick="'+goFn+'(1)" '+(p<=1?'disabled':'')+'>«</button>';
+    out += '<button class="pg-btn" onclick="'+goFn+'('+(p-1)+')" '+(p<=1?'disabled':'')+'>‹</button>';
+    var from = Math.max(1,p-2), to = Math.min(tp,from+4);
+    from = Math.max(1,to-4);
+    for (var i = from; i <= to; i++) {
+      out += '<button class="pg-btn'+(i===p?' active':'')+'" onclick="'+goFn+'('+i+')">'+i+'</button>';
+    }
+    out += '<button class="pg-btn" onclick="'+goFn+'('+(p+1)+')" '+(p>=tp?'disabled':'')+'>›</button>';
+    out += '<button class="pg-btn" onclick="'+goFn+'('+tp+')" '+(p>=tp?'disabled':'')+'>»</button>';
+    return out;
+  };
+
+  /* ── Sort column highlight ─────────────────────────────────── */
+  GDB.highlightSortCol = function(theadId, col) {
+    document.querySelectorAll('#'+theadId+' th[data-col]').forEach(function(th) {
+      var active = th.getAttribute('data-col') === col;
+      th.style.background = active ? 'rgba(88,166,255,.1)' : '';
+      th.style.color      = active ? 'var(--accent)' : '';
+    });
+  };
+
+  /* ── CSS variable reader ───────────────────────────────────── */
+  GDB.cssVar = function(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  };
+
   global.GDB = GDB;
 })(window);

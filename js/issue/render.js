@@ -20,31 +20,28 @@ var _chartGroupBy   = 'week'; /* 'week' | 'month' */
 /* ── Filter state persistence (localStorage) ─────────────── */
 var _issueFiltersLoaded = false;
 function _saveIssueFilters(){
-  try{ localStorage.setItem('gdb_filter_issue_list', JSON.stringify({
+  GDB.saveFilters('gdb_filter_issue_list', {
     _filterStatuses:_filterStatuses, _filterPriority:_filterPriority,
     _filterSeverity:_filterSeverity, _filterComp:_filterComp,
     _filterGroup:_filterGroup, _searchQ:_searchQ,
     _sortCol:_sortCol, _sortAsc:_sortAsc,
     _activeView:_activeView, _chartGroupBy:_chartGroupBy, _tablePage:_tablePage
-  }));}catch(e){}
+  });
 }
 function _loadIssueFilters(){
   if(_issueFiltersLoaded)return; _issueFiltersLoaded=true;
-  try{
-    var s=localStorage.getItem('gdb_filter_issue_list'); if(!s)return;
-    var f=JSON.parse(s);
-    if(f._filterStatuses&&typeof f._filterStatuses==='object') _filterStatuses=f._filterStatuses;
-    if(f._filterPriority) _filterPriority=f._filterPriority;
-    if(f._filterSeverity) _filterSeverity=f._filterSeverity;
-    if(Array.isArray(f._filterComp))  _filterComp=f._filterComp;
-    if(f._filterGroup)    _filterGroup=f._filterGroup;
-    if(f._searchQ)        _searchQ=f._searchQ;
-    if(f._sortCol)        _sortCol=f._sortCol;
-    if(typeof f._sortAsc==='boolean')  _sortAsc=f._sortAsc;
-    if(f._activeView)     _activeView=f._activeView;
-    if(f._chartGroupBy)   _chartGroupBy=f._chartGroupBy;
-    if(f._tablePage>0)    _tablePage=f._tablePage;
-  }catch(e){}
+  var f=GDB.loadFilters('gdb_filter_issue_list'); if(!f)return;
+  if(f._filterStatuses&&typeof f._filterStatuses==='object') _filterStatuses=f._filterStatuses;
+  if(f._filterPriority) _filterPriority=f._filterPriority;
+  if(f._filterSeverity) _filterSeverity=f._filterSeverity;
+  if(Array.isArray(f._filterComp))  _filterComp=f._filterComp;
+  if(f._filterGroup)    _filterGroup=f._filterGroup;
+  if(f._searchQ)        _searchQ=f._searchQ;
+  if(f._sortCol)        _sortCol=f._sortCol;
+  if(typeof f._sortAsc==='boolean')  _sortAsc=f._sortAsc;
+  if(f._activeView)     _activeView=f._activeView;
+  if(f._chartGroupBy)   _chartGroupBy=f._chartGroupBy;
+  if(f._tablePage>0)    _tablePage=f._tablePage;
 }
 
 /* ── Status board columns ────────────────────────────────── */
@@ -125,13 +122,9 @@ function calcResponseHours(fo, cb) {
   return h > 0 ? h : null;
 }
 
-function isOverdue(due, status) {
-  if (!due || status === 'Done' || status === 'Resolved') return false;
-  return new Date(due) < new Date();
-}
+function isOverdue(due, status) { return GDB.isOverdue(due, status); }
 
 /* ── Date formatter: "23 Mar 2026" ──────────────────────── */
-var _MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 /* ── Robust date parser: handles "2026-03-31", "31 Mar 2026", "Mar 31 2026" etc. ── */
 function _parseDate(raw) {
@@ -140,7 +133,7 @@ function _parseDate(raw) {
   if (!isNaN(d)) return d;
   /* fallback: try replacing space-separated parts */
   var iso = String(raw).replace(/(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})/, function(_,day,mon,yr){
-    var mi = (function(){ for(var i=0;i<_MONTHS.length;i++){ if(_MONTHS[i].toLowerCase()===mon.toLowerCase()) return i; } return -1; })();
+    var mi = (function(){ for(var i=0;i<GDB.MONTHS.length;i++){ if(GDB.MONTHS[i].toLowerCase()===mon.toLowerCase()) return i; } return -1; })();
     return yr+'-'+(mi>=0?String(mi+1).padStart(2,'0'):'01')+'-'+String(day).padStart(2,'0');
   });
   d = new Date(iso);
@@ -151,7 +144,7 @@ function _fmtDate(raw) {
   if (!raw) return null;
   var d = _parseDate(raw);
   if (!d) return String(raw).substring(0, 12); /* fallback: show raw */
-  return d.getDate() + ' ' + _MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+  return d.getDate() + ' ' + GDB.MONTHS[d.getMonth()] + ' ' + d.getFullYear();
 }
 
 function _fmtDateTime(raw) {
@@ -159,7 +152,7 @@ function _fmtDateTime(raw) {
   var d = _parseDate(raw);
   if (!d) return String(raw).substring(0, 20);
   var pad = function(n){ return String(n).padStart(2,'0'); };
-  return d.getDate()+' '+_MONTHS[d.getMonth()]+' '+d.getFullYear()+
+  return d.getDate()+' '+GDB.MONTHS[d.getMonth()]+' '+d.getFullYear()+
          ' '+pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
 }
 
@@ -205,7 +198,7 @@ function buildIncidentTimeline(d) {
     var dt = _parseDate(raw);
     if (!dt) return '';
     var pad = function(n){ return String(n).padStart(2,'0'); };
-    var dateStr = dt.getDate()+' '+_MONTHS[dt.getMonth()]+' '+dt.getFullYear();
+    var dateStr = dt.getDate()+' '+GDB.MONTHS[dt.getMonth()]+' '+dt.getFullYear();
     var timeStr = pad(dt.getHours())+':'+pad(dt.getMinutes())+':'+pad(dt.getSeconds());
     return '<span class="tl2-dot-wrap">'+
              '<span class="tl2-dot" style="background:'+color+'"></span>'+
@@ -354,7 +347,7 @@ function buildWeekChart(data) {
         key = NO_DATE_KEY;
         sortKey = '0000-00';
       } else if (_chartGroupBy === 'month') {
-        key = _MONTHS[dt.getMonth()] + ' ' + dt.getFullYear();
+        key = GDB.MONTHS[dt.getMonth()] + ' ' + dt.getFullYear();
         /* sortKey: YYYY-MM for correct ASC sort */
         sortKey = dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0');
       } else {
@@ -691,25 +684,6 @@ var STATUS_COLORS = {
   'Open': 'var(--down)', 'Investigating': 'var(--amber)',
   'In Progress': 'var(--accent)', 'Resolved': 'var(--teal)', 'Done': 'var(--up)'
 };
-function _buildIssueDropdown(listId, labelId, btnId, vals, colorMap, isCheckedFn) {
-  var listEl = document.getElementById(listId); if (!listEl) return;
-  listEl.innerHTML = vals.map(function(v) {
-    var dot = (colorMap && colorMap[v])
-      ? '<span style="width:8px;height:8px;border-radius:50%;background:'+colorMap[v]+';display:inline-block;flex-shrink:0"></span>'
-      : '';
-    return '<label style="display:flex;align-items:center;gap:8px;padding:5px 12px;cursor:pointer;font-size:12px;color:var(--text)" '+
-      'onmouseover="this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'\'">'+
-      '<input type="checkbox"'+(isCheckedFn(v)?' checked':'')+' onchange="'+listEl.dataset.togglefn+'(\''+v+'\')" style="accent-color:var(--accent);width:13px;height:13px;flex-shrink:0">'+
-      dot+'<span>'+v+'</span></label>';
-  }).join('');
-  /* update button label */
-  var active = vals.filter(isCheckedFn);
-  var lbl = document.getElementById(labelId);
-  if (lbl) lbl.textContent = active.length === 0 ? lbl.dataset.empty||'All'
-    : active.length === 1 ? active[0] : active.length+' selected';
-  var btn = document.getElementById(btnId);
-  if (btn) btn.style.borderColor = active.length > 0 ? 'var(--accent)' : 'var(--border)';
-}
 
 /* ── Populate filter dropdowns ───────────────────────────── */
 function populateFilters(data) {
@@ -727,21 +701,21 @@ function populateFilters(data) {
   });
 
   /* Status checkbox dropdown */
-  var statusListEl = document.getElementById('status-checkbox-list');
-  if (statusListEl) {
-    statusListEl.dataset.togglefn = 'onIssueStatusToggle';
-    _buildIssueDropdown('status-checkbox-list','status-btn-label','status-dropdown-btn',
-      allStatuses, STATUS_COLORS, function(v){ return !!_filterStatuses[v]; });
-  }
+  GDB.buildCheckDropdown({
+    wrapperId:'status-dropdown-wrap', btnLabelId:'status-btn-label',
+    listId:'status-checkbox-list', values:allStatuses,
+    colorMap:STATUS_COLORS, isChecked:function(v){ return !!_filterStatuses[v]; },
+    toggleFn:'onIssueStatusToggle'
+  });
 
   /* Component checkbox dropdown */
   comps.sort();
-  var compListEl = document.getElementById('comp-checkbox-list');
-  if (compListEl) {
-    compListEl.dataset.togglefn = 'onIssueCompToggle';
-    _buildIssueDropdown('comp-checkbox-list','comp-btn-label','comp-dropdown-btn',
-      comps, null, function(v){ return _filterComp.indexOf(v) >= 0; });
-  }
+  GDB.buildCheckDropdown({
+    wrapperId:'comp-dropdown-wrap', btnLabelId:'comp-btn-label',
+    listId:'comp-checkbox-list', values:comps,
+    colorMap:null, isChecked:function(v){ return _filterComp.indexOf(v) >= 0; },
+    toggleFn:'onIssueCompToggle'
+  });
 
   function fillSelect(id, values) {
     var sel = document.getElementById(id);
@@ -843,11 +817,7 @@ function sortIssueBy(col) {
   if (_sortCol === col) _sortAsc = !_sortAsc;
   else { _sortCol = col; _sortAsc = true; }
   applyFilters();
-  document.querySelectorAll('#issue-list-thead th[data-col]').forEach(function(th){
-    var active=th.getAttribute('data-col')===col;
-    th.style.background=active?'rgba(88,166,255,.1)':'';
-    th.style.color=active?'var(--accent)':'';
-  });
+  GDB.highlightSortCol('issue-list-thead', col);
 }
 
 function switchView(view) {

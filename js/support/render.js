@@ -1,11 +1,8 @@
 /* ── Date formatter ─────────────────────────────────────── */
-var _MONTHS      = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-var _FULL_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 function _fmtDate(raw) {
   if (!raw) return '—';
-  var d = new Date(String(raw).trim());
-  if (isNaN(d.getTime())) return raw;
-  return d.getDate() + ' ' + _FULL_MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+  var r = GDB.fmtDate(raw);
+  return r || String(raw);
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -39,10 +36,7 @@ function statusTag(s){
   var cls = s==='Done'?'done':s==='In Progress'?'in-progress':'todo';
   return '<span class="tag '+cls+'">'+s+'</span>';
 }
-function isOverdue(due,status){
-  if(!due||status==='Done') return false;
-  return new Date(due)<new Date();
-}
+function isOverdue(due,status){ return GDB.isOverdue(due,status); }
 
 /* ── State ───────────────────────────────────────────────── */
 var activeStatuses=[];  /* multi-select; empty = all */
@@ -56,26 +50,23 @@ var searchQ='', sortCol='Key', sortAsc=true;
 /* ── Filter state persistence (localStorage) ─────────────── */
 var _supportFiltersLoaded=false;
 function _saveSupportFilters(){
-  try{ localStorage.setItem('gdb_filter_support_list', JSON.stringify({
+  GDB.saveFilters('gdb_filter_support_list', {
     activeStatuses:activeStatuses, activeGroups:activeGroups,
     activePriority:activePriority, activeLabels:activeLabels,
     searchQ:searchQ, sortCol:sortCol, sortAsc:sortAsc, _taskPage:_taskPage
-  }));}catch(e){}
+  });
 }
 function _loadSupportFilters(){
   if(_supportFiltersLoaded)return; _supportFiltersLoaded=true;
-  try{
-    var s=localStorage.getItem('gdb_filter_support_list'); if(!s)return;
-    var f=JSON.parse(s);
-    if(Array.isArray(f.activeStatuses)) activeStatuses=f.activeStatuses;
-    if(Array.isArray(f.activeGroups))   activeGroups=f.activeGroups;
-    if(f.activePriority)                activePriority=f.activePriority;
-    if(Array.isArray(f.activeLabels))   activeLabels=f.activeLabels;
-    if(f.searchQ)                       searchQ=f.searchQ;
-    if(f.sortCol)                       sortCol=f.sortCol;
-    if(typeof f.sortAsc==='boolean')    sortAsc=f.sortAsc;
-    if(f._taskPage>0)                   _taskPage=f._taskPage;
-  }catch(e){}
+  var f=GDB.loadFilters('gdb_filter_support_list'); if(!f)return;
+  if(Array.isArray(f.activeStatuses)) activeStatuses=f.activeStatuses;
+  if(Array.isArray(f.activeGroups))   activeGroups=f.activeGroups;
+  if(f.activePriority)                activePriority=f.activePriority;
+  if(Array.isArray(f.activeLabels))   activeLabels=f.activeLabels;
+  if(f.searchQ)                       searchQ=f.searchQ;
+  if(f.sortCol)                       sortCol=f.sortCol;
+  if(typeof f.sortAsc==='boolean')    sortAsc=f.sortAsc;
+  if(f._taskPage>0)                   _taskPage=f._taskPage;
 }
 
 /* ── Build summary strip ─────────────────────────────────── */
@@ -160,44 +151,21 @@ function buildAssigneeTable(data){
 /* ── Shared dropdown builder ─────────────────────────────── */
 var SUPPORT_STATUS_COLORS = {'To do':'var(--amber)','In Progress':'var(--accent)','Done':'var(--up)'};
 
-function _buildSupportDropdown(listId, labelId, btnId, vals, colorMap, activeArr, toggleFn) {
-  var listEl = document.getElementById(listId); if (!listEl) return;
-  listEl.innerHTML = vals.map(function(v) {
-    var dot = (colorMap && colorMap[v])
-      ? '<span style="width:8px;height:8px;border-radius:50%;background:'+colorMap[v]+';display:inline-block;flex-shrink:0"></span>'
-      : '';
-    var label = v;
-    return '<label style="display:flex;align-items:center;gap:8px;padding:5px 12px;cursor:pointer;font-size:12px;color:var(--text);white-space:nowrap" '+
-      'onmouseover="this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'\'">'+
-      '<input type="checkbox"'+(activeArr.indexOf(v)>=0?' checked':'')+' onchange="'+toggleFn+'(\''+v+'\')" style="accent-color:var(--accent);width:13px;height:13px;flex-shrink:0">'+
-      dot+'<span>'+label+'</span></label>';
-  }).join('');
-  var lbl = document.getElementById(labelId);
-  if (lbl) lbl.textContent = activeArr.length === 0 ? lbl.dataset.empty||'All'
-    : activeArr.length === 1 ? activeArr[0]
-    : activeArr.length+' selected';
-  var btn = document.getElementById(btnId);
-  if (btn) btn.style.borderColor = activeArr.length > 0 ? 'var(--accent)' : 'var(--border)';
-}
-
 function buildStatusDropdown(data) {
-  _buildSupportDropdown('status-checkbox-list','status-btn-label','status-dropdown-btn',
-    ['To do','In Progress','Done'], SUPPORT_STATUS_COLORS, activeStatuses, 'onSupportStatusToggle');
+  GDB.buildCheckDropdown({wrapperId:'status-dropdown-wrap', btnLabelId:'status-btn-label', listId:'status-checkbox-list', values:['To do','In Progress','Done'], colorMap:SUPPORT_STATUS_COLORS, activeArr:activeStatuses, toggleFn:'onSupportStatusToggle'});
 }
 function buildGroupFilter(data){
   var groups=Array.from(new Set(data.map(function(d){
     return (d.Group && d.Group.trim()) ? d.Group.trim() : 'other';
   }))).sort();
-  _buildSupportDropdown('group-checkbox-list','group-btn-label','group-dropdown-btn',
-    groups, null, activeGroups, 'onSupportGroupToggle');
+  GDB.buildCheckDropdown({wrapperId:'group-dropdown-wrap', btnLabelId:'group-btn-label', listId:'group-checkbox-list', values:groups, colorMap:null, activeArr:activeGroups, toggleFn:'onSupportGroupToggle'});
 }
 function buildLabelFilter(data){
   var labels=Array.from(new Set(
     data.reduce(function(acc,d){ return acc.concat((d.Labels||'').split(';').map(function(l){return l.trim();})); }, [])
         .filter(Boolean)
   )).sort();
-  _buildSupportDropdown('label-checkbox-list','label-btn-label','label-dropdown-btn',
-    labels, null, activeLabels, 'onSupportLabelToggle');
+  GDB.buildCheckDropdown({wrapperId:'label-dropdown-wrap', btnLabelId:'label-btn-label', listId:'label-checkbox-list', values:labels, colorMap:null, activeArr:activeLabels, toggleFn:'onSupportLabelToggle'});
 }
 
 function _supportToggle(arr, val, buildFn) {
@@ -407,11 +375,7 @@ function setFilter(type, val, btn) {
 function sortBy(col){
   if(sortCol===col) sortAsc=!sortAsc; else { sortCol=col; sortAsc=true; }
   applyFilters();
-  document.querySelectorAll('#task-thead th[data-col]').forEach(function(th){
-    var active=th.getAttribute('data-col')===col;
-    th.style.background=active?'rgba(88,166,255,.1)':'';
-    th.style.color=active?'var(--accent)':'';
-  });
+  GDB.highlightSortCol('task-thead', col);
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -456,7 +420,7 @@ function buildSupportTrendChart(data) {
   function _label(k) {
     if (_supTrendPeriod === 'week') return k;
     var p = k.split('-');
-    return _MONTHS[parseInt(p[1])-1]+' '+p[0];
+    return GDB.MONTHS[parseInt(p[1])-1]+' '+p[0];
   }
 
   if (_supTrendChart) { _supTrendChart.destroy(); _supTrendChart = null; }
@@ -464,10 +428,10 @@ function buildSupportTrendChart(data) {
   if (!canvas) return;
   canvas.style.display = 'block';
 
-  var cCreated = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#58a6ff';
-  var cDone    = getComputedStyle(document.documentElement).getPropertyValue('--up').trim()||'#3fb950';
-  var cText    = getComputedStyle(document.documentElement).getPropertyValue('--text2').trim()||'#8b949e';
-  var cGrid    = getComputedStyle(document.documentElement).getPropertyValue('--border').trim()||'#30363d';
+  var cCreated = GDB.cssVar('--accent')||'#58a6ff';
+  var cDone    = GDB.cssVar('--up')||'#3fb950';
+  var cText    = GDB.cssVar('--text2')||'#8b949e';
+  var cGrid    = GDB.cssVar('--border')||'#30363d';
 
   _supTrendChart = new Chart(canvas.getContext('2d'), {
     type: 'bar',

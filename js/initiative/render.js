@@ -17,6 +17,25 @@ var _listPage=1, _listPageSize=20, _lastListFiltered=[];
 var _listSortCol='Start', _listSortAsc=true;
 var doneComponentFilter=[];
 
+/* ── Timeline focus range state ──────────────────────────── */
+var _tlStart='', _tlEnd='';
+function _initTlRange(){
+  if(_tlStart&&_tlEnd)return;
+  var yr=new Date().getFullYear(),defS=yr+'-01',defE=yr+'-12';
+  var opts=CONFIG.TIMELINE_RANGE_OPTIONS.map(function(o){return o.val;});
+  if(!_tlStart) _tlStart=opts.indexOf(defS)>=0?defS:(opts.find(function(v){return v>=defS;})||opts[0]);
+  if(!_tlEnd){var eM=opts.filter(function(v){return v<=defE;});_tlEnd=eM.length?eM[eM.length-1]:opts[opts.length-1];}
+}
+function onTlRangeChange(which,val){
+  if(which==='start')_tlStart=val; else _tlEnd=val;
+  renderSummary();
+}
+function _tlOptHtml(sel){
+  return CONFIG.TIMELINE_RANGE_OPTIONS.map(function(o){
+    return'<option value="'+o.val+'"'+(o.val===sel?' selected':'')+'>'+o.label+'</option>';
+  }).join('');
+}
+
 /* ── Filter state persistence (localStorage) ─────────────── */
 var _filtersLoadedList=false, _filtersLoadedSum=false;
 function _saveFilterState(key,state){try{localStorage.setItem(key,JSON.stringify(state));}catch(e){}}
@@ -47,7 +66,8 @@ function _saveSumFilters(){
   _saveFilterState('gdb_filter_initiative_timeline',{
     sumYearFilter:sumYearFilter, sumStageFilter:sumStageFilter,
     sumRoadmapFilter:sumRoadmapFilter, sumComponentFilter:sumComponentFilter,
-    sumSearchQuery:sumSearchQuery, hideNoDate:hideNoDate
+    sumSearchQuery:sumSearchQuery, hideNoDate:hideNoDate,
+    _tlStart:_tlStart, _tlEnd:_tlEnd
   });
 }
 function _loadSumFilters(){
@@ -59,6 +79,8 @@ function _loadSumFilters(){
   if(Array.isArray(f.sumComponentFilter)) sumComponentFilter=f.sumComponentFilter;
   if(f.sumSearchQuery)                    sumSearchQuery=f.sumSearchQuery;
   if(typeof f.hideNoDate==='boolean')     hideNoDate=f.hideNoDate;
+  if(f._tlStart)                          _tlStart=f._tlStart;
+  if(f._tlEnd)                            _tlEnd=f._tlEnd;
 }
 
 var MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -139,30 +161,10 @@ function buildMetrics(data,id){
   ].map(function(m){return'<div class="m-card '+m.cls+'"><div class="m-label">'+m.l+'</div><div class="m-value">'+m.v+'</div><div class="m-sub">'+m.s+'</div></div>';}).join('');
 }
 
-/* Timeline selects */
-function populateRangeSelects(){
-  var ss=document.getElementById('tl-start'),se=document.getElementById('tl-end');
-  if(!ss||!se)return;
-  if(ss.options.length>0)return;
-  CONFIG.TIMELINE_RANGE_OPTIONS.forEach(function(o){
-    ss.appendChild(Object.assign(document.createElement('option'),{value:o.val,textContent:o.label}));
-    se.appendChild(Object.assign(document.createElement('option'),{value:o.val,textContent:o.label}));
-  });
-  var yr=new Date().getFullYear(),defS=yr+'-01',defE=yr+'-12';
-  var sOpts=Array.from(ss.options).map(function(o){return o.value;});
-  ss.value=sOpts.includes(defS)?defS:(sOpts.find(function(v){return v>=defS;})||sOpts[0]);
-  var eOpts=Array.from(se.options).map(function(o){return o.value;});
-  var eM=eOpts.filter(function(v){return v<=defE;});
-  se.value=eM.length?eM[eM.length-1]:eOpts[eOpts.length-1];
-}
-
 /* Timeline render */
 function renderTimeline(data){
-  populateRangeSelects();
-  var tlStartEl=document.getElementById('tl-start');
-  var tlEndEl=document.getElementById('tl-end');
-  if(!tlStartEl||!tlEndEl)return;
-  var ss=tlStartEl.value,se=tlEndEl.value;
+  _initTlRange();
+  var ss=_tlStart,se=_tlEnd;
   var syArr=ss.split('-').map(Number),eyArr=se.split('-').map(Number);
   var sy=syArr[0],sm=syArr[1],ey=eyArr[0],em=eyArr[1];
   var START=new Date(sy,sm-1,1),END=new Date(ey,em,0,23,59,59),totalMs=END-START,today=new Date();
@@ -199,7 +201,15 @@ function renderTimeline(data){
     return'<div class="tl-row '+rowCls+'"><div class="tl-label"><div class="tl-key-line">'+jiraLink(d.Key)+'</div><div class="tl-name" title="'+d.Summary+'">'+emoji+d.Summary+'</div>'+dLine+'</div><div class="tl-track">'+todayColBg+(todayP!==null?'<div class="tl-today-v" style="left:'+todayP.toFixed(2)+'%"><div class="tl-today-dot-v"></div></div>':'')+' '+(hasPlan||hasActual?planBar+actBar:'<div class="tl-no-date">No date set</div>')+'</div><div class="tl-status-col">'+(mon?monBadge(mon):sPill(d.Status))+'</div></div>';
   }).join('');
   var tlInner=document.getElementById('tl-inner');
-  if(tlInner)tlInner.innerHTML='<div class="tl-header"><div class="tl-label-head"></div><div class="tl-grid-head"><div class="tl-qtr-row">'+qtrHtml+'</div><div class="tl-month-row">'+monHtml+'</div></div><div class="tl-status-head"></div></div>'+rowsHtml;
+  var focusHtml='<div style="display:flex;flex-direction:column;justify-content:center;height:100%;padding:4px 10px 4px 0;gap:4px">'+
+    '<div style="display:flex;align-items:center;gap:5px">'+
+      '<span style="font-size:10px;color:var(--text2);font-weight:600;white-space:nowrap">Focus:</span>'+
+      '<select style="font-size:10.5px;padding:2px 5px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);cursor:pointer;outline:none" onchange="onTlRangeChange(\'start\',this.value)">'+_tlOptHtml(ss)+'</select>'+
+      '<span style="font-size:10px;color:var(--text3)">to</span>'+
+      '<select style="font-size:10.5px;padding:2px 5px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);cursor:pointer;outline:none" onchange="onTlRangeChange(\'end\',this.value)">'+_tlOptHtml(se)+'</select>'+
+    '</div>'+
+  '</div>';
+  if(tlInner)tlInner.innerHTML='<div class="tl-header"><div class="tl-label-head">'+focusHtml+'</div><div class="tl-grid-head"><div class="tl-qtr-row">'+qtrHtml+'</div><div class="tl-month-row">'+monHtml+'</div></div><div class="tl-status-head"></div></div>'+rowsHtml;
 }
 
 /* Charts */

@@ -5,6 +5,7 @@
 
 var charts={};
 var sumYearFilter=['ROADMAP_2026'],initYearFilter=['all'],showNoYear=false,sumStageFilter=[],hideNoDate=false,sumSearchQuery='';
+var sumRoadmapFilter=[];
 var listYearFilter=['ROADMAP_2026'];
 var listAssigneeFilter='all';
 var listSearchQuery='';
@@ -278,6 +279,12 @@ function renderSummary(){
   _buildCheckDropdown('stage-dropdown-wrap','stage-btn-label','stage-dropdown-panel','stage-checkbox-list',
     STAGES, sumStageFilter, SC, 'onSumStageToggle', 'clearSumStageFilter');
 
+  /* Roadmap Status dropdown */
+  var RS_COLORS={'Now':'var(--accent)','Next':'var(--teal)','Later':'var(--amber)','Completed':'var(--up)',"Won't do":'var(--text3)'};
+  var rsTlVals=[]; allData.forEach(function(d){ var v=d['Roadmap Status']||''; if(v&&rsTlVals.indexOf(v)<0)rsTlVals.push(v); }); rsTlVals.sort();
+  _buildCheckDropdown('rs-tl-dropdown-wrap','rs-tl-btn-label','rs-tl-dropdown-panel','rs-tl-checkbox-list',
+    rsTlVals, sumRoadmapFilter, RS_COLORS, 'onSumRoadmapToggle', 'clearSumRoadmapFilter');
+
   /* Component dropdown */
   var compVals=[];
   allData.forEach(function(d){
@@ -293,6 +300,7 @@ function renderSummary(){
 
   /* Apply filters */
   if(sumStageFilter.length>0) filtered=filtered.filter(function(d){return sumStageFilter.indexOf(d.Status)>=0;});
+  if(sumRoadmapFilter.length>0) filtered=filtered.filter(function(d){return sumRoadmapFilter.indexOf(d['Roadmap Status']||'')>=0;});
   if(sumComponentFilter.length>0){
     filtered=filtered.filter(function(d){
       var comps=(d['Components']||'').split(';').map(function(c){return c.trim();});
@@ -317,6 +325,14 @@ function onSumStageToggle(val){
   var panel=document.getElementById('stage-dropdown-panel'); if(panel)panel.style.display='block';
 }
 function clearSumStageFilter(){ sumStageFilter=[]; document.getElementById('stage-dropdown-panel').style.display='none'; renderSummary(); }
+
+function onSumRoadmapToggle(val){
+  var idx=sumRoadmapFilter.indexOf(val);
+  if(idx>=0)sumRoadmapFilter.splice(idx,1); else sumRoadmapFilter.push(val);
+  renderSummary();
+  var panel=document.getElementById('rs-tl-dropdown-panel'); if(panel)panel.style.display='block';
+}
+function clearSumRoadmapFilter(){ sumRoadmapFilter=[]; document.getElementById('rs-tl-dropdown-panel').style.display='none'; renderSummary(); }
 
 function onSumCompToggle(val){
   var idx=sumComponentFilter.indexOf(val);

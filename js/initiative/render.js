@@ -133,7 +133,7 @@ function toggleYF(arr,val){if(val==='all')return['all'];var w=arr.filter(functio
 function filterYear(data,arr){if(arr.includes('all'))return data;return data.filter(function(d){var ys=(d['Roadmap Year Plan']||'').split(';').map(function(x){return x.trim();});return arr.some(function(y){return ys.includes(y);});});}
 function filterNoYear(data){return data.filter(function(d){return!(d['Roadmap Year Plan']||'').trim();});}
 function toggleNoYear(btn){showNoYear=!showNoYear;btn.classList.toggle('active',showNoYear);renderInitiatives();}
-function toggleHideNoDate(btn){hideNoDate=!hideNoDate;btn.classList.toggle('active',hideNoDate);renderSummary();}
+function toggleHideNoDate(){hideNoDate=!hideNoDate;renderSummary();}
 
 /* Metrics */
 function buildMetrics(data,id){
@@ -205,7 +205,10 @@ function renderTimeline(data){
       '<select style="font-size:10.5px;padding:2px 5px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);cursor:pointer;outline:none" onchange="onTlRangeChange(\'end\',this.value)">'+_tlOptHtml(se)+'</select>'+
     '</div>'+
   '</div>';
-  if(tlInner)tlInner.innerHTML='<div class="tl-header"><div class="tl-label-head">'+focusHtml+'</div><div class="tl-grid-head"><div class="tl-qtr-row">'+qtrHtml+'</div><div class="tl-month-row">'+monHtml+'</div></div><div class="tl-status-head"></div></div>'+rowsHtml;
+  var noDateBtnHtml='<div style="display:flex;align-items:center;justify-content:center;height:100%;padding:0 6px">'+
+    '<button class="fb-btn'+(hideNoDate?' active':'')+'" onclick="toggleHideNoDate()" style="font-size:10.5px;padding:3px 7px;white-space:nowrap">No-date</button>'+
+  '</div>';
+  if(tlInner)tlInner.innerHTML='<div class="tl-header"><div class="tl-label-head">'+focusHtml+'</div><div class="tl-grid-head"><div class="tl-qtr-row">'+qtrHtml+'</div><div class="tl-month-row">'+monHtml+'</div></div><div class="tl-status-head">'+noDateBtnHtml+'</div></div>'+rowsHtml;
 }
 
 /* Charts */
@@ -304,8 +307,7 @@ function _filterComp(data, val) {
 function renderSummary(){
   _loadSumFilters();
   _saveSumFilters();
-  /* sync hideNoDate button state after restore */
-  var _hdBtn=document.getElementById('btn-hide-nodate'); if(_hdBtn)_hdBtn.classList.toggle('active',hideNoDate);
+  /* hideNoDate button is rendered inline in tl-status-head — no separate sync needed */
   var filtered=filterYear(allData,sumYearFilter);
   renderYF('yf-sum',sumYearFilter,function(btn,val){sumYearFilter=toggleYF(sumYearFilter,val);renderSummary();});
 

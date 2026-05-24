@@ -1068,6 +1068,11 @@ function buildSystemicSection(data) {
 /* ── Render pipeline (called after data is ready) ───────── */
 function _renderIssues() {
   _loadIssueFilters();
+  /* Force view based on which DOM elements actually exist on this page */
+  var hasBoardEl = !!document.getElementById('board-view-wrap');
+  var hasTableEl = !!document.getElementById('table-view-wrap');
+  if (!hasBoardEl && hasTableEl) _activeView = 'table';
+  if (!hasTableEl && hasBoardEl) _activeView = 'board';
   /* restore DOM state from loaded filters */
   var se=document.getElementById('issue-search'); if(se&&_searchQ)se.value=_searchQ;
   var fp=document.getElementById('filter-priority'); if(fp)fp.value=_filterPriority;

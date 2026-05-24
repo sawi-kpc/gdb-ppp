@@ -13,7 +13,7 @@ var listStatusFilter=[];
 var sumComponentFilter=[];
 var listComponentFilter=[];
 var _listPage=1, _listPageSize=20, _lastListFiltered=[];
-var _listSortCol='Key', _listSortAsc=true;
+var _listSortCol='Start', _listSortAsc=true;
 var doneComponentFilter=[];
 
 var MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];

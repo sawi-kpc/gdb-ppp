@@ -26,11 +26,11 @@
       <span style="font-size:11px;color:#aaa">to</span>
       <select class="tl-ctrl-select" id="tl-end" onchange="renderSummary()"></select>
       <div class="fb-sep"></div>
-      <span class="tl-ctrl-label">Stage:</span>
+      <span class="tl-ctrl-label">Lifecycle Status:</span>
       <div style="position:relative" id="stage-dropdown-wrap">
         <button onclick="toggleDropdown('stage-dropdown-panel')"
           style="height:26px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);font-size:11.5px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap">
-          <span id="stage-btn-label" data-empty="All Stages">All Stages</span><span style="font-size:9px;color:var(--text3)">▾</span>
+          <span id="stage-btn-label" data-empty="All Lifecycle Status">All Lifecycle Status</span><span style="font-size:9px;color:var(--text3)">▾</span>
         </button>
         <div id="stage-dropdown-panel" style="display:none;position:absolute;top:30px;left:0;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.18);padding:8px 0;min-width:170px">
           <div id="stage-checkbox-list"></div>
@@ -40,11 +40,11 @@
         </div>
       </div>
       <div class="fb-sep"></div>
-      <span class="tl-ctrl-label">Status:</span>
+      <span class="tl-ctrl-label">Roadmap Status:</span>
       <div style="position:relative" id="rs-tl-dropdown-wrap">
         <button onclick="toggleDropdown('rs-tl-dropdown-panel')"
           style="height:26px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);font-size:11.5px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap">
-          <span id="rs-tl-btn-label" data-empty="All Status">All Status</span><span style="font-size:9px;color:var(--text3)">▾</span>
+          <span id="rs-tl-btn-label" data-empty="All Roadmap Status">All Roadmap Status</span><span style="font-size:9px;color:var(--text3)">▾</span>
         </button>
         <div id="rs-tl-dropdown-panel" style="display:none;position:absolute;top:30px;left:0;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.18);padding:8px 0;min-width:170px">
           <div id="rs-tl-checkbox-list"></div>

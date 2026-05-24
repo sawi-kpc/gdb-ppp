@@ -17,6 +17,36 @@ var _tablePage      = 1;
 var _tablePageSize  = 20;
 var _chartGroupBy   = 'week'; /* 'week' | 'month' */
 
+/* ── Filter state persistence (localStorage) ─────────────── */
+var _issueFiltersLoaded = false;
+function _saveIssueFilters(){
+  try{ localStorage.setItem('gdb_filter_issue_list', JSON.stringify({
+    _filterStatuses:_filterStatuses, _filterPriority:_filterPriority,
+    _filterSeverity:_filterSeverity, _filterComp:_filterComp,
+    _filterGroup:_filterGroup, _searchQ:_searchQ,
+    _sortCol:_sortCol, _sortAsc:_sortAsc,
+    _activeView:_activeView, _chartGroupBy:_chartGroupBy, _tablePage:_tablePage
+  }));}catch(e){}
+}
+function _loadIssueFilters(){
+  if(_issueFiltersLoaded)return; _issueFiltersLoaded=true;
+  try{
+    var s=localStorage.getItem('gdb_filter_issue_list'); if(!s)return;
+    var f=JSON.parse(s);
+    if(f._filterStatuses&&typeof f._filterStatuses==='object') _filterStatuses=f._filterStatuses;
+    if(f._filterPriority) _filterPriority=f._filterPriority;
+    if(f._filterSeverity) _filterSeverity=f._filterSeverity;
+    if(Array.isArray(f._filterComp))  _filterComp=f._filterComp;
+    if(f._filterGroup)    _filterGroup=f._filterGroup;
+    if(f._searchQ)        _searchQ=f._searchQ;
+    if(f._sortCol)        _sortCol=f._sortCol;
+    if(typeof f._sortAsc==='boolean')  _sortAsc=f._sortAsc;
+    if(f._activeView)     _activeView=f._activeView;
+    if(f._chartGroupBy)   _chartGroupBy=f._chartGroupBy;
+    if(f._tablePage>0)    _tablePage=f._tablePage;
+  }catch(e){}
+}
+
 /* ── Status board columns ────────────────────────────────── */
 var STATUSES = [
   { key:'Open',          label:'Open',          color:'var(--down)'   },
@@ -740,6 +770,7 @@ function applyFilters() {
   });
 
   _searchQ = (document.getElementById('issue-search')||{}).value || '';
+  _saveIssueFilters();
 
   var out = raw.filter(function(d) {
     /* multi-select status */
@@ -1066,12 +1097,20 @@ function buildSystemicSection(data) {
 
 /* ── Render pipeline (called after data is ready) ───────── */
 function _renderIssues() {
+  _loadIssueFilters();
+  /* restore DOM state from loaded filters */
+  var se=document.getElementById('issue-search'); if(se&&_searchQ)se.value=_searchQ;
+  var fp=document.getElementById('filter-priority'); if(fp)fp.value=_filterPriority;
+  var fs=document.getElementById('filter-severity'); if(fs)fs.value=_filterSeverity;
+  var fg=document.getElementById('filter-group'); if(fg)fg.value=_filterGroup;
   var data = window.issueData || [];
   data.forEach(function(d){ d.Status = _normaliseStatus(d.Status); });
   populateFilters(data);
   buildKPI(data);
   buildCharts(data);
   applyFilters();
+  /* restore active view */
+  if(_activeView==='table') switchView('table');
 }
 
 /* ── initIssueBoard: called by index.html onDOMContentLoaded ─

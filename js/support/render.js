@@ -53,6 +53,31 @@ var activePriority='all';
 var activeLabels  =[];  /* multi-select; empty = all */
 var searchQ='', sortCol='Key', sortAsc=true;
 
+/* ── Filter state persistence (localStorage) ─────────────── */
+var _supportFiltersLoaded=false;
+function _saveSupportFilters(){
+  try{ localStorage.setItem('gdb_filter_support_list', JSON.stringify({
+    activeStatuses:activeStatuses, activeGroups:activeGroups,
+    activePriority:activePriority, activeLabels:activeLabels,
+    searchQ:searchQ, sortCol:sortCol, sortAsc:sortAsc, _taskPage:_taskPage
+  }));}catch(e){}
+}
+function _loadSupportFilters(){
+  if(_supportFiltersLoaded)return; _supportFiltersLoaded=true;
+  try{
+    var s=localStorage.getItem('gdb_filter_support_list'); if(!s)return;
+    var f=JSON.parse(s);
+    if(Array.isArray(f.activeStatuses)) activeStatuses=f.activeStatuses;
+    if(Array.isArray(f.activeGroups))   activeGroups=f.activeGroups;
+    if(f.activePriority)                activePriority=f.activePriority;
+    if(Array.isArray(f.activeLabels))   activeLabels=f.activeLabels;
+    if(f.searchQ)                       searchQ=f.searchQ;
+    if(f.sortCol)                       sortCol=f.sortCol;
+    if(typeof f.sortAsc==='boolean')    sortAsc=f.sortAsc;
+    if(f._taskPage>0)                   _taskPage=f._taskPage;
+  }catch(e){}
+}
+
 /* ── Build summary strip ─────────────────────────────────── */
 function _ssc(label,cls,num,sub){
   var colorMap={accent:'var(--accent)',green:'var(--up)',amber:'var(--amber)',teal:'var(--teal)',purple:'var(--purple)'};
@@ -329,6 +354,7 @@ function getFiltered(){
 }
 function applyFilters(){
   _taskPage = 1; /* reset to page 1 on filter change */
+  _saveSupportFilters();
   var filtered = getFiltered();
   buildTaskTable(filtered);
   /* Chart always shows full dataset — not filtered */
@@ -477,8 +503,12 @@ function buildSupportTrendChart(data) {
 
 /* ── Init ───────────────────────────────────────────────── */
 function init(){
+  _loadSupportFilters();
   var el = document.getElementById('last-updated');
   if (el) el.textContent = 'Last updated: '+new Date().toLocaleString('en-GB',{day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  /* restore DOM state from loaded filters */
+  var se=document.getElementById('search'); if(se&&searchQ)se.value=searchQ;
+  var fp=document.getElementById('filter-priority'); if(fp)fp.value=activePriority;
   buildStrip(supportData);
   buildGroupChart(supportData);
   buildAssigneeTable(supportData);

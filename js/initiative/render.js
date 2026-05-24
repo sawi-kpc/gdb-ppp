@@ -17,6 +17,50 @@ var _listPage=1, _listPageSize=20, _lastListFiltered=[];
 var _listSortCol='Start', _listSortAsc=true;
 var doneComponentFilter=[];
 
+/* ── Filter state persistence (localStorage) ─────────────── */
+var _filtersLoadedList=false, _filtersLoadedSum=false;
+function _saveFilterState(key,state){try{localStorage.setItem(key,JSON.stringify(state));}catch(e){}}
+function _loadFilterState(key){try{var s=localStorage.getItem(key);return s?JSON.parse(s):null;}catch(e){return null;}}
+
+function _saveListFilters(){
+  _saveFilterState('gdb_filter_initiative_list',{
+    listYearFilter:listYearFilter, listStatusFilter:listStatusFilter,
+    listRoadmapFilter:listRoadmapFilter, listComponentFilter:listComponentFilter,
+    listAssigneeFilter:listAssigneeFilter, listSearchQuery:listSearchQuery,
+    _listSortCol:_listSortCol, _listSortAsc:_listSortAsc, _listPage:_listPage
+  });
+}
+function _loadListFilters(){
+  if(_filtersLoadedList)return; _filtersLoadedList=true;
+  var f=_loadFilterState('gdb_filter_initiative_list'); if(!f)return;
+  if(Array.isArray(f.listYearFilter)&&f.listYearFilter.length) listYearFilter=f.listYearFilter;
+  if(Array.isArray(f.listStatusFilter))    listStatusFilter=f.listStatusFilter;
+  if(Array.isArray(f.listRoadmapFilter))   listRoadmapFilter=f.listRoadmapFilter;
+  if(Array.isArray(f.listComponentFilter)) listComponentFilter=f.listComponentFilter;
+  if(f.listAssigneeFilter!=null)           listAssigneeFilter=f.listAssigneeFilter;
+  if(f.listSearchQuery)                    listSearchQuery=f.listSearchQuery;
+  if(f._listSortCol)                       _listSortCol=f._listSortCol;
+  if(typeof f._listSortAsc==='boolean')    _listSortAsc=f._listSortAsc;
+  if(f._listPage>0)                        _listPage=f._listPage;
+}
+function _saveSumFilters(){
+  _saveFilterState('gdb_filter_initiative_timeline',{
+    sumYearFilter:sumYearFilter, sumStageFilter:sumStageFilter,
+    sumRoadmapFilter:sumRoadmapFilter, sumComponentFilter:sumComponentFilter,
+    sumSearchQuery:sumSearchQuery, hideNoDate:hideNoDate
+  });
+}
+function _loadSumFilters(){
+  if(_filtersLoadedSum)return; _filtersLoadedSum=true;
+  var f=_loadFilterState('gdb_filter_initiative_timeline'); if(!f)return;
+  if(Array.isArray(f.sumYearFilter)&&f.sumYearFilter.length) sumYearFilter=f.sumYearFilter;
+  if(Array.isArray(f.sumStageFilter))     sumStageFilter=f.sumStageFilter;
+  if(Array.isArray(f.sumRoadmapFilter))   sumRoadmapFilter=f.sumRoadmapFilter;
+  if(Array.isArray(f.sumComponentFilter)) sumComponentFilter=f.sumComponentFilter;
+  if(f.sumSearchQuery)                    sumSearchQuery=f.sumSearchQuery;
+  if(typeof f.hideNoDate==='boolean')     hideNoDate=f.hideNoDate;
+}
+
 var MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 var FULL_MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
 var STAGES=['Parking Lot','Budget Approval','Discovery','Ready for Delivery','Delivery','Done'];
@@ -272,6 +316,10 @@ function _buildCheckDropdown(wrapperId, btnLabelId, panelId, listId, values, act
 }
 
 function renderSummary(){
+  _loadSumFilters();
+  _saveSumFilters();
+  /* sync hideNoDate button state after restore */
+  var _hdBtn=document.getElementById('btn-hide-nodate'); if(_hdBtn)_hdBtn.classList.toggle('active',hideNoDate);
   var filtered=filterYear(allData,sumYearFilter);
   renderYF('yf-sum',sumYearFilter,function(btn,val){sumYearFilter=toggleYF(sumYearFilter,val);renderSummary();});
 
@@ -971,6 +1019,8 @@ function renderInitiatives(){
 /* CSV parser — handles normal row-per-record format */
 
 function renderList(){
+  _loadListFilters();
+  _saveListFilters();
   /* Year filter */
   renderYF('yf-list',listYearFilter,function(btn,val){
     listYearFilter=toggleYF(listYearFilter,val);

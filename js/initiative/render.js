@@ -584,13 +584,27 @@ function _buildKPI(data) {
 function _buildPipeline(data) {
   var el = document.getElementById('dash-delivery'); if (!el) return;
 
-  /* Items to show: Delivery + Budget Approval + Ready for Delivery */
+  /* Helper: component missing or invalid (empty / "new-or-undefined") */
+  function _missingComp(d) {
+    var NEED_COMP = ['Ready for Delivery', 'Delivery', 'Done'];
+    if (NEED_COMP.indexOf(d.Status) < 0) return false;
+    var comps = (d['Components'] || '').split(';').map(function(c) { return c.trim(); }).filter(function(c) { return c && c.toLowerCase() !== 'new-or-undefined'; });
+    return comps.length === 0;
+  }
+
+  /* Items to show:
+     - Delivery + Budget Approval + Ready for Delivery (active pipeline)
+     - Done / Ready / Delivery items missing component (data quality)
+     - Exclude Roadmap Status = "Won't do" */
   var items = data.filter(function(d) {
-    return d.Status === 'Delivery' || d.Status === 'Budget Approval' || d.Status === 'Ready for Delivery';
+    if ((d['Roadmap Status'] || '') === "Won't do") return false;
+    var isActive = d.Status === 'Delivery' || d.Status === 'Budget Approval' || d.Status === 'Ready for Delivery';
+    return isActive || _missingComp(d);
   });
 
   /* Build action map per key */
   function _actionFor(d) {
+    if (_missingComp(d)) return { label: 'Specify component (related platform)', color: 'var(--amber)' };
     var mon = (d['Project Monitoring Status'] || '').toLowerCase();
     if (mon.includes('delay')) return { label: 'Provide revised plan & mitigation', color: 'var(--down)' };
     if (mon.includes('risk'))  return { label: 'Identify blockers', color: 'var(--amber)' };
@@ -599,14 +613,15 @@ function _buildPipeline(data) {
     return null;
   }
 
-  /* Sort: delayed → at-risk → budget → ready → on-track */
+  /* Sort: delayed → missing-comp → at-risk → budget → ready → on-track */
   function _sortOrder(d) {
+    if (_missingComp(d)) return 0;
     var mon = (d['Project Monitoring Status'] || '').toLowerCase();
-    if (mon.includes('delay')) return 0;
-    if (mon.includes('risk'))  return 1;
-    if (d.Status === 'Budget Approval')    return 2;
-    if (d.Status === 'Ready for Delivery') return 3;
-    return 4;
+    if (mon.includes('delay')) return 1;
+    if (mon.includes('risk'))  return 2;
+    if (d.Status === 'Budget Approval')    return 3;
+    if (d.Status === 'Ready for Delivery') return 4;
+    return 5;
   }
   items = items.slice().sort(function(a, b) { return _sortOrder(a) - _sortOrder(b); });
 

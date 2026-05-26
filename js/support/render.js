@@ -13,7 +13,7 @@ function _fmtDate(raw) {
 ══════════════════════════════════════════════════════════════ */
 
 /* ── Helpers ─────────────────────────────────────────────── */
-var JIRA_BASE = 'https://kingpower.atlassian.net/browse/';
+var JIRA_BASE = 'https://kingpowerclick.atlassian.net/browse/';
 function secToHours(s) {
   if (!s || s <= 0) return '—';
   var totalH = s / 3600;

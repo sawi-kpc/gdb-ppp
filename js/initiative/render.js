@@ -46,6 +46,7 @@ function _saveListFilters(){
   GDB.saveFilters('gdb_filter_initiative_list',{
     listYearFilter:listYearFilter, listStatusFilter:listStatusFilter,
     listRoadmapFilter:listRoadmapFilter, listComponentFilter:listComponentFilter,
+    listPMRoleFilter:listPMRoleFilter,
     listAssigneeFilter:listAssigneeFilter, listSearchQuery:listSearchQuery,
     _listSortCol:_listSortCol, _listSortAsc:_listSortAsc, _listPage:_listPage
   });
@@ -57,6 +58,7 @@ function _loadListFilters(){
   if(Array.isArray(f.listStatusFilter))    listStatusFilter=f.listStatusFilter;
   if(Array.isArray(f.listRoadmapFilter))   listRoadmapFilter=f.listRoadmapFilter;
   if(Array.isArray(f.listComponentFilter)) listComponentFilter=f.listComponentFilter;
+  if(Array.isArray(f.listPMRoleFilter))    listPMRoleFilter=f.listPMRoleFilter;
   if(f.listAssigneeFilter!=null)           listAssigneeFilter=f.listAssigneeFilter;
   if(f.listSearchQuery)                    listSearchQuery=f.listSearchQuery;
   if(f._listSortCol)                       _listSortCol=f._listSortCol;
@@ -67,6 +69,7 @@ function _saveSumFilters(){
   GDB.saveFilters('gdb_filter_initiative_timeline',{
     sumYearFilter:sumYearFilter, sumStageFilter:sumStageFilter,
     sumRoadmapFilter:sumRoadmapFilter, sumComponentFilter:sumComponentFilter,
+    sumPMRoleFilter:sumPMRoleFilter,
     sumSearchQuery:sumSearchQuery, hideNoDate:hideNoDate,
     _tlStart:_tlStart, _tlEnd:_tlEnd
   });
@@ -78,6 +81,7 @@ function _loadSumFilters(){
   if(Array.isArray(f.sumStageFilter))     sumStageFilter=f.sumStageFilter;
   if(Array.isArray(f.sumRoadmapFilter))   sumRoadmapFilter=f.sumRoadmapFilter;
   if(Array.isArray(f.sumComponentFilter)) sumComponentFilter=f.sumComponentFilter;
+  if(Array.isArray(f.sumPMRoleFilter))    sumPMRoleFilter=f.sumPMRoleFilter;
   if(f.sumSearchQuery)                    sumSearchQuery=f.sumSearchQuery;
   if(typeof f.hideNoDate==='boolean')     hideNoDate=f.hideNoDate;
   if(f._tlStart)                          _tlStart=f._tlStart;

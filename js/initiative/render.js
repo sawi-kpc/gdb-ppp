@@ -12,10 +12,13 @@ var listSearchQuery='';
 var listRoadmapFilter=[];
 var listStatusFilter=[];
 var sumComponentFilter=[];
+var sumPMRoleFilter=[];
 var listComponentFilter=[];
+var listPMRoleFilter=[];
 var _listPage=1, _listPageSize=20, _lastListFiltered=[];
 var _listSortCol='Start', _listSortAsc=true;
 var doneComponentFilter=[];
+var donePMRoleFilter=[];
 
 /* ── Timeline focus range state ──────────────────────────── */
 var _tlStart='', _tlEnd='';
@@ -327,6 +330,12 @@ function renderSummary(){
   compVals.sort();
   GDB.buildCheckDropdown({wrapperId:'comp-dropdown-wrap', btnLabelId:'comp-btn-label', listId:'comp-checkbox-list', values:compVals, activeArr:sumComponentFilter, colorMap:null, toggleFn:'onSumCompToggle'});
 
+  /* PM Role dropdown */
+  var sumPMVals=[];
+  allData.forEach(function(d){ var v=(d['PM Role']||'').trim(); if(v&&sumPMVals.indexOf(v)<0)sumPMVals.push(v); });
+  sumPMVals.sort();
+  GDB.buildCheckDropdown({wrapperId:'sum-pm-dropdown-wrap', btnLabelId:'sum-pm-btn-label', listId:'sum-pm-checkbox-list', values:sumPMVals, activeArr:sumPMRoleFilter, colorMap:null, toggleFn:'onSumPMToggle'});
+
   /* Sync search box */
   var sumSearchEl=document.getElementById('sum-search');
   if(sumSearchEl&&sumSearchEl.value!==sumSearchQuery)sumSearchEl.value=sumSearchQuery;
@@ -339,6 +348,9 @@ function renderSummary(){
       var comps=(d['Components']||'').split(';').map(function(c){return c.trim();});
       return sumComponentFilter.some(function(f){return comps.indexOf(f)>=0;});
     });
+  }
+  if(sumPMRoleFilter.length>0){
+    filtered=filtered.filter(function(d){ return sumPMRoleFilter.indexOf((d['PM Role']||'').trim())>=0; });
   }
   if(sumSearchQuery.trim()){
     var q=sumSearchQuery.trim().toLowerCase();
@@ -375,6 +387,14 @@ function onSumCompToggle(val){
 }
 function clearSumCompFilter(){ sumComponentFilter=[]; document.getElementById('comp-dropdown-panel').style.display='none'; renderSummary(); }
 
+function onSumPMToggle(val){
+  var idx=sumPMRoleFilter.indexOf(val);
+  if(idx>=0)sumPMRoleFilter.splice(idx,1); else sumPMRoleFilter.push(val);
+  renderSummary();
+  var panel=document.getElementById('sum-pm-dropdown-panel'); if(panel)panel.style.display='block';
+}
+function clearSumPMFilter(){ sumPMRoleFilter=[]; document.getElementById('sum-pm-dropdown-panel').style.display='none'; renderSummary(); }
+
 /* ── Done initiatives list ────────────────── */
 var doneYearFilter=['all'];
 var doneBUFilter=[];
@@ -404,6 +424,12 @@ function renderCompleted(){
   doneCompVals.sort();
   GDB.buildCheckDropdown({wrapperId:'done-comp-wrap', btnLabelId:'done-comp-label', listId:'done-comp-list', values:doneCompVals, activeArr:doneComponentFilter, colorMap:null, toggleFn:'onDoneCompToggle'});
 
+  /* PM Role dropdown */
+  var donePMVals=[];
+  allData.forEach(function(d){ var v=(d['PM Role']||'').trim(); if(v&&donePMVals.indexOf(v)<0)donePMVals.push(v); });
+  donePMVals.sort();
+  GDB.buildCheckDropdown({wrapperId:'done-pm-wrap', btnLabelId:'done-pm-label', listId:'done-pm-list', values:donePMVals, activeArr:donePMRoleFilter, colorMap:null, toggleFn:'onDonePMToggle'});
+
   /* Sync search */
   var doneSearchEl=document.getElementById('done-search');
   if(doneSearchEl&&doneSearchEl.value!==doneSearchQuery)doneSearchEl.value=doneSearchQuery;
@@ -421,6 +447,9 @@ function renderCompleted(){
       var comps=(d['Components']||'').split(';').map(function(c){return c.trim();});
       return doneComponentFilter.some(function(f){return comps.indexOf(f)>=0;});
     });
+  }
+  if(donePMRoleFilter.length>0){
+    done=done.filter(function(d){ return donePMRoleFilter.indexOf((d['PM Role']||'').trim())>=0; });
   }
   if(doneSearchQuery.trim()){
     var q=doneSearchQuery.trim().toLowerCase();
@@ -493,6 +522,8 @@ function onDoneBUToggle(val){ var i=doneBUFilter.indexOf(val); if(i>=0)doneBUFil
 function clearDoneBUFilter(){ doneBUFilter=[]; document.getElementById('done-bu-panel').style.display='none'; renderCompleted(); }
 function onDoneCompToggle(val){ var i=doneComponentFilter.indexOf(val); if(i>=0)doneComponentFilter.splice(i,1); else doneComponentFilter.push(val); renderCompleted(); var p=document.getElementById('done-comp-panel'); if(p)p.style.display='block'; }
 function clearDoneCompFilter(){ doneComponentFilter=[]; document.getElementById('done-comp-panel').style.display='none'; renderCompleted(); }
+function onDonePMToggle(val){ var i=donePMRoleFilter.indexOf(val); if(i>=0)donePMRoleFilter.splice(i,1); else donePMRoleFilter.push(val); renderCompleted(); var p=document.getElementById('done-pm-panel'); if(p)p.style.display='block'; }
+function clearDonePMFilter(){ donePMRoleFilter=[]; document.getElementById('done-pm-panel').style.display='none'; renderCompleted(); }
 function onDoneSearchChange(val){ doneSearchQuery=val||''; renderCompleted(); }
 
 /* ══════════════════════════════════════════════════════════════
@@ -1053,6 +1084,12 @@ function renderList(){
   listCompVals.sort();
   GDB.buildCheckDropdown({wrapperId:'comp-list-dropdown-wrap', btnLabelId:'comp-list-btn-label', listId:'comp-list-checkbox-list', values:listCompVals, activeArr:listComponentFilter, colorMap:null, toggleFn:'onListCompToggle'});
 
+  /* PM Role dropdown */
+  var listPMVals=[];
+  allData.forEach(function(d){ var v=(d['PM Role']||'').trim(); if(v&&listPMVals.indexOf(v)<0)listPMVals.push(v); });
+  listPMVals.sort();
+  GDB.buildCheckDropdown({wrapperId:'list-pm-dropdown-wrap', btnLabelId:'list-pm-btn-label', listId:'list-pm-checkbox-list', values:listPMVals, activeArr:listPMRoleFilter, colorMap:null, toggleFn:'onListPMToggle'});
+
   /* Roadmap status dropdown checkboxes */
   var rsCheckList=document.getElementById('rs-checkbox-list');
   if(rsCheckList){
@@ -1103,6 +1140,9 @@ function renderList(){
       var comps=(d['Components']||'').split(';').map(function(c){return c.trim();});
       return listComponentFilter.some(function(f){return comps.indexOf(f)>=0;});
     });
+  }
+  if(listPMRoleFilter.length>0){
+    filtered=filtered.filter(function(d){ return listPMRoleFilter.indexOf((d['PM Role']||'').trim())>=0; });
   }
   /* Roadmap status filter */
   if(listRoadmapFilter.length>0){
@@ -1242,6 +1282,14 @@ function onListCompToggle(val){
   var panel=document.getElementById('comp-list-dropdown-panel'); if(panel)panel.style.display='block';
 }
 function clearListCompFilter(){ listComponentFilter=[]; document.getElementById('comp-list-dropdown-panel').style.display='none'; renderList(); }
+
+function onListPMToggle(val){
+  var idx=listPMRoleFilter.indexOf(val);
+  if(idx>=0)listPMRoleFilter.splice(idx,1); else listPMRoleFilter.push(val);
+  renderList();
+  var panel=document.getElementById('list-pm-dropdown-panel'); if(panel)panel.style.display='block';
+}
+function clearListPMFilter(){ listPMRoleFilter=[]; document.getElementById('list-pm-dropdown-panel').style.display='none'; renderList(); }
 function onListSearchChange(val){ listSearchQuery=val||''; renderList(); }
 function onListRoadmapToggle(val){
   var idx=listRoadmapFilter.indexOf(val);

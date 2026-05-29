@@ -262,13 +262,17 @@
 
   @page { size: A3 landscape; margin: 8mm; }
 
-  /* hide all chrome */
-  #gdb-header, .gdb-init-subnav,
+  /* kill body padding that the fixed header creates */
+  body, body.has-init-subnav {
+    padding: 0 !important; margin: 0 !important;
+    background: #0d1117 !important;
+  }
+
+  /* hide all chrome — note: header/nav use class, not id */
+  .gdb-header, .gdb-nav, .gdb-init-subnav,
   .rm-ctrl-row, .rm-legend,
   #gdb-loading, #gdb-error,
   #refresh-time, #current-dt { display: none !important; }
-
-  body { padding: 0 !important; margin: 0 !important; background: #0d1117 !important; }
 
   #rm-page { display: block !important; padding: 0 !important; max-width: none !important; }
 
@@ -278,12 +282,11 @@
   /* expand table — no clipping */
   .rm-table-wrap { overflow: visible !important; height: auto !important; }
 
-  /* un-stick headers (avoids duplicate rendering in some browsers) */
+  /* un-stick headers so they don't double-render */
   .rm-goal-hd, .rm-q-hd, .rm-goal-lbl { position: relative !important; }
 
   /* no mid-table page breaks */
-  .rm-table  { page-break-inside: avoid !important; break-inside: avoid !important; }
-  .rm-row    { page-break-inside: avoid !important; break-inside: avoid !important; }
+  .rm-table, .rm-row { page-break-inside: avoid !important; break-inside: avoid !important; }
 }
 </style>
 </head>
@@ -429,17 +432,27 @@ function exportRoadmapPDF() {
   if (dateEl) dateEl.textContent = new Date().toLocaleDateString('en-GB',
     {day:'2-digit', month:'short', year:'numeric'});
 
-  /* Calculate zoom so everything fits on 1 A3-landscape page
-     Printable area: 420mm – 16mm margins = 404mm wide, 297mm – 16mm = 281mm tall
-     At 96 dpi:  1mm ≈ 3.7795 px  →  404mm ≈ 1527px,  281mm ≈ 1062px        */
+  /* Measure FULL table dimensions by temporarily removing overflow clip */
+  var prevOverflow = wrap.style.overflow;
+  var prevMaxH     = wrap.style.maxHeight;
+  wrap.style.overflow  = 'visible';
+  wrap.style.maxHeight = 'none';
+  void wrap.offsetHeight; /* force reflow */
+
+  var tw = table.offsetWidth;
+  var th = table.offsetHeight;
+
+  wrap.style.overflow  = prevOverflow;
+  wrap.style.maxHeight = prevMaxH;
+
+  /* A3 landscape printable area (420×297mm, 8mm margins each side)
+     404mm × 281mm  →  at 96 dpi (1mm ≈ 3.7795px):  1527 × 1062 px          */
   var pW = 1527, pH = 1062;
-  var tw = wrap.scrollWidth;   /* full table width inc. overflow */
-  var th = wrap.scrollHeight;  /* full table height inc. overflow */
-  var zoom = Math.min(1, pW / tw, pH / th);
+  var zoom = Math.min(1, pW / (tw || 1), pH / (th || 1));
   container.style.zoom = zoom.toFixed(4);
 
   document.body.classList.add('rm-printing');
-  window.print();                          /* blocks until dialog closed */
+  window.print();
   document.body.classList.remove('rm-printing');
   container.style.zoom = '';
 }

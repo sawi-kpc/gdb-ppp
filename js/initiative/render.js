@@ -1358,17 +1358,30 @@ function _rmFmtOwner(email){
   if(!local)return '';
   return local.split('.').map(function(w){return w.charAt(0).toUpperCase()+w.slice(1);}).join(' ');
 }
+var _RM_MON_COLOR={'On track':'#6DBF9A','Delayed':'#D4A850','At risk':'#E07878','Off track':'#E07878'};
+function _rmBadge(label,color){
+  if(!label)return '';
+  var bg=color+'22'; // ~13% opacity hex
+  return '<span class="rm-badge" style="color:'+color+';background:'+bg+';border:1px solid '+color+'44">'+_rmEsc(label)+'</span>';
+}
 function _rmChip(d){
   var status=(d['Status']||'').trim();
   var cls=_rmStatusCls(status);
   var summary=(d['Summary']||'').trim();
   var key=(d['Key']||'').trim();
   var owner=_rmFmtOwner((d['BU Owner']||'').trim());
+  var roadmapStatus=(d['Roadmap Status']||'').trim();
+  var monStatus=(d['Project Monitoring Status']||'').trim();
   var href=CONFIG.JIRA_BASE+key;
+  var badges='';
+  if(status)       badges+=_rmBadge(status,       SC[status]||'#8b949e');
+  if(roadmapStatus)badges+=_rmBadge(roadmapStatus, RC[roadmapStatus]||'#8b949e');
+  if(monStatus)    badges+=_rmBadge(monStatus,     _RM_MON_COLOR[monStatus]||'#8b949e');
   return '<a class="rm-chip '+cls+'" href="'+href+'" target="_blank" title="'+_rmEsc(key+' · '+summary)+'">' +
     '<span class="rm-chip-key">'+_rmEsc(key)+' ↗</span>' +
     '<span class="rm-chip-name">'+_rmEsc(summary)+'</span>' +
     (owner?'<span class="rm-chip-owner">'+_rmEsc(owner)+'</span>':'') +
+    (badges?'<span class="rm-chip-badges">'+badges+'</span>':'') +
     '</a>';
 }
 

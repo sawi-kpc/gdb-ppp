@@ -232,6 +232,59 @@
 .rm-li-bar {
   width: 3px; height: 12px; border-radius: 2px; flex-shrink: 0;
 }
+
+/* ── PDF export button ────────────────────────────────────── */
+.rm-pdf-btn {
+  height: 26px; padding: 0 10px;
+  border: 1px solid var(--border); border-radius: 4px;
+  background: var(--surface2); color: var(--text2);
+  font-size: 11px; font-weight: 500; cursor: pointer;
+  display: flex; align-items: center; gap: 4px;
+  white-space: nowrap; transition: border-color .15s, color .15s;
+}
+.rm-pdf-btn:hover { border-color: var(--text2); color: var(--text); }
+.rm-pdf-btn svg { flex-shrink: 0; }
+
+/* ── Print-only header (hidden on screen) ─────────────────── */
+.rm-print-hd {
+  display: none;
+  align-items: baseline; gap: 10px;
+  padding: 0 0 8px 0; margin-bottom: 6px;
+  border-bottom: 1px solid #30363d;
+  font-size: 12px; color: #c9d1d9;
+}
+.rm-print-hd strong { font-size: 15px; font-weight: 700; }
+.rm-print-hd span   { font-size: 10px; color: #8b949e; }
+
+/* ── Print styles ─────────────────────────────────────────── */
+@media print {
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+  @page { size: A3 landscape; margin: 8mm; }
+
+  /* hide all chrome */
+  #gdb-header, .gdb-init-subnav,
+  .rm-ctrl-row, .rm-legend,
+  #gdb-loading, #gdb-error,
+  #refresh-time, #current-dt { display: none !important; }
+
+  body { padding: 0 !important; margin: 0 !important; background: #0d1117 !important; }
+
+  #rm-page { display: block !important; padding: 0 !important; max-width: none !important; }
+
+  /* show print title */
+  .rm-print-hd { display: flex !important; }
+
+  /* expand table — no clipping */
+  .rm-table-wrap { overflow: visible !important; height: auto !important; }
+
+  /* un-stick headers (avoids duplicate rendering in some browsers) */
+  .rm-goal-hd, .rm-q-hd, .rm-goal-lbl { position: relative !important; }
+
+  /* no mid-table page breaks */
+  .rm-table  { page-break-inside: avoid !important; break-inside: avoid !important; }
+  .rm-row    { page-break-inside: avoid !important; break-inside: avoid !important; }
+}
 </style>
 </head>
 <body class="has-init-subnav">
@@ -240,6 +293,12 @@
 <div id="gdb-loading"><div class="gdb-spinner"></div><div class="gdb-loading-text">Loading…</div></div>
 
 <div id="rm-page" class="gdb-page" style="display:none">
+
+  <!-- ── Print-only title ─────────────────────────────────── -->
+  <div class="rm-print-hd">
+    <strong>Roadmap <span id="rm-print-year"></span></strong>
+    <span>Generated <span id="rm-print-date"></span></span>
+  </div>
 
   <!-- ── Filter bar ─────────────────────────────────────── -->
   <div class="rm-ctrl-row">
@@ -296,6 +355,16 @@
     <div class="rm-search-wrap">
       <input class="rm-search" type="search" placeholder="Search…" oninput="onRmSearchChange(this.value)">
     </div>
+
+    <!-- Export PDF -->
+    <button class="rm-pdf-btn" onclick="exportRoadmapPDF()" title="Export to PDF (1 page)">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+        <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+      </svg>
+      PDF
+    </button>
+
     <span id="rm-count" class="rm-count"></span>
   </div>
 
@@ -346,6 +415,34 @@ window.addEventListener('DOMContentLoaded', function() {
     }
   });
 });
+
+function exportRoadmapPDF() {
+  var wrap      = document.querySelector('.rm-table-wrap');
+  var container = document.getElementById('rm-table-container');
+  var table     = container && container.querySelector('.rm-table');
+  if (!table || !wrap) { window.print(); return; }
+
+  /* Fill print-only title */
+  var yearEl = document.getElementById('rm-print-year');
+  var dateEl = document.getElementById('rm-print-date');
+  if (yearEl) yearEl.textContent = rmYearFilter || '';
+  if (dateEl) dateEl.textContent = new Date().toLocaleDateString('en-GB',
+    {day:'2-digit', month:'short', year:'numeric'});
+
+  /* Calculate zoom so everything fits on 1 A3-landscape page
+     Printable area: 420mm – 16mm margins = 404mm wide, 297mm – 16mm = 281mm tall
+     At 96 dpi:  1mm ≈ 3.7795 px  →  404mm ≈ 1527px,  281mm ≈ 1062px        */
+  var pW = 1527, pH = 1062;
+  var tw = wrap.scrollWidth;   /* full table width inc. overflow */
+  var th = wrap.scrollHeight;  /* full table height inc. overflow */
+  var zoom = Math.min(1, pW / tw, pH / th);
+  container.style.zoom = zoom.toFixed(4);
+
+  document.body.classList.add('rm-printing');
+  window.print();                          /* blocks until dialog closed */
+  document.body.classList.remove('rm-printing');
+  container.style.zoom = '';
+}
 
 function toggleDropdown(panelId) {
   var panel = document.getElementById(panelId);

@@ -262,9 +262,10 @@
 
   @page { size: A3 landscape; margin: 8mm; }
 
-  /* kill body padding that the fixed header creates */
+  /* kill body padding + min-height:100vh that push content to page 2 */
   body, body.has-init-subnav {
     padding: 0 !important; margin: 0 !important;
+    min-height: 0 !important; height: auto !important;
     background: #0d1117 !important;
   }
 
@@ -451,9 +452,22 @@ function exportRoadmapPDF() {
   var zoom = Math.min(1, pW / (tw || 1), pH / (th || 1));
   container.style.zoom = zoom.toFixed(4);
 
+  /* Force-reset body constraints via inline !important.
+     Inline style beats any stylesheet !important, so this wins over
+     body { min-height:100vh } and .has-init-subnav { padding-top:X !important }
+     which would otherwise push content to page 2.                              */
+  document.body.style.setProperty('padding',    '0', 'important');
+  document.body.style.setProperty('margin',     '0', 'important');
+  document.body.style.setProperty('min-height', '0', 'important');
+
   document.body.classList.add('rm-printing');
   window.print();
+
+  /* Restore body styles */
   document.body.classList.remove('rm-printing');
+  document.body.style.removeProperty('padding');
+  document.body.style.removeProperty('margin');
+  document.body.style.removeProperty('min-height');
   container.style.zoom = '';
 }
 

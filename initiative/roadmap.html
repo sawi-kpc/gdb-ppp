@@ -70,13 +70,15 @@
 
 /* Column header */
 .rm-goal-hd {
-  width: 172px; text-align: left;
+  width: 172px; min-width: 172px; max-width: 172px;
+  text-align: left;
   font-size: 10px; font-weight: 600; color: var(--text3);
   text-transform: uppercase; letter-spacing: .07em;
   background: var(--surface); border-bottom: 2px solid var(--border);
   padding: 8px 12px;
   position: sticky; top: 0; left: 0; z-index: 40;
   border-right: 1px solid var(--border);
+  overflow: hidden;
 }
 .rm-q-hd {
   text-align: left; padding: 7px 12px;
@@ -111,7 +113,8 @@
 /* Goal label cell */
 .rm-goal-lbl {
   position: sticky; left: 0; z-index: 20;
-  width: 172px;
+  width: 172px; max-width: 172px; min-width: 172px;
+  overflow: hidden;
   background: var(--surface2);
   border-right: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
@@ -120,9 +123,9 @@
   transition: background .12s;
 }
 .rm-goal-name {
-  display: flex; align-items: center; gap: 6px;
+  display: flex; align-items: flex-start; gap: 6px;
   font-size: 11px; font-weight: 700; color: var(--text);
-  line-height: 1.4; white-space: nowrap;
+  line-height: 1.4; white-space: normal; word-break: break-word;
 }
 .rm-dot {
   width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;

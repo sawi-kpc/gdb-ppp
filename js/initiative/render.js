@@ -1357,16 +1357,10 @@ function _rmChip(d){
   var cls=_rmStatusCls(status);
   var summary=(d['Summary']||'').trim();
   var key=(d['Key']||'').trim();
-  var assignee=(d['Assignee.displayName']||'').trim().split(' ')[0];
-  var startQ=_rmDateToQ(_rmParseDate(d['Target Project Start']));
-  var endQ=_rmDateToQ(_rmParseDate(d['Target Project End']));
-  var rangeSuffix=(endQ&&startQ&&endQ>startQ)?(' → Q'+endQ):'';
-  var sub=(assignee?assignee+' · ':'')+status+rangeSuffix;
   var href=CONFIG.JIRA_BASE+key;
-  return '<a class="rm-chip '+cls+'" href="'+href+'" target="_blank" title="'+_rmEsc(summary)+'">' +
-    '<div class="rm-chip-key">'+_rmEsc(key)+'</div>' +
-    '<div class="rm-chip-name">'+_rmEsc(summary)+'</div>' +
-    '<div class="rm-chip-sub">'+_rmEsc(sub)+'</div>' +
+  return '<a class="rm-chip '+cls+'" href="'+href+'" target="_blank" title="'+_rmEsc(key+' · '+summary)+'">' +
+    '<span class="rm-chip-key">'+_rmEsc(key)+'</span>' +
+    '<span class="rm-chip-name">'+_rmEsc(summary)+'</span>' +
     '</a>';
 }
 
@@ -1453,10 +1447,15 @@ function renderRoadmap(){
   GOAL_ORDER.forEach(function(goal){
     var g=groups[goal];
     var color=GC[goal]||'#666';
+    var total=g[1].length+g[2].length+g[3].length+g[4].length;
     html+='<tr class="rm-row">';
     html+='<td class="rm-goal-lbl" style="border-left:3px solid '+color+'">' +
-      '<span class="rm-dot" style="background:'+color+'"></span>'+_rmEsc(goal);
-    if(g.noDate.length>0) html+='<br><span class="rm-nodate-badge">+'+g.noDate.length+' unscheduled</span>';
+      '<div class="rm-goal-name"><span class="rm-dot" style="background:'+color+'"></span>'+_rmEsc(goal)+'</div>';
+    if(total>0||g.noDate.length>0){
+      html+='<div class="rm-goal-count">'+(total+g.noDate.length)+' initiative'+(total+g.noDate.length!==1?'s':'');
+      if(g.noDate.length>0) html+=' · <span class="rm-nodate-badge">'+g.noDate.length+' unscheduled</span>';
+      html+='</div>';
+    }
     html+='</td>';
     [1,2,3,4].forEach(function(q){
       html+='<td class="rm-qcell'+(q===currentQ?' rm-qcell-now':'')+'">';

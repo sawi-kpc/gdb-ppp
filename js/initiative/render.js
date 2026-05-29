@@ -1358,7 +1358,7 @@ function _rmFmtOwner(email){
   if(!local)return '';
   return local.split('.').map(function(w){return w.charAt(0).toUpperCase()+w.slice(1);}).join(' ');
 }
-var _RM_MON_COLOR={'On track':'#6DBF9A','Delayed':'#D4A850','At risk':'#E07878','Off track':'#E07878'};
+var _RM_MON_COLOR={'On track':'#6DBF9A','Delayed':'#f85149','At risk':'#f85149','Off track':'#f85149'};
 function _rmBadge(label,color){
   if(!label)return '';
   var bg=color+'22'; // ~13% opacity hex
@@ -1406,6 +1406,7 @@ function renderRoadmap(){
   /* filter data */
   var yearKey='ROADMAP_'+rmYearFilter;
   var filtered=allData.filter(function(d){
+    if((d['Roadmap Status']||'').trim()==="Won't Do") return false;
     return (d['Roadmap Year Plan']||'').split(';').some(function(v){return v.trim()===yearKey;});
   });
   if(rmComponentFilter.length>0){

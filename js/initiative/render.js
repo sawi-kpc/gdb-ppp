@@ -1303,3 +1303,179 @@ function onListRoadmapToggle(val){
   var panel=document.getElementById('rs-dropdown-panel');
   if(panel) panel.style.display='block';
 }
+
+/* ══════════════════════════════════════════════════════════════
+   ROADMAP VIEW — group by Project Goal, Q1–Q4 columns
+══════════════════════════════════════════════════════════════ */
+
+var rmYearFilter=2026;
+var rmComponentFilter=[];
+var rmPMRoleFilter=[];
+var rmStatusFilter=[];
+var rmSearchQuery='';
+var _filtersLoadedRm=false;
+
+function _saveRmFilters(){
+  GDB.saveFilters('gdb_filter_initiative_roadmap',{
+    rmYearFilter:rmYearFilter, rmComponentFilter:rmComponentFilter,
+    rmPMRoleFilter:rmPMRoleFilter, rmStatusFilter:rmStatusFilter, rmSearchQuery:rmSearchQuery
+  });
+}
+function _loadRmFilters(){
+  if(_filtersLoadedRm)return; _filtersLoadedRm=true;
+  var f=GDB.loadFilters('gdb_filter_initiative_roadmap'); if(!f)return;
+  if(f.rmYearFilter)             rmYearFilter=f.rmYearFilter;
+  if(Array.isArray(f.rmComponentFilter)) rmComponentFilter=f.rmComponentFilter;
+  if(Array.isArray(f.rmPMRoleFilter))    rmPMRoleFilter=f.rmPMRoleFilter;
+  if(Array.isArray(f.rmStatusFilter))    rmStatusFilter=f.rmStatusFilter;
+  if(f.rmSearchQuery)            rmSearchQuery=f.rmSearchQuery;
+}
+
+function _rmParseDate(fieldVal){
+  if(!fieldVal)return null;
+  try{var o=JSON.parse(fieldVal);return o.start||null;}catch(e){return null;}
+}
+function _rmDateToQ(dateStr){
+  if(!dateStr)return null;
+  var m=parseInt((dateStr.split('-')[1]||'0'),10);
+  if(m>=1&&m<=3)return 1; if(m>=4&&m<=6)return 2; if(m>=7&&m<=9)return 3; return 4;
+}
+function _rmEsc(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function _rmStatusCls(status){
+  var s=(status||'').toLowerCase();
+  if(s==='delivery')return 'rm-delivery';
+  if(s==='ready for delivery')return 'rm-rfd';
+  if(s==='discovery')return 'rm-discovery';
+  if(s==='done')return 'rm-done';
+  if(s==='budget approval')return 'rm-budget';
+  return 'rm-parking';
+}
+function _rmChip(d){
+  var status=(d['Status']||'').trim();
+  var cls=_rmStatusCls(status);
+  var summary=(d['Summary']||'').trim();
+  var key=(d['Key']||'').trim();
+  var assignee=(d['Assignee.displayName']||'').trim().split(' ')[0];
+  var startQ=_rmDateToQ(_rmParseDate(d['Target Project Start']));
+  var endQ=_rmDateToQ(_rmParseDate(d['Target Project End']));
+  var rangeSuffix=(endQ&&startQ&&endQ>startQ)?(' → Q'+endQ):'';
+  var sub=(assignee?assignee+' · ':'')+status+rangeSuffix;
+  var href=CONFIG.JIRA_BASE+key;
+  return '<a class="rm-chip '+cls+'" href="'+href+'" target="_blank" title="'+_rmEsc(summary)+'">' +
+    '<div class="rm-chip-key">'+_rmEsc(key)+'</div>' +
+    '<div class="rm-chip-name">'+_rmEsc(summary)+'</div>' +
+    '<div class="rm-chip-sub">'+_rmEsc(sub)+'</div>' +
+    '</a>';
+}
+
+function renderRoadmap(){
+  _loadRmFilters();
+  var container=document.getElementById('rm-table-container'); if(!container)return;
+
+  /* year buttons */
+  var allYears=[];
+  allData.forEach(function(d){
+    (d['Roadmap Year Plan']||'').split(';').forEach(function(v){
+      var m=v.trim().match(/^ROADMAP_(\d{4})$/);
+      if(m){var y=parseInt(m[1]);if(allYears.indexOf(y)<0)allYears.push(y);}
+    });
+  });
+  allYears.sort();
+  var yrEl=document.getElementById('rm-year-btns');
+  if(yrEl) yrEl.innerHTML=allYears.map(function(y){
+    return '<button class="rm-yr-btn'+(y===rmYearFilter?' on':'')+'" onclick="onRmYearChange('+y+')">'+y+'</button>';
+  }).join('');
+
+  /* filter data */
+  var yearKey='ROADMAP_'+rmYearFilter;
+  var filtered=allData.filter(function(d){
+    return (d['Roadmap Year Plan']||'').split(';').some(function(v){return v.trim()===yearKey;});
+  });
+  if(rmComponentFilter.length>0){
+    filtered=filtered.filter(function(d){
+      var cs=(d['Components']||'').split(';').map(function(c){return c.trim();});
+      return rmComponentFilter.some(function(f){return cs.indexOf(f)>=0;});
+    });
+  }
+  if(rmPMRoleFilter.length>0){
+    filtered=filtered.filter(function(d){return rmPMRoleFilter.indexOf((d['PM Role']||'').trim())>=0;});
+  }
+  if(rmStatusFilter.length>0){
+    filtered=filtered.filter(function(d){return rmStatusFilter.indexOf((d['Status']||'').trim())>=0;});
+  }
+  if(rmSearchQuery){
+    var q=rmSearchQuery.toLowerCase();
+    filtered=filtered.filter(function(d){
+      return (d['Summary']||'').toLowerCase().indexOf(q)>=0||(d['Key']||'').toLowerCase().indexOf(q)>=0;
+    });
+  }
+
+  /* build dropdowns */
+  var compVals=[];
+  allData.forEach(function(d){(d['Components']||'').split(';').forEach(function(c){c=c.trim();if(c&&compVals.indexOf(c)<0)compVals.push(c);});});
+  compVals.sort();
+  GDB.buildCheckDropdown({wrapperId:'rm-comp-wrap',btnLabelId:'rm-comp-lbl',listId:'rm-comp-list',values:compVals,activeArr:rmComponentFilter,colorMap:null,toggleFn:'onRmCompToggle'});
+
+  var pmVals=[];
+  allData.forEach(function(d){var v=(d['PM Role']||'').trim();if(v&&pmVals.indexOf(v)<0)pmVals.push(v);});
+  pmVals.sort();
+  GDB.buildCheckDropdown({wrapperId:'rm-pm-wrap',btnLabelId:'rm-pm-lbl',listId:'rm-pm-list',values:pmVals,activeArr:rmPMRoleFilter,colorMap:null,toggleFn:'onRmPMToggle'});
+
+  GDB.buildCheckDropdown({wrapperId:'rm-status-wrap',btnLabelId:'rm-status-lbl',listId:'rm-status-list',values:STAGES,activeArr:rmStatusFilter,colorMap:SC,toggleFn:'onRmStatusToggle'});
+
+  var countEl=document.getElementById('rm-count');
+  if(countEl) countEl.textContent=filtered.length+' initiatives · '+rmYearFilter;
+
+  /* group by goal → Q */
+  var GOAL_ORDER=['Increase Revenue','Improve Customer Experience','Improve Customer Engagement','Improve Internal Operation','Strategic Direction'];
+  var groups={};
+  GOAL_ORDER.forEach(function(g){groups[g]={1:[],2:[],3:[],4:[],noDate:[]};});
+  var currentQ=Math.ceil((new Date().getMonth()+1)/3);
+
+  filtered.forEach(function(d){
+    var goal=(d['Project Goal']||'').trim();
+    if(!groups[goal])return;
+    var q=_rmDateToQ(_rmParseDate(d['Target Project Start']));
+    if(q) groups[goal][q].push(d); else groups[goal].noDate.push(d);
+  });
+
+  /* render table */
+  var html='<table class="rm-table"><thead><tr>';
+  html+='<th class="rm-goal-hd">Project Goal</th>';
+  [{q:1,label:'Q1',sub:'Jan – Mar'},{q:2,label:'Q2',sub:'Apr – Jun'},{q:3,label:'Q3',sub:'Jul – Sep'},{q:4,label:'Q4',sub:'Oct – Dec'}].forEach(function(col){
+    var isNow=col.q===currentQ;
+    html+='<th class="rm-q-hd rm-q'+col.q+(isNow?' rm-qnow':'')+'">'+col.label+' <span class="rm-q-sub">'+col.sub+'</span>'+(isNow?' <span class="rm-now-tag">now</span>':'')+'</th>';
+  });
+  html+='</tr></thead><tbody>';
+
+  GOAL_ORDER.forEach(function(goal){
+    var g=groups[goal];
+    var color=GC[goal]||'#666';
+    html+='<tr class="rm-row">';
+    html+='<td class="rm-goal-lbl" style="border-left:3px solid '+color+'">' +
+      '<span class="rm-dot" style="background:'+color+'"></span>'+_rmEsc(goal);
+    if(g.noDate.length>0) html+='<br><span class="rm-nodate-badge">+'+g.noDate.length+' unscheduled</span>';
+    html+='</td>';
+    [1,2,3,4].forEach(function(q){
+      html+='<td class="rm-qcell'+(q===currentQ?' rm-qcell-now':'')+'">';
+      g[q].forEach(function(d){html+=_rmChip(d);});
+      html+='</td>';
+    });
+    html+='</tr>';
+  });
+
+  html+='</tbody></table>';
+  container.innerHTML=html;
+  _saveRmFilters();
+}
+
+function onRmYearChange(yr){rmYearFilter=yr;renderRoadmap();}
+function onRmCompToggle(v){var i=rmComponentFilter.indexOf(v);if(i>=0)rmComponentFilter.splice(i,1);else rmComponentFilter.push(v);renderRoadmap();var p=document.getElementById('rm-comp-panel');if(p)p.style.display='block';}
+function clearRmCompFilter(){rmComponentFilter=[];var p=document.getElementById('rm-comp-panel');if(p)p.style.display='none';renderRoadmap();}
+function onRmPMToggle(v){var i=rmPMRoleFilter.indexOf(v);if(i>=0)rmPMRoleFilter.splice(i,1);else rmPMRoleFilter.push(v);renderRoadmap();var p=document.getElementById('rm-pm-panel');if(p)p.style.display='block';}
+function clearRmPMFilter(){rmPMRoleFilter=[];var p=document.getElementById('rm-pm-panel');if(p)p.style.display='none';renderRoadmap();}
+function onRmStatusToggle(v){var i=rmStatusFilter.indexOf(v);if(i>=0)rmStatusFilter.splice(i,1);else rmStatusFilter.push(v);renderRoadmap();var p=document.getElementById('rm-status-panel');if(p)p.style.display='block';}
+function clearRmStatusFilter(){rmStatusFilter=[];var p=document.getElementById('rm-status-panel');if(p)p.style.display='none';renderRoadmap();}
+function onRmSearchChange(v){rmSearchQuery=v||'';renderRoadmap();}

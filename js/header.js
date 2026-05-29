@@ -18,6 +18,7 @@ document.head.appendChild(_headerStyle);
 function buildGdbInitiativeSubNav() {
   var p = window.location.pathname;
   var timelineActive  = (p.endsWith('/initiative/index.html') || p.endsWith('/initiative/')) ? ' active' : '';
+  var roadmapActive   = p.endsWith('/initiative/roadmap.html') ? ' active' : '';
   var dashActive      = p.endsWith('/initiative/dashboard.html') ? ' active' : '';
   var listActive      = p.endsWith('/initiative/list.html') ? ' active' : '';
   var compActive      = p.endsWith('/initiative/completed.html') ? ' active' : '';
@@ -25,6 +26,7 @@ function buildGdbInitiativeSubNav() {
 
   var subNav = '<div class="gdb-init-subnav" id="gdb-init-subnav">' +
     '<a class="gdb-init-tab' + timelineActive + '" href="/gdb-ppp/initiative/index.html">Timeline</a>' +
+    '<a class="gdb-init-tab' + roadmapActive + '" href="/gdb-ppp/initiative/roadmap.html">Roadmap</a>' +
     '<a class="gdb-init-tab' + dashActive + '" href="/gdb-ppp/initiative/dashboard.html">Dashboard</a>' +
     '<a class="gdb-init-tab' + listActive + '" href="/gdb-ppp/initiative/list.html">List</a>' +
     '<a class="gdb-init-tab' + compActive + '" href="/gdb-ppp/initiative/completed.html">Completed</a>' +

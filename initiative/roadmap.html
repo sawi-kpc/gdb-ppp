@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Roadmap — GDB</title>
+<link rel="stylesheet" href="../css/shared.css">
+<link rel="stylesheet" href="../css/gdb-shared.css">
+<link rel="stylesheet" href="../css/initiative.css">
+<style>
+/* ── Roadmap page layout ───────────────────────────────────── */
+.rm-ctrl-row {
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  padding:10px 16px 8px;
+}
+.rm-ctrl-row .tl-ctrl-label { font-size:11.5px; color:var(--text2); white-space:nowrap; }
+.rm-yr-btn {
+  padding:2px 11px; border-radius:20px; border:1px solid var(--border);
+  background:var(--surface2); color:var(--text2); font-size:11px; font-weight:600;
+  cursor:pointer; transition:all .15s;
+}
+.rm-yr-btn.on { background:var(--accent); border-color:var(--accent); color:#fff; }
+.rm-yr-btn:hover:not(.on) { border-color:var(--text2); color:var(--text); }
+.rm-sep { width:1px; height:18px; background:var(--border); flex-shrink:0; }
+.rm-count { margin-left:auto; font-size:11px; color:var(--text3); }
+
+/* ── Table wrapper ─────────────────────────────────────────── */
+.rm-table-wrap { overflow:auto; flex:1; padding:0 0 16px 0; }
+
+/* ── Table ─────────────────────────────────────────────────── */
+.rm-table { width:100%; border-collapse:collapse; table-layout:fixed; min-width:700px; }
+
+/* header */
+.rm-goal-hd {
+  width:160px; text-align:left; font-size:10px; font-weight:600;
+  color:var(--text3); text-transform:uppercase; letter-spacing:.06em;
+  background:var(--surface); border-bottom:2px solid var(--border);
+  padding:8px 12px; position:sticky; top:0; left:0; z-index:40;
+  border-right:1px solid var(--border);
+}
+.rm-q-hd {
+  text-align:center; font-size:11px; font-weight:700;
+  background:var(--surface); border-bottom:2px solid var(--border);
+  padding:7px 10px; position:sticky; top:0; z-index:30;
+  border-right:1px solid var(--border);
+}
+.rm-q-hd:last-child { border-right:none; }
+.rm-q-sub { font-size:9px; font-weight:400; opacity:.55; margin-left:3px; }
+.rm-now-tag {
+  font-size:9px; font-weight:700; color:var(--amber,#d29922);
+  background:rgba(210,153,34,.12); border:1px solid rgba(210,153,34,.25);
+  border-radius:3px; padding:1px 5px; margin-left:4px;
+}
+.rm-q1 { color:var(--accent,#58a6ff); }
+.rm-q2 { color:var(--amber,#d29922); }
+.rm-q3 { color:var(--up,#3fb950); }
+.rm-q4 { color:var(--purple,#bc8cff); }
+.rm-qnow { background:rgba(210,153,34,.04); }
+
+/* rows */
+.rm-row:hover td { background:rgba(255,255,255,.012); }
+
+/* goal label cell */
+.rm-goal-lbl {
+  position:sticky; left:0; z-index:20;
+  background:var(--surface2); border-right:1px solid var(--border);
+  border-bottom:1px solid var(--border); padding:10px 10px 10px 12px;
+  vertical-align:top; font-size:10px; font-weight:700; color:var(--text2);
+  line-height:1.6; white-space:nowrap; min-width:160px;
+}
+.rm-dot {
+  display:inline-block; width:7px; height:7px; border-radius:50%;
+  margin-right:5px; vertical-align:middle; flex-shrink:0;
+}
+.rm-nodate-badge {
+  display:inline-block; font-size:9px; font-weight:600; color:var(--text3);
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:3px; padding:1px 5px; margin-top:3px;
+}
+
+/* quarter cells */
+.rm-qcell {
+  border-right:1px solid var(--border); border-bottom:1px solid var(--border);
+  padding:6px; vertical-align:top;
+}
+.rm-qcell:last-child { border-right:none; }
+.rm-qcell-now { background:rgba(210,153,34,.025); }
+
+/* chips */
+.rm-chip {
+  display:block; text-decoration:none;
+  border-radius:4px; padding:5px 8px; margin-bottom:4px;
+  font-size:10px; line-height:1.4; cursor:pointer;
+  transition:filter .15s;
+}
+.rm-chip:last-child { margin-bottom:0; }
+.rm-chip:hover { filter:brightness(1.18); text-decoration:none; }
+.rm-chip-key { font-size:9px; opacity:.6; margin-bottom:1px; }
+.rm-chip-name { font-weight:600; color:#fff; }
+.rm-chip-sub  { font-size:9px; color:rgba(255,255,255,.6); margin-top:1px; }
+
+/* chip colors */
+.rm-delivery  { background:rgba(107,174,212,.55); border:1px solid rgba(107,174,212,.75); }
+.rm-rfd       { background:rgba(155,143,224,.5);  border:1px solid rgba(155,143,224,.75); }
+.rm-discovery { background:rgba(212,168,80,.5);   border:1px solid rgba(212,168,80,.75); }
+.rm-done      { background:rgba(109,191,154,.45); border:1px solid rgba(109,191,154,.7); }
+.rm-budget    { background:rgba(224,120,120,.45); border:1px solid rgba(224,120,120,.7); }
+.rm-parking   { background:rgba(72,79,88,.35);    border:1px solid rgba(72,79,88,.6); }
+
+/* legend */
+.rm-legend {
+  display:flex; align-items:center; gap:14px; padding:8px 16px;
+  background:var(--surface); border-top:1px solid var(--border);
+  flex-wrap:wrap; flex-shrink:0;
+}
+.rm-li { display:flex; align-items:center; gap:5px; font-size:10px; color:var(--text3); }
+.rm-ld { width:10px; height:10px; border-radius:2px; }
+</style>
+</head>
+<body class="has-init-subnav">
+
+<div id="gdb-error"></div>
+<div id="gdb-loading"><div class="gdb-spinner"></div><div class="gdb-loading-text">Loading…</div></div>
+
+<div id="rm-page" class="gdb-page" style="display:none;display:flex;flex-direction:column;min-height:0;flex:1;padding-bottom:0">
+
+  <!-- Filter bar -->
+  <div class="rm-ctrl-row">
+    <span class="tl-ctrl-label">Year:</span>
+    <div id="rm-year-btns" style="display:flex;gap:5px"></div>
+
+    <div class="rm-sep"></div>
+    <span class="tl-ctrl-label">Component:</span>
+    <div style="position:relative" id="rm-comp-wrap">
+      <button onclick="toggleDropdown('rm-comp-panel')"
+        style="height:26px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);font-size:11.5px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap">
+        <span id="rm-comp-lbl" data-empty="All Components">All Components</span>
+        <span style="font-size:9px;color:var(--text3)">▾</span>
+      </button>
+      <div id="rm-comp-panel" style="display:none;position:absolute;top:30px;left:0;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,.18);padding:8px 0;min-width:200px;max-height:260px;overflow-y:auto">
+        <div id="rm-comp-list"></div>
+        <div style="border-top:1px solid var(--border);margin-top:6px;padding:6px 12px 2px">
+          <button onclick="clearRmCompFilter()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Clear all</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="rm-sep"></div>
+    <span class="tl-ctrl-label">PM Role:</span>
+    <div style="position:relative" id="rm-pm-wrap">
+      <button onclick="toggleDropdown('rm-pm-panel')"
+        style="height:26px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);font-size:11.5px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap">
+        <span id="rm-pm-lbl" data-empty="All PM Roles">All PM Roles</span>
+        <span style="font-size:9px;color:var(--text3)">▾</span>
+      </button>
+      <div id="rm-pm-panel" style="display:none;position:absolute;top:30px;left:0;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,.18);padding:8px 0;min-width:170px;max-height:260px;overflow-y:auto">
+        <div id="rm-pm-list"></div>
+        <div style="border-top:1px solid var(--border);margin-top:6px;padding:6px 12px 2px">
+          <button onclick="clearRmPMFilter()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Clear all</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="rm-sep"></div>
+    <span class="tl-ctrl-label">Status:</span>
+    <div style="position:relative" id="rm-status-wrap">
+      <button onclick="toggleDropdown('rm-status-panel')"
+        style="height:26px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);font-size:11.5px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap">
+        <span id="rm-status-lbl" data-empty="All Statuses">All Statuses</span>
+        <span style="font-size:9px;color:var(--text3)">▾</span>
+      </button>
+      <div id="rm-status-panel" style="display:none;position:absolute;top:30px;left:0;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,.18);padding:8px 0;min-width:180px">
+        <div id="rm-status-list"></div>
+        <div style="border-top:1px solid var(--border);margin-top:6px;padding:6px 12px 2px">
+          <button onclick="clearRmStatusFilter()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Clear all</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1"></div>
+    <span class="tl-ctrl-label">Search:</span>
+    <input type="search" placeholder="Search…" oninput="onRmSearchChange(this.value)"
+      style="height:26px;padding:0 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);font-size:11.5px;width:170px;outline:none">
+    <span id="rm-count" class="rm-count"></span>
+  </div>
+
+  <!-- Table -->
+  <div class="rm-table-wrap">
+    <div id="rm-table-container"></div>
+  </div>
+
+  <!-- Legend -->
+  <div class="rm-legend">
+    <span style="font-size:10px;color:var(--text3);font-weight:600;margin-right:2px">Status:</span>
+    <span class="rm-li"><span class="rm-ld rm-delivery"></span>Delivery</span>
+    <span class="rm-li"><span class="rm-ld rm-rfd"></span>Ready for Delivery</span>
+    <span class="rm-li"><span class="rm-ld rm-discovery"></span>Discovery</span>
+    <span class="rm-li"><span class="rm-ld rm-done"></span>Done</span>
+    <span class="rm-li"><span class="rm-ld rm-budget"></span>Budget Approval</span>
+    <span class="rm-li"><span class="rm-ld rm-parking"></span>Parking Lot</span>
+  </div>
+
+</div>
+
+<span id="refresh-time" style="display:none"></span>
+<span id="current-dt"   style="display:none"></span>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="../js/initiative/config.js"></script>
+<script src="../js/header.js"></script>
+<script src="../js/shared/gdb-utils.js"></script>
+<script src="../js/initiative/render.js"></script>
+<script src="../js/initiative/data.js"></script>
+<script>
+window.onDataReady = function() {
+  document.getElementById('gdb-loading').style.display = 'none';
+  document.getElementById('rm-page').style.display = 'flex';
+  renderRoadmap();
+};
+
+window.addEventListener('DOMContentLoaded', function() {
+  buildGdbHeader({ showRefresh: true });
+  buildGdbInitiativeSubNav();
+  gdbAuthGuard(function() {
+    loadData();
+  });
+  document.addEventListener('click', function(e) {
+    if (e.target && e.target.id === 'gdb-refresh-btn') {
+      document.getElementById('gdb-loading').style.display = 'flex';
+      document.getElementById('rm-page').style.display = 'none';
+      loadData();
+    }
+  });
+});
+
+function toggleDropdown(panelId) {
+  var panel = document.getElementById(panelId);
+  if (!panel) return;
+  var isOpen = panel.style.display !== 'none';
+  document.querySelectorAll('[id$="-panel"]').forEach(function(p) { p.style.display = 'none'; });
+  panel.style.display = isOpen ? 'none' : 'block';
+}
+document.addEventListener('click', function(e) {
+  ['rm-comp-wrap','rm-pm-wrap','rm-status-wrap'].forEach(function(id) {
+    var wrap = document.getElementById(id);
+    if (wrap && !wrap.contains(e.target)) {
+      var panel = wrap.querySelector('[id$="-panel"]');
+      if (panel) panel.style.display = 'none';
+    }
+  });
+});
+</script>
+</body>
+</html>

@@ -421,54 +421,81 @@ window.addEventListener('DOMContentLoaded', function() {
 });
 
 function exportRoadmapPDF() {
-  var wrap      = document.querySelector('.rm-table-wrap');
   var container = document.getElementById('rm-table-container');
-  var table     = container && container.querySelector('.rm-table');
-  if (!table || !wrap) { window.print(); return; }
+  if (!container) return;
 
-  /* Fill print-only title */
-  var yearEl = document.getElementById('rm-print-year');
-  var dateEl = document.getElementById('rm-print-date');
-  if (yearEl) yearEl.textContent = rmYearFilter || '';
-  if (dateEl) dateEl.textContent = new Date().toLocaleDateString('en-GB',
-    {day:'2-digit', month:'short', year:'numeric'});
+  var year  = rmYearFilter || '';
+  var date  = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
+  var count = (document.getElementById('rm-count') || {}).textContent || '';
 
-  /* Measure FULL table dimensions by temporarily removing overflow clip */
-  var prevOverflow = wrap.style.overflow;
-  var prevMaxH     = wrap.style.maxHeight;
-  wrap.style.overflow  = 'visible';
-  wrap.style.maxHeight = 'none';
-  void wrap.offsetHeight; /* force reflow */
+  var win = window.open('', '_blank');
+  if (!win) { alert('Please allow popups for this site to export PDF.'); return; }
 
-  var tw = table.offsetWidth;
-  var th = table.offsetHeight;
+  /* ── Light-theme CSS for clean print ─────────────────────────── */
+  var css =
+    '@page{size:A3 landscape;margin:10mm}' +
+    '*{box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}' +
+    'body{font-family:-apple-system,system-ui,sans-serif;font-size:10px;background:#fff;color:#1a1a2e;margin:0;padding:8px;min-height:0}' +
+    '.prt-hdr{display:flex;align-items:baseline;gap:8px;margin-bottom:8px;padding-bottom:5px;border-bottom:2px solid #dde1e7}' +
+    '.prt-hdr strong{font-size:14px;font-weight:700}' +
+    '.prt-hdr span{font-size:9px;color:#888}' +
+    /* table */
+    '.rm-table{width:100%;border-collapse:collapse;table-layout:fixed}' +
+    '.rm-goal-hd{width:140px;padding:6px 8px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#888;background:#f0f2f5;border:1px solid #dde1e7}' +
+    '.rm-q-hd{padding:6px 8px;background:#f0f2f5;border:1px solid #dde1e7}' +
+    '.rm-q-label{display:block;font-size:11px;font-weight:700;line-height:1;margin-bottom:1px}' +
+    '.rm-q-sub{font-size:9px;color:#888}' +
+    '.rm-now-tag{font-size:8px;font-weight:700;color:#e65100;background:#fff3e0;border:1px solid #ff9800;border-radius:2px;padding:0 3px;margin-left:4px}' +
+    '.rm-q1 .rm-q-label{color:#1565c0}.rm-q2 .rm-q-label{color:#e65100}.rm-q3 .rm-q-label{color:#2e7d32}.rm-q4 .rm-q-label{color:#6a1b9a}' +
+    '.rm-qnow{background:#fffde7!important}' +
+    /* goal cell */
+    '.rm-goal-lbl{padding:7px 8px;background:#f5f7fa;border:1px solid #dde1e7;vertical-align:top}' +
+    '.rm-goal-name{display:flex;align-items:flex-start;gap:5px;font-size:10px;font-weight:700;color:#1a1a2e;line-height:1.4;white-space:normal;word-break:break-word}' +
+    '.rm-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:2px}' +
+    '.rm-goal-count{font-size:9px;color:#888;margin-top:3px;margin-left:12px}' +
+    '.rm-nodate-badge{font-size:8px;color:#888;border:1px solid #ccc;border-radius:2px;padding:0 3px}' +
+    /* quarter cells */
+    '.rm-qcell{border:1px solid #dde1e7;padding:4px 5px;vertical-align:top}.rm-qcell-now{background:#fffde7}' +
+    /* chips */
+    '.rm-chip{display:block;text-decoration:none;border-left:2px solid transparent;border-radius:0 3px 3px 0;padding:3px 5px;margin-bottom:2px}' +
+    '.rm-chip:last-child{margin-bottom:0}' +
+    '.rm-chip-key{display:block;font-size:8.5px;font-weight:700;font-family:monospace;letter-spacing:.03em;margin-bottom:1px}' +
+    '.rm-chip-name{display:block;font-size:10px;font-weight:500;color:#1a1a2e;line-height:1.3;margin-bottom:1px}' +
+    '.rm-chip-owner{display:block;font-size:8.5px;color:#666;margin-bottom:2px}' +
+    '.rm-chip-badges{display:flex;flex-wrap:wrap;gap:2px}' +
+    '.rm-badge{font-size:8px;font-weight:600;padding:0 4px;border-radius:2px;line-height:14px}' +
+    /* chip status colours – light-theme remaps */
+    '.rm-delivery{border-left-color:#1565c0;background:rgba(21,101,192,.07)}.rm-delivery .rm-chip-key{color:#1565c0}' +
+    '.rm-rfd{border-left-color:#6a1b9a;background:rgba(106,27,154,.07)}.rm-rfd .rm-chip-key{color:#6a1b9a}' +
+    '.rm-discovery{border-left-color:#e65100;background:rgba(230,81,0,.07)}.rm-discovery .rm-chip-key{color:#e65100}' +
+    '.rm-done{border-left-color:#2e7d32;background:rgba(46,125,50,.06)}.rm-done .rm-chip-key{color:#2e7d32}' +
+    '.rm-budget{border-left-color:#b71c1c;background:rgba(183,28,28,.06)}.rm-budget .rm-chip-key{color:#b71c1c}' +
+    '.rm-parking{border-left-color:#9e9e9e;background:rgba(0,0,0,.04)}.rm-parking .rm-chip-key{color:#9e9e9e}.rm-parking .rm-chip-name{color:#555}';
 
-  wrap.style.overflow  = prevOverflow;
-  wrap.style.maxHeight = prevMaxH;
+  /* ── Auto-fit zoom then print ─────────────────────────────────── */
+  var autoScript =
+    'window.onload=function(){' +
+      'var t=document.querySelector(".rm-table");' +
+      'if(t){' +
+        /* A3 landscape printable: 404mm × 281mm at 96dpi ≈ 1527 × 1062px */
+        'var z=Math.min(1,1527/(t.offsetWidth||1),1062/(t.offsetHeight||1));' +
+        't.style.zoom=z.toFixed(3);' +
+      '}' +
+      'window.print();' +
+      'setTimeout(function(){window.close();},500);' +
+    '};';
 
-  /* A3 landscape printable area (420×297mm, 8mm margins each side)
-     404mm × 281mm  →  at 96 dpi (1mm ≈ 3.7795px):  1527 × 1062 px          */
-  var pW = 1527, pH = 1062;
-  var zoom = Math.min(1, pW / (tw || 1), pH / (th || 1));
-  container.style.zoom = zoom.toFixed(4);
-
-  /* Force-reset body constraints via inline !important.
-     Inline style beats any stylesheet !important, so this wins over
-     body { min-height:100vh } and .has-init-subnav { padding-top:X !important }
-     which would otherwise push content to page 2.                              */
-  document.body.style.setProperty('padding',    '0', 'important');
-  document.body.style.setProperty('margin',     '0', 'important');
-  document.body.style.setProperty('min-height', '0', 'important');
-
-  document.body.classList.add('rm-printing');
-  window.print();
-
-  /* Restore body styles */
-  document.body.classList.remove('rm-printing');
-  document.body.style.removeProperty('padding');
-  document.body.style.removeProperty('margin');
-  document.body.style.removeProperty('min-height');
-  container.style.zoom = '';
+  win.document.write(
+    '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
+    '<title>Roadmap ' + year + '</title>' +
+    '<style>' + css + '</style></head><body>' +
+    '<div class="prt-hdr"><strong>Roadmap ' + year + '</strong>' +
+    '<span>' + count + ' · Generated ' + date + '</span></div>' +
+    container.innerHTML +
+    '<script>' + autoScript + '<\/script>' +
+    '</body></html>'
+  );
+  win.document.close();
 }
 
 function toggleDropdown(panelId) {

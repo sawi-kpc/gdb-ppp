@@ -1352,15 +1352,23 @@ function _rmStatusCls(status){
   if(s==='budget approval')return 'rm-budget';
   return 'rm-parking';
 }
+function _rmFmtOwner(email){
+  if(!email)return '';
+  var local=(email.split('@')[0]||'').trim();
+  if(!local)return '';
+  return local.split('.').map(function(w){return w.charAt(0).toUpperCase()+w.slice(1);}).join(' ');
+}
 function _rmChip(d){
   var status=(d['Status']||'').trim();
   var cls=_rmStatusCls(status);
   var summary=(d['Summary']||'').trim();
   var key=(d['Key']||'').trim();
+  var owner=_rmFmtOwner((d['BU Owner']||'').trim());
   var href=CONFIG.JIRA_BASE+key;
   return '<a class="rm-chip '+cls+'" href="'+href+'" target="_blank" title="'+_rmEsc(key+' · '+summary)+'">' +
-    '<span class="rm-chip-key">'+_rmEsc(key)+'</span>' +
+    '<span class="rm-chip-key">'+_rmEsc(key)+' ↗</span>' +
     '<span class="rm-chip-name">'+_rmEsc(summary)+'</span>' +
+    (owner?'<span class="rm-chip-owner">'+_rmEsc(owner)+'</span>':'') +
     '</a>';
 }
 

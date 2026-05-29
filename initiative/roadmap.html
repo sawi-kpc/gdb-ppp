@@ -150,26 +150,34 @@
 
 /* ── Initiative chips ─────────────────────────────────────── */
 .rm-chip {
-  display: flex; align-items: baseline; gap: 5px;
+  display: block;
+  text-align: left;
   text-decoration: none;
   border-radius: 0 4px 4px 0;
   border-left: 2px solid transparent;
-  padding: 4px 7px;
+  padding: 5px 8px;
   margin-bottom: 3px;
   transition: background .12s, transform .1s;
-  overflow: hidden;
 }
 .rm-chip:last-child { margin-bottom: 0; }
 .rm-chip:hover      { transform: translateX(2px); text-decoration: none; }
 
 .rm-chip-key {
-  font-size: 9px; font-weight: 700; flex-shrink: 0;
+  display: block;
+  font-size: 9.5px; font-weight: 700;
   font-family: ui-monospace, 'SF Mono', 'Fira Mono', monospace;
-  letter-spacing: .03em; opacity: .75; white-space: nowrap;
+  letter-spacing: .03em;
+  margin-bottom: 2px;
 }
 .rm-chip-name {
+  display: block;
   font-size: 11px; font-weight: 500;
-  color: var(--text); line-height: 1.35;
+  color: var(--text); line-height: 1.4;
+  margin-bottom: 2px;
+}
+.rm-chip-owner {
+  display: block;
+  font-size: 10px; color: var(--text3);
 }
 
 /* Status colours — left-border + tinted bg */

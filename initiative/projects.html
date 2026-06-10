@@ -383,7 +383,13 @@ function projRender() {
       var endRaw = ini['Target Project End'] || '';
       var endStr = null;
       try { var ep = JSON.parse(endRaw); endStr = ep && ep.start ? ep.start : null; } catch(e) { endStr = /\d{4}-\d{2}-\d{2}/.test(endRaw) ? endRaw.match(/(\d{4}-\d{2}-\d{2})/)[1] : null; }
-      var isOverdue = endStr && ini.Status !== 'Done' && new Date(endStr) < now;
+      /* Overdue only if end month has fully passed (still in the end month = not yet overdue) */
+      var isOverdue = (function() {
+        if (!endStr || ini.Status === 'Done') return false;
+        var d = new Date(endStr);
+        return d.getFullYear() < now.getFullYear() ||
+               (d.getFullYear() === now.getFullYear() && d.getMonth() < now.getMonth());
+      })();
       var tgtStart = _fd(ini['Target Project Start']);
       var tgtEnd   = _fd(ini['Target Project End']);
       var tgtCell  = (tgtStart || tgtEnd)

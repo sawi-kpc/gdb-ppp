@@ -45,7 +45,7 @@ var _taskPageSize = 20;
 var activeGroups  =[];  /* multi-select; empty = all */
 var activePriority='all';
 var activeLabels  =[];  /* multi-select; empty = all */
-var searchQ='', sortCol='Key', sortAsc=true;
+var searchQ='', sortCol='Due', sortAsc=false;
 
 /* ── Filter state persistence (localStorage) ─────────────── */
 var _supportFiltersLoaded=false;

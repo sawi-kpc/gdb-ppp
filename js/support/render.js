@@ -313,6 +313,16 @@ function getFiltered(){
                    (d.Assignee||'').toLowerCase().includes(q);
     return okStatus&&okGroup&&okPriority&&okLabels&&okSearch;
   }).sort(function(a,b){
+    /* Date columns: parse to timestamp so "Mar 2026" sorts correctly */
+    if(sortCol==='Due'||sortCol==='Created'||sortCol==='Updated'){
+      var da=a[sortCol]?new Date(a[sortCol]).getTime():NaN;
+      var db=b[sortCol]?new Date(b[sortCol]).getTime():NaN;
+      /* push no-date items to bottom regardless of direction */
+      if(isNaN(da)&&isNaN(db)) return 0;
+      if(isNaN(da)) return 1;
+      if(isNaN(db)) return -1;
+      return sortAsc?(da-db):(db-da);
+    }
     var va=a[sortCol]||'', vb=b[sortCol]||'';
     if(sortCol==='Hours'){ va=a.TimeSpentSec; vb=b.TimeSpentSec; }
     if(va<vb) return sortAsc?-1:1;

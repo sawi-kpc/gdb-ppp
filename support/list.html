@@ -29,9 +29,14 @@
 .tag.todo{background:rgba(245,158,11,.15);color:var(--amber);border:1px solid rgba(245,158,11,.3)}
 .tag.in-progress{background:rgba(88,166,255,.12);color:var(--accent);border:1px solid rgba(88,166,255,.25)}
 .tag.done{background:rgba(63,185,80,.1);color:var(--up);border:1px solid rgba(63,185,80,.2)}
-/* Overdue toggle button */
-#btn-overdue-only.active{background:var(--down);border-color:var(--down);color:#fff}
-#btn-overdue-only:hover:not(.active){border-color:var(--down);color:var(--down)}
+/* Overdue toggle switch */
+#btn-overdue-only{display:inline-flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;padding:0;flex-shrink:0}
+.tog-track{position:relative;width:28px;height:16px;border-radius:8px;background:var(--border);transition:background .2s;flex-shrink:0}
+.tog-thumb{position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--text3);transition:transform .2s,background .2s}
+.tog-label{font-size:11.5px;font-weight:500;color:var(--text2);white-space:nowrap;transition:color .2s}
+#btn-overdue-only.active .tog-track{background:var(--down)}
+#btn-overdue-only.active .tog-thumb{transform:translateX(12px);background:#fff}
+#btn-overdue-only.active .tog-label{color:var(--down);font-weight:600}
 /* Search */
 .search-wrap{position:relative}
 .search-wrap input{background:var(--surface2);border:1px solid var(--border);
@@ -98,12 +103,6 @@
 
       <div style="width:1px;height:20px;background:var(--border);flex-shrink:0"></div>
 
-      <!-- Overdue filter -->
-      <button id="btn-overdue-only" class="fb-btn" onclick="toggleOverdueOnly()"
-        style="border-color:var(--down);color:var(--down)">⚠ Overdue</button>
-
-      <div style="width:1px;height:20px;background:var(--border);flex-shrink:0"></div>
-
       <!-- Group dropdown -->
       <div style="position:relative" id="group-dropdown-wrap">
         <button id="group-dropdown-btn" onclick="toggleSupportDropdown('group-dropdown-panel')"
@@ -135,6 +134,12 @@
       </div>
 
       <div style="flex:1"></div>
+
+      <!-- Overdue toggle -->
+      <button id="btn-overdue-only" onclick="toggleOverdueOnly()">
+        <span class="tog-track"><span class="tog-thumb"></span></span>
+        <span class="tog-label">Overdue only</span>
+      </button>
 
       <!-- Search -->
       <div class="search-wrap"><input type="text" id="search" placeholder="Search…" oninput="applyFilters()"></div>

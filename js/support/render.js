@@ -45,7 +45,7 @@ var _taskPageSize = 20;
 var activeGroups  =[];  /* multi-select; empty = all */
 var activePriority='all';
 var activeLabels  =[];  /* multi-select; empty = all */
-var searchQ='', sortCol='Due', sortAsc=false;
+var searchQ='', sortCol='Due', sortAsc=false, showOverdueOnly=false;
 
 /* ── Filter state persistence (localStorage) ─────────────── */
 var _supportFiltersLoaded=false;
@@ -53,7 +53,8 @@ function _saveSupportFilters(){
   GDB.saveFilters('gdb_filter_support_list', {
     activeStatuses:activeStatuses, activeGroups:activeGroups,
     activePriority:activePriority, activeLabels:activeLabels,
-    searchQ:searchQ, sortCol:sortCol, sortAsc:sortAsc, _taskPage:_taskPage
+    searchQ:searchQ, sortCol:sortCol, sortAsc:sortAsc, _taskPage:_taskPage,
+    showOverdueOnly:showOverdueOnly
   });
 }
 function _loadSupportFilters(){
@@ -65,8 +66,9 @@ function _loadSupportFilters(){
   if(Array.isArray(f.activeLabels))   activeLabels=f.activeLabels;
   if(f.searchQ)                       searchQ=f.searchQ;
   if(f.sortCol)                       sortCol=f.sortCol;
-  if(typeof f.sortAsc==='boolean')    sortAsc=f.sortAsc;
-  if(f._taskPage>0)                   _taskPage=f._taskPage;
+  if(typeof f.sortAsc==='boolean')       sortAsc=f.sortAsc;
+  if(f._taskPage>0)                      _taskPage=f._taskPage;
+  if(typeof f.showOverdueOnly==='boolean') showOverdueOnly=f.showOverdueOnly;
 }
 
 /* ── Build summary strip ─────────────────────────────────── */
@@ -311,7 +313,8 @@ function getFiltered(){
     var q=searchQ.toLowerCase();
     var okSearch = !q||d.Key.toLowerCase().includes(q)||d.Summary.toLowerCase().includes(q)||
                    (d.Assignee||'').toLowerCase().includes(q);
-    return okStatus&&okGroup&&okPriority&&okLabels&&okSearch;
+    var okOverdue = !showOverdueOnly || isOverdue(d.Due, d.Status);
+    return okStatus&&okGroup&&okPriority&&okLabels&&okSearch&&okOverdue;
   }).sort(function(a,b){
     /* Date columns: parse to timestamp so "Mar 2026" sorts correctly */
     if(sortCol==='Due'||sortCol==='Created'||sortCol==='Updated'){
@@ -330,9 +333,18 @@ function getFiltered(){
     return 0;
   });
 }
+function toggleOverdueOnly(){
+  showOverdueOnly=!showOverdueOnly;
+  var btn=document.getElementById('btn-overdue-only');
+  if(btn) btn.classList.toggle('active', showOverdueOnly);
+  applyFilters();
+}
 function applyFilters(){
   _taskPage = 1; /* reset to page 1 on filter change */
   _saveSupportFilters();
+  /* sync overdue button state (e.g. after filter restore) */
+  var btn=document.getElementById('btn-overdue-only');
+  if(btn) btn.classList.toggle('active', showOverdueOnly);
   var filtered = getFiltered();
   buildTaskTable(filtered);
   /* Chart always shows full dataset — not filtered */

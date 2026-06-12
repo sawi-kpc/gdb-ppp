@@ -29,6 +29,9 @@
 .tag.todo{background:rgba(245,158,11,.15);color:var(--amber);border:1px solid rgba(245,158,11,.3)}
 .tag.in-progress{background:rgba(88,166,255,.12);color:var(--accent);border:1px solid rgba(88,166,255,.25)}
 .tag.done{background:rgba(63,185,80,.1);color:var(--up);border:1px solid rgba(63,185,80,.2)}
+/* Overdue toggle button */
+#btn-overdue-only.active{background:var(--down);border-color:var(--down);color:#fff}
+#btn-overdue-only:hover:not(.active){border-color:var(--down);color:var(--down)}
 /* Search */
 .search-wrap{position:relative}
 .search-wrap input{background:var(--surface2);border:1px solid var(--border);
@@ -92,6 +95,12 @@
       <select class="ctrl-select" id="filter-priority" onchange="onDropdownChange()" style="height:26px;padding:0 8px;font-size:11.5px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);outline:none">
         <option value="all">All priorities</option>
       </select>
+
+      <div style="width:1px;height:20px;background:var(--border);flex-shrink:0"></div>
+
+      <!-- Overdue filter -->
+      <button id="btn-overdue-only" class="fb-btn" onclick="toggleOverdueOnly()"
+        style="border-color:var(--down);color:var(--down)">⚠ Overdue</button>
 
       <div style="width:1px;height:20px;background:var(--border);flex-shrink:0"></div>
 

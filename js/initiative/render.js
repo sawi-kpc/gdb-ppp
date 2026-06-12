@@ -212,8 +212,14 @@ function renderTimeline(data){
       '<select style="font-size:10.5px;padding:2px 5px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);cursor:pointer;outline:none" onchange="onTlRangeChange(\'end\',this.value)">'+_tlOptHtml(se)+'</select>'+
     '</div>'+
   '</div>';
-  var noDateBtnHtml='<div style="display:flex;align-items:center;justify-content:center;height:100%;padding:0 6px">'+
-    '<button class="fb-btn'+(hideNoDate?' active':'')+'" onclick="toggleHideNoDate()" style="font-size:10.5px;padding:3px 7px;white-space:nowrap">Hide no-date</button>'+
+  var _togTrack='position:relative;width:26px;height:14px;border-radius:7px;transition:background .2s;flex-shrink:0;background:'+(hideNoDate?'var(--accent)':'var(--border)');
+  var _togThumb='position:absolute;top:2px;width:10px;height:10px;border-radius:50%;transition:transform .2s,background .2s;background:'+(hideNoDate?'#fff':'var(--text3)')+(hideNoDate?';left:2px;transform:translateX(12px)':';left:2px');
+  var _togLabel='font-size:10.5px;font-weight:'+(hideNoDate?'600':'500')+';color:'+(hideNoDate?'var(--accent)':'var(--text2)')+';white-space:nowrap;transition:color .2s';
+  var noDateBtnHtml='<div style="display:flex;align-items:center;justify-content:center;height:100%;padding:0 8px">'+
+    '<button onclick="toggleHideNoDate()" style="display:inline-flex;align-items:center;gap:5px;background:none;border:none;cursor:pointer;padding:0;flex-shrink:0">'+
+      '<span style="'+_togTrack+'"><span style="'+_togThumb+'"></span></span>'+
+      '<span style="'+_togLabel+'">No-date</span>'+
+    '</button>'+
   '</div>';
   if(tlInner)tlInner.innerHTML='<div class="tl-header"><div class="tl-label-head">'+focusHtml+'</div><div class="tl-grid-head"><div class="tl-qtr-row">'+qtrHtml+'</div><div class="tl-month-row">'+monHtml+'</div></div><div class="tl-status-head">'+noDateBtnHtml+'</div></div>'+rowsHtml;
 }

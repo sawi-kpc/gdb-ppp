@@ -1352,6 +1352,26 @@ function _rmDateToQ(dateStr){
   var m=parseInt((dateStr.split('-')[1]||'0'),10);
   if(m>=1&&m<=3)return 1; if(m>=4&&m<=6)return 2; if(m>=7&&m<=9)return 3; return 4;
 }
+function _rmDateYear(dateStr){
+  if(!dateStr)return null;
+  return parseInt((dateStr.split('-')[0]||'0'),10)||null;
+}
+function _rmStartQ(dateStr,filterYear){
+  if(!dateStr)return null;
+  var y=_rmDateYear(dateStr);
+  if(!y)return null;
+  if(y<filterYear)return 1;           /* started before this year — ongoing from Q1 */
+  if(y===filterYear)return _rmDateToQ(dateStr);
+  return null;                         /* starts after filter year — treat as unscheduled */
+}
+function _rmEndQ(dateStr,filterYear){
+  if(!dateStr)return null;
+  var y=_rmDateYear(dateStr);
+  if(!y)return null;
+  if(y>filterYear)return 4;            /* ends after this year — show through Q4 */
+  if(y===filterYear)return _rmDateToQ(dateStr);
+  return null;                         /* ended before filter year */
+}
 function _rmEsc(s){
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
@@ -1476,8 +1496,8 @@ function renderRoadmap(){
   filtered.forEach(function(d){
     var goal=(d['Project Goal']||'').trim();
     if(!goalItems[goal])return;
-    var startQ=_rmDateToQ(_rmParseDate(d['Target Project Start']));
-    var endQ  =_rmDateToQ(_rmParseDate(d['Target Project End']));
+    var startQ=_rmStartQ(_rmParseDate(d['Target Project Start']),rmYearFilter);
+    var endQ  =_rmEndQ  (_rmParseDate(d['Target Project End']),  rmYearFilter);
     if(startQ&&endQ&&endQ<startQ)endQ=startQ;
     goalItems[goal].push({d:d,startQ:startQ,endQ:endQ||startQ});
   });

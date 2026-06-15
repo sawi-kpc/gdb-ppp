@@ -426,9 +426,8 @@ function projRender() {
         '<a class="proj-key" href="' + (CONFIG.JIRA_BASE||'https://kingpowerclick.atlassian.net/browse/') + p.Key + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">' + p.Key + '</a>' +
         '<span class="proj-title">' + (p.Summary||'') + '</span>' +
         '<div class="proj-meta">' +
-          _statusPill(p.Status) +
-          _monBadge(p.MonitoringStatus) +
           yearTags +
+          _statusPill(p.Status) +
           '<span class="ini-count">' + iniCount + ' initiative' + (iniCount !== 1 ? 's' : '') + '</span>' +
         '</div>' +
         '<span class="proj-chevron' + (collapsed ? '' : ' open') + '" id="proj-chev-' + p.Key + '">▾</span>' +

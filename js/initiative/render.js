@@ -1453,20 +1453,29 @@ function renderRoadmap(){
   var countEl=document.getElementById('rm-count');
   if(countEl) countEl.textContent=filtered.length+' initiatives · '+rmYearFilter;
 
-  /* group by goal → Q */
+  /* group by goal → sorted item list with start/end Q */
   var GOAL_ORDER=['Increase Revenue','Improve Customer Experience','Improve Customer Engagement','Improve Internal Operation','Strategic Direction'];
-  var groups={};
-  GOAL_ORDER.forEach(function(g){groups[g]={1:[],2:[],3:[],4:[],noDate:[]};});
+  var goalItems={};
+  GOAL_ORDER.forEach(function(g){goalItems[g]=[];});
   var currentQ=Math.ceil((new Date().getMonth()+1)/3);
 
   filtered.forEach(function(d){
     var goal=(d['Project Goal']||'').trim();
-    if(!groups[goal])return;
-    var q=_rmDateToQ(_rmParseDate(d['Target Project Start']));
-    if(q) groups[goal][q].push(d); else groups[goal].noDate.push(d);
+    if(!goalItems[goal])return;
+    var startQ=_rmDateToQ(_rmParseDate(d['Target Project Start']));
+    var endQ  =_rmDateToQ(_rmParseDate(d['Target Project End']));
+    if(startQ&&endQ&&endQ<startQ)endQ=startQ;
+    goalItems[goal].push({d:d,startQ:startQ,endQ:endQ||startQ});
+  });
+  GOAL_ORDER.forEach(function(g){
+    goalItems[g].sort(function(a,b){
+      if(!a.startQ&&!b.startQ)return 0;
+      if(!a.startQ)return 1; if(!b.startQ)return -1;
+      return a.startQ!==b.startQ?a.startQ-b.startQ:(a.endQ||0)-(b.endQ||0);
+    });
   });
 
-  /* render table */
+  /* render table — one <tr> per initiative, goal cell uses rowspan */
   var html='<table class="rm-table"><thead><tr>';
   html+='<th class="rm-goal-hd">Project Goal</th>';
   [{q:1,label:'Q1',sub:'Jan – Mar'},{q:2,label:'Q2',sub:'Apr – Jun'},{q:3,label:'Q3',sub:'Jul – Sep'},{q:4,label:'Q4',sub:'Oct – Dec'}].forEach(function(col){
@@ -1476,24 +1485,37 @@ function renderRoadmap(){
   html+='</tr></thead><tbody>';
 
   GOAL_ORDER.forEach(function(goal){
-    var g=groups[goal];
+    var items=goalItems[goal];
+    if(!items.length)return;
     var color=GC[goal]||'#666';
-    var total=g[1].length+g[2].length+g[3].length+g[4].length;
-    html+='<tr class="rm-row">';
-    html+='<td class="rm-goal-lbl" style="border-left:3px solid '+color+'">' +
-      '<div class="rm-goal-name"><span class="rm-dot" style="background:'+color+'"></span>'+_rmEsc(goal)+'</div>';
-    if(total>0||g.noDate.length>0){
-      html+='<div class="rm-goal-count">'+(total+g.noDate.length)+' initiative'+(total+g.noDate.length!==1?'s':'');
-      if(g.noDate.length>0) html+=' · <span class="rm-nodate-badge">'+g.noDate.length+' unscheduled</span>';
-      html+='</div>';
-    }
-    html+='</td>';
-    [1,2,3,4].forEach(function(q){
-      html+='<td class="rm-qcell'+(q===currentQ?' rm-qcell-now':'')+'">';
-      g[q].forEach(function(d){html+=_rmChip(d);});
-      html+='</td>';
+    var unscheduled=items.filter(function(it){return!it.startQ;}).length;
+
+    items.forEach(function(item,idx){
+      html+='<tr class="rm-row">';
+      /* Goal label — only on first row with rowspan covering all items */
+      if(idx===0){
+        html+='<td class="rm-goal-lbl" rowspan="'+items.length+'" style="border-left:3px solid '+color+'">' +
+          '<div class="rm-goal-name"><span class="rm-dot" style="background:'+color+'"></span>'+_rmEsc(goal)+'</div>' +
+          '<div class="rm-goal-count">'+items.length+' initiative'+(items.length!==1?'s':'') +
+            (unscheduled?' · <span class="rm-nodate-badge">'+unscheduled+' unscheduled</span>':'') +
+          '</div></td>';
+      }
+      var sq=item.startQ, eq=item.endQ||item.startQ;
+      if(!sq){
+        /* unscheduled — span all 4 Q */
+        html+='<td class="rm-qcell" colspan="4">'+_rmChip(item.d)+'</td>';
+      } else {
+        /* empty cells before startQ */
+        for(var qi=1;qi<sq;qi++) html+='<td class="rm-qcell'+(qi===currentQ?' rm-qcell-now':'')+'"></td>';
+        /* chip cell spanning startQ → endQ */
+        var span=eq-sq+1;
+        var nowInSpan=(sq<=currentQ&&currentQ<=eq)?' rm-qcell-now':'';
+        html+='<td class="rm-qcell'+nowInSpan+'" colspan="'+span+'">'+_rmChip(item.d)+'</td>';
+        /* empty cells after endQ */
+        for(var qi=eq+1;qi<=4;qi++) html+='<td class="rm-qcell'+(qi===currentQ?' rm-qcell-now':'')+'"></td>';
+      }
+      html+='</tr>';
     });
-    html+='</tr>';
   });
 
   html+='</tbody></table>';

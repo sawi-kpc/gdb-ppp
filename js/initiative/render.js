@@ -1494,7 +1494,7 @@ function renderRoadmap(){
   html+='<th class="rm-goal-hd">Project Goal</th>';
   [{q:1,label:'Q1',sub:'Jan – Mar'},{q:2,label:'Q2',sub:'Apr – Jun'},{q:3,label:'Q3',sub:'Jul – Sep'},{q:4,label:'Q4',sub:'Oct – Dec'}].forEach(function(col){
     var isNow=col.q===currentQ;
-    html+='<th class="rm-q-hd rm-q'+col.q+(isNow?' rm-qnow':'')+'">'+col.label+' <span class="rm-q-sub">'+col.sub+'</span>'+(isNow?' <span class="rm-now-tag">now</span>':'')+'</th>';
+    html+='<th class="rm-q-hd rm-q'+col.q+(isNow?' rm-qnow':'')+'">'+col.label+' <span class="rm-q-sub">'+col.sub+' '+rmYearFilter+'</span>'+(isNow?' <span class="rm-now-tag">now</span>':'')+'</th>';
   });
   html+='</tr></thead><tbody>';
 

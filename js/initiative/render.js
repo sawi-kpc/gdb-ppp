@@ -1386,7 +1386,7 @@ function _rmChip(d){
   var href=CONFIG.JIRA_BASE+key;
   var tStart=fmtMonYear(d['Target Project Start']||'');
   var tEnd  =fmtMonYear(d['Target Project End']||'');
-  var timeline=(tStart!=='—'||tEnd!=='—') ? tStart+' → '+tEnd : '';
+  var timeline=(tStart!=='—'||tEnd!=='—') ? tStart+' → '+tEnd : 'No target date set';
   var badges='';
   if(status)       badges+=_rmBadge(status,       SC[status]||'#8b949e');
   if(roadmapStatus)badges+=_rmBadge(roadmapStatus, RC[roadmapStatus]||'#8b949e');
@@ -1394,7 +1394,9 @@ function _rmChip(d){
   return '<a class="rm-chip '+cls+'" href="'+href+'" target="_blank" title="'+_rmEsc(key+' · '+summary)+'">' +
     '<span class="rm-chip-key">'+_rmEsc(key)+' ↗</span>' +
     '<span class="rm-chip-name">'+_rmEsc(summary)+'</span>' +
-    (timeline?'<span class="rm-chip-owner">'+_rmEsc(timeline)+'</span>':'') +
+    (timeline==='No target date set'
+      ?'<span class="rm-chip-owner" style="color:#f85149;font-style:italic">'+timeline+'</span>'
+      :'<span class="rm-chip-owner">'+_rmEsc(timeline)+'</span>') +
     (badges?'<span class="rm-chip-badges">'+badges+'</span>':'') +
     '</a>';
 }
@@ -1515,10 +1517,7 @@ function renderRoadmap(){
       var sq=item.startQ, eq=item.endQ||item.startQ;
       if(!sq){
         /* unscheduled — span all 4 Q with visual indicator */
-        html+='<td class="rm-qcell rm-qcell-nodate" colspan="4">'+
-          '<div class="rm-nodate-label">No target date set</div>'+
-          _rmChip(item.d)+
-        '</td>';
+        html+='<td class="rm-qcell rm-qcell-nodate" colspan="4">'+_rmChip(item.d)+'</td>';
       } else {
         /* empty cells before startQ */
         for(var qi=1;qi<sq;qi++) html+='<td class="rm-qcell'+(qi===currentQ?' rm-qcell-now':'')+'"></td>';

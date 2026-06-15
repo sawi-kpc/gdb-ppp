@@ -272,7 +272,7 @@ function buildAssigneeChart(data){
 /* buildAssignee2Chart — 2nd assignee horizontal bar (kept for backward compat) */
 function buildAssignee2Chart(data){
   var a2={};
-  data.forEach(function(d){var n=(d['Assignee (2nd)']&&d['Assignee (2nd)'].displayName||d['Assignee (2nd).displayName']||'').trim().split(' ')[0];if(n&&n!=='[no'&&n.length>1)a2[n]=(a2[n]||0)+1;});
+  data.forEach(function(d){var raw=(d['Assignee (2nd)']&&d['Assignee (2nd)'].displayName||d['Assignee (2nd).displayName']||'').trim();raw.split(';').forEach(function(p){var n=p.trim().split(' ')[0];if(n&&n!=='[no'&&n.length>1)a2[n]=(a2[n]||0)+1;});});
   var a2K=Object.keys(a2).sort(function(a,b){return a2[b]-a2[a];});
   mkHBar('c-a2','c-a2-wrap',a2K,a2K.map(function(k){return a2[k];}),a2K.map(function(_,i){return AC[i%AC.length];}));
 }
@@ -672,9 +672,9 @@ function _buildPipeline(data) {
   var colorIdx = 0;
   data.forEach(function(d) {
     var n1 = (d['Assignee'] && d['Assignee'].displayName) || d['Assignee.displayName'] || '';
-    var n2 = (d['Assignee (2nd)'] && d['Assignee (2nd)'].displayName) || d['Assignee (2nd).displayName'] || '';
+    var n2raw = (d['Assignee (2nd)'] && d['Assignee (2nd)'].displayName) || d['Assignee (2nd).displayName'] || '';
     if (n1 && !colorMap[n1]) colorMap[n1] = AVATAR_COLORS[colorIdx++ % AVATAR_COLORS.length];
-    if (n2 && !colorMap[n2]) colorMap[n2] = AVATAR_COLORS[colorIdx++ % AVATAR_COLORS.length];
+    n2raw.split(';').forEach(function(n2){ n2=n2.trim(); if(n2 && !colorMap[n2]) colorMap[n2]=AVATAR_COLORS[colorIdx++%AVATAR_COLORS.length]; });
   });
 
   function _avatar(name) {
@@ -688,7 +688,7 @@ function _buildPipeline(data) {
     var monTxt = d.Status === 'Delivery' ? (mon || 'On track') : d.Status;
     var action = _actionFor(d);
     var a1 = (d['Assignee'] && d['Assignee'].displayName) || d['Assignee.displayName'] || '';
-    var a2 = (d['Assignee (2nd)'] && d['Assignee (2nd)'].displayName) || d['Assignee (2nd).displayName'] || '';
+    var a2s = ((d['Assignee (2nd)'] && d['Assignee (2nd)'].displayName) || d['Assignee (2nd).displayName'] || '').split(';').map(function(n){return n.trim();}).filter(Boolean);
     var actionChip = action
       ? '<span style="font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;background:'+action.color+'22;color:'+action.color+';white-space:nowrap;flex-shrink:0">'+action.label+'</span>'
       : '';
@@ -698,7 +698,7 @@ function _buildPipeline(data) {
       '<a href="'+CONFIG.JIRA_BASE+d.Key+'" target="_blank" style="font-size:10px;font-weight:700;color:var(--accent);text-decoration:none;white-space:nowrap;flex-shrink:0">'+d.Key+' ↗</a>'+
       '<span style="font-size:11px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+d.Summary+'">'+d.Summary+'</span>'+
       actionChip+
-      _avatar(a2)+
+      a2s.map(_avatar).join('')+
       _avatar(a1)+
     '</div>';
   }).join('');
@@ -993,9 +993,9 @@ function _buildAssigneeCompact(data) {
   var prim = {}, sec = {};
   data.forEach(function(d) {
     var n1 = ((d['Assignee'] && d['Assignee'].displayName) || d['Assignee.displayName'] || '').trim();
-    var n2 = ((d['Assignee (2nd)'] && d['Assignee (2nd)'].displayName) || d['Assignee (2nd).displayName'] || '').trim();
+    var n2raw = ((d['Assignee (2nd)'] && d['Assignee (2nd)'].displayName) || d['Assignee (2nd).displayName'] || '').trim();
     if (n1) { var f1 = _firstName(n1); prim[f1] = (prim[f1] || 0) + 1; }
-    if (n2) { var f2 = _firstName(n2); sec[f2] = (sec[f2] || 0) + 1; }
+    if (n2raw) { n2raw.split(';').forEach(function(p){ var f2=_firstName(p.trim()); if(f2&&f2!=='—') sec[f2]=(sec[f2]||0)+1; }); }
   });
 
   var names = [];
@@ -1070,9 +1070,10 @@ function renderList(){
   var allAssignees=new Set();
   allData.forEach(function(d){
     var a1=(d['Assignee.displayName']||'').trim().split(' ')[0];
-    var a2=(d['Assignee (2nd).displayName']||'').trim().split(' ')[0];
     if(a1&&a1.length>1&&a1!=='[no')allAssignees.add(a1);
-    if(a2&&a2.length>1&&a2!=='[no')allAssignees.add(a2);
+    (d['Assignee (2nd).displayName']||'').split(';').forEach(function(n){
+      var fn=n.trim().split(' ')[0]; if(fn&&fn.length>1&&fn!=='[no')allAssignees.add(fn);
+    });
   });
   var sel=document.getElementById('af-list-select');
   if(sel){
@@ -1141,8 +1142,10 @@ function renderList(){
   if(listAssigneeFilter!=='all'){
     filtered=filtered.filter(function(d){
       var a1=(d['Assignee.displayName']||'').trim().split(' ')[0];
-      var a2=(d['Assignee (2nd).displayName']||'').trim().split(' ')[0];
-      return a1===listAssigneeFilter||a2===listAssigneeFilter;
+      if(a1===listAssigneeFilter) return true;
+      return (d['Assignee (2nd).displayName']||'').split(';').some(function(n){
+        return n.trim().split(' ')[0]===listAssigneeFilter;
+      });
     });
   }
   if(listComponentFilter.length>0){
@@ -1253,7 +1256,7 @@ function _renderListPage() {
         var stCls=stMap[d.Status]||'';
         var tpCls=d['Project Type']==='Strategic'?'strategic':d['Project Type']==='BAU'?'bau':'';
         var a1=(d['Assignee.displayName']||'').split(' ')[0]||'—';
-        var a2=(d['Assignee (2nd).displayName']||'').split(' ')[0]||'—';
+        var a2=(d['Assignee (2nd).displayName']||'').split(';').map(function(n){return n.trim().split(' ')[0];}).filter(Boolean).join(', ')||'—';
         return '<tr>'+
           '<td>'+jiraLink(d.Key)+'</td>'+
           '<td style="font-weight:600;color:var(--text);max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+d.Summary+'">'+d.Summary+'</td>'+

@@ -59,6 +59,15 @@
 
 .rm-count { font-size: 10px; color: var(--text3); }
 
+/* ── Hide no-date toggle ──────────────────────────────────── */
+#rm-hide-nodate{display:inline-flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;padding:0;flex-shrink:0}
+#rm-hide-nodate .tog-track{position:relative;width:28px;height:16px;border-radius:8px;background:var(--border);transition:background .2s;flex-shrink:0}
+#rm-hide-nodate .tog-thumb{position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--text3);transition:transform .2s,background .2s}
+#rm-hide-nodate .tog-label{font-size:11.5px;font-weight:500;color:var(--text2);white-space:nowrap}
+#rm-hide-nodate.active .tog-track{background:var(--accent)}
+#rm-hide-nodate.active .tog-thumb{transform:translateX(12px);background:#fff}
+#rm-hide-nodate.active .tog-label{color:var(--accent);font-weight:600}
+
 /* ── Table wrapper ────────────────────────────────────────── */
 .rm-table-wrap { overflow: auto; }
 
@@ -150,6 +159,21 @@
 }
 .rm-qcell:last-child { border-right: none; }
 .rm-qcell-now { background: rgba(210,153,34,.025); }
+.rm-qcell-nodate {
+  background: repeating-linear-gradient(
+    135deg,
+    transparent,
+    transparent 6px,
+    rgba(139,148,158,.04) 6px,
+    rgba(139,148,158,.04) 7px
+  );
+}
+.rm-nodate-label {
+  font-size: 9px; font-weight: 600; letter-spacing: .04em;
+  color: var(--text3); text-transform: uppercase;
+  margin-bottom: 4px; padding-bottom: 3px;
+  border-bottom: 1px dashed var(--border);
+}
 
 /* ── Initiative chips ─────────────────────────────────────── */
 .rm-chip {
@@ -354,6 +378,12 @@
     </div>
 
     <div style="flex:1"></div>
+
+    <!-- Hide no-date toggle -->
+    <button id="rm-hide-nodate" onclick="onRmHideNoDate()" title="Hide initiatives with no target date">
+      <span class="tog-track"><span class="tog-thumb"></span></span>
+      <span class="tog-label">Hide no date</span>
+    </button>
 
     <!-- Search -->
     <div class="rm-search-wrap">

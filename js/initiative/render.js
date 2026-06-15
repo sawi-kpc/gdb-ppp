@@ -1322,12 +1322,14 @@ var rmComponentFilter=[];
 var rmPMRoleFilter=[];
 var rmStatusFilter=[];
 var rmSearchQuery='';
+var rmHideNoDate=false;
 var _filtersLoadedRm=false;
 
 function _saveRmFilters(){
   GDB.saveFilters('gdb_filter_initiative_roadmap',{
     rmYearFilter:rmYearFilter, rmComponentFilter:rmComponentFilter,
-    rmPMRoleFilter:rmPMRoleFilter, rmStatusFilter:rmStatusFilter, rmSearchQuery:rmSearchQuery
+    rmPMRoleFilter:rmPMRoleFilter, rmStatusFilter:rmStatusFilter,
+    rmSearchQuery:rmSearchQuery, rmHideNoDate:rmHideNoDate
   });
 }
 function _loadRmFilters(){
@@ -1338,6 +1340,7 @@ function _loadRmFilters(){
   if(Array.isArray(f.rmPMRoleFilter))    rmPMRoleFilter=f.rmPMRoleFilter;
   if(Array.isArray(f.rmStatusFilter))    rmStatusFilter=f.rmStatusFilter;
   if(f.rmSearchQuery)            rmSearchQuery=f.rmSearchQuery;
+  if(f.rmHideNoDate!=null)       rmHideNoDate=!!f.rmHideNoDate;
 }
 
 function _rmParseDate(fieldVal){
@@ -1378,10 +1381,12 @@ function _rmChip(d){
   var cls=_rmStatusCls(status);
   var summary=(d['Summary']||'').trim();
   var key=(d['Key']||'').trim();
-  var owner=_rmFmtOwner((d['BU Owner']||'').trim());
   var roadmapStatus=(d['Roadmap Status']||'').trim();
   var monStatus=(d['Project Monitoring Status']||'').trim();
   var href=CONFIG.JIRA_BASE+key;
+  var tStart=fmtMonYear(d['Target Project Start']||'');
+  var tEnd  =fmtMonYear(d['Target Project End']||'');
+  var timeline=(tStart!=='—'||tEnd!=='—') ? tStart+' → '+tEnd : '';
   var badges='';
   if(status)       badges+=_rmBadge(status,       SC[status]||'#8b949e');
   if(roadmapStatus)badges+=_rmBadge(roadmapStatus, RC[roadmapStatus]||'#8b949e');
@@ -1389,7 +1394,7 @@ function _rmChip(d){
   return '<a class="rm-chip '+cls+'" href="'+href+'" target="_blank" title="'+_rmEsc(key+' · '+summary)+'">' +
     '<span class="rm-chip-key">'+_rmEsc(key)+' ↗</span>' +
     '<span class="rm-chip-name">'+_rmEsc(summary)+'</span>' +
-    (owner?'<span class="rm-chip-owner">'+_rmEsc(owner)+'</span>':'') +
+    (timeline?'<span class="rm-chip-owner">'+_rmEsc(timeline)+'</span>':'') +
     (badges?'<span class="rm-chip-badges">'+badges+'</span>':'') +
     '</a>';
 }
@@ -1436,6 +1441,9 @@ function renderRoadmap(){
       return (d['Summary']||'').toLowerCase().indexOf(q)>=0||(d['Key']||'').toLowerCase().indexOf(q)>=0;
     });
   }
+  if(rmHideNoDate){
+    filtered=filtered.filter(function(d){return !!_rmDateToQ(_rmParseDate(d['Target Project Start']));});
+  }
 
   /* build dropdowns */
   var compVals=[];
@@ -1449,6 +1457,10 @@ function renderRoadmap(){
   GDB.buildCheckDropdown({wrapperId:'rm-pm-wrap',btnLabelId:'rm-pm-lbl',listId:'rm-pm-list',values:pmVals,activeArr:rmPMRoleFilter,colorMap:null,toggleFn:'onRmPMToggle'});
 
   GDB.buildCheckDropdown({wrapperId:'rm-status-wrap',btnLabelId:'rm-status-lbl',listId:'rm-status-list',values:STAGES,activeArr:rmStatusFilter,colorMap:SC,toggleFn:'onRmStatusToggle'});
+
+  /* sync hide-no-date toggle button */
+  var ndBtn=document.getElementById('rm-hide-nodate');
+  if(ndBtn) ndBtn.classList.toggle('active',rmHideNoDate);
 
   var countEl=document.getElementById('rm-count');
   if(countEl) countEl.textContent=filtered.length+' initiatives · '+rmYearFilter;
@@ -1502,8 +1514,11 @@ function renderRoadmap(){
       }
       var sq=item.startQ, eq=item.endQ||item.startQ;
       if(!sq){
-        /* unscheduled — span all 4 Q */
-        html+='<td class="rm-qcell" colspan="4">'+_rmChip(item.d)+'</td>';
+        /* unscheduled — span all 4 Q with visual indicator */
+        html+='<td class="rm-qcell rm-qcell-nodate" colspan="4">'+
+          '<div class="rm-nodate-label">No target date set</div>'+
+          _rmChip(item.d)+
+        '</td>';
       } else {
         /* empty cells before startQ */
         for(var qi=1;qi<sq;qi++) html+='<td class="rm-qcell'+(qi===currentQ?' rm-qcell-now':'')+'"></td>';
@@ -1531,3 +1546,4 @@ function clearRmPMFilter(){rmPMRoleFilter=[];var p=document.getElementById('rm-p
 function onRmStatusToggle(v){var i=rmStatusFilter.indexOf(v);if(i>=0)rmStatusFilter.splice(i,1);else rmStatusFilter.push(v);renderRoadmap();var p=document.getElementById('rm-status-panel');if(p)p.style.display='block';}
 function clearRmStatusFilter(){rmStatusFilter=[];var p=document.getElementById('rm-status-panel');if(p)p.style.display='none';renderRoadmap();}
 function onRmSearchChange(v){rmSearchQuery=v||'';renderRoadmap();}
+function onRmHideNoDate(){rmHideNoDate=!rmHideNoDate;renderRoadmap();}

@@ -15,7 +15,7 @@ var sumComponentFilter=[];
 var sumPMRoleFilter=[];
 var listComponentFilter=[];
 var listPMRoleFilter=[];
-var _listPage=1, _listPageSize=20, _lastListFiltered=[];
+var _listPage=1, _listPageSize=20, _lastListFiltered=[], listHideWontDo=false;
 var _listSortCol='Start', _listSortAsc=true;
 var doneComponentFilter=[];
 var donePMRoleFilter=[];
@@ -48,7 +48,8 @@ function _saveListFilters(){
     listRoadmapFilter:listRoadmapFilter, listComponentFilter:listComponentFilter,
     listPMRoleFilter:listPMRoleFilter,
     listAssigneeFilter:listAssigneeFilter, listSearchQuery:listSearchQuery,
-    _listSortCol:_listSortCol, _listSortAsc:_listSortAsc, _listPage:_listPage
+    _listSortCol:_listSortCol, _listSortAsc:_listSortAsc, _listPage:_listPage,
+    listHideWontDo:listHideWontDo
   });
 }
 function _loadListFilters(){
@@ -62,8 +63,9 @@ function _loadListFilters(){
   if(f.listAssigneeFilter!=null)           listAssigneeFilter=f.listAssigneeFilter;
   if(f.listSearchQuery)                    listSearchQuery=f.listSearchQuery;
   if(f._listSortCol)                       _listSortCol=f._listSortCol;
-  if(typeof f._listSortAsc==='boolean')    _listSortAsc=f._listSortAsc;
-  if(f._listPage>0)                        _listPage=f._listPage;
+  if(typeof f._listSortAsc==='boolean')       _listSortAsc=f._listSortAsc;
+  if(f._listPage>0)                           _listPage=f._listPage;
+  if(typeof f.listHideWontDo==='boolean')     listHideWontDo=f.listHideWontDo;
 }
 function _saveSumFilters(){
   GDB.saveFilters('gdb_filter_initiative_timeline',{
@@ -1161,6 +1163,13 @@ function renderList(){
   if(listRoadmapFilter.length>0){
     filtered=filtered.filter(function(d){ return listRoadmapFilter.indexOf(d['Roadmap Status']||'')>=0; });
   }
+  /* Hide Won't do toggle */
+  if(listHideWontDo){
+    filtered=filtered.filter(function(d){ return(d['Roadmap Status']||'')!=="Won't do"; });
+  }
+  /* Sync toggle button state */
+  var _wdBtn=document.getElementById('btn-list-hide-wontdo');
+  if(_wdBtn){ _wdBtn.classList.toggle('active',listHideWontDo); }
   /* Summary search */
   if(listSearchQuery.trim()){
     var q=listSearchQuery.trim().toLowerCase();
@@ -1304,6 +1313,7 @@ function onListPMToggle(val){
 }
 function clearListPMFilter(){ listPMRoleFilter=[]; document.getElementById('list-pm-dropdown-panel').style.display='none'; renderList(); }
 function onListSearchChange(val){ listSearchQuery=val||''; renderList(); }
+function toggleListHideWontDo(){ listHideWontDo=!listHideWontDo; renderList(); }
 function onListRoadmapToggle(val){
   var idx=listRoadmapFilter.indexOf(val);
   if(idx>=0)listRoadmapFilter.splice(idx,1); else listRoadmapFilter.push(val);

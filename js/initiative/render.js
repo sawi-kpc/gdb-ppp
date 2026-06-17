@@ -995,7 +995,7 @@ function _buildBauStrategic(data) {
   '</svg>';
 
   /* Status breakdown table */
-  var STATUSES2 = ['Delivery','Discovery','Done','Parking Lot'];
+  var STATUSES2 = STAGES;
   var tHead = '<tr><th style="text-align:left;font-size:10px;color:var(--text3);padding:4px 8px;border-bottom:1px solid var(--border)">Type</th>'+
     STATUSES2.map(function(s){ return '<th style="text-align:center;font-size:10px;color:var(--text3);padding:4px;border-bottom:1px solid var(--border);white-space:nowrap">'+s+'</th>'; }).join('')+'</tr>';
   var tBody = ['BAU','Strategic'].map(function(type) {

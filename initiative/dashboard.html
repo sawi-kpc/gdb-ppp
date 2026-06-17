@@ -14,6 +14,13 @@
   .kpi-grid { grid-template-columns: repeat(4, 1fr) !important; }
   .dash-cols { grid-template-columns: 1fr; }
 }
+/* Collapse / expand */
+.panel.collapsed > .panel-body { display: none !important; }
+.panel.collapsed > .panel-head { border-bottom: none; }
+.panel-head.collapsible { cursor: pointer; }
+.panel-head.collapsible:hover { background: var(--surface2); }
+.panel-chevron { font-size: 10px; color: var(--text3); flex-shrink: 0; transition: transform .2s; }
+.panel.collapsed .panel-chevron { transform: rotate(-90deg); }
 </style>
 </head>
 <body class="has-init-subnav">
@@ -37,7 +44,6 @@
 
     <!-- Left column -->
     <div>
-      <div class="panel" id="dash-scatter"></div>
       <div class="panel" id="dash-conf-heatmap"></div>
       <div class="panel" id="dash-bau"></div>
       <div class="panel" id="dash-impact"></div>
@@ -55,6 +61,9 @@
     </div>
 
   </div>
+
+  <!-- Final score × effort — collapsed by default, full width -->
+  <div class="panel" id="dash-scatter"></div>
 </div>
 
 <!-- Placeholder for data.js timestamp display -->

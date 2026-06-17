@@ -580,6 +580,38 @@ function _firstName(name) {
   return name.trim().split(/\s+/)[0];
 }
 
+/* ── Panel collapse helpers ── */
+var _dashCollapseKey = 'gdb_dash_collapse';
+function _getDashCollapse() {
+  try { return JSON.parse(localStorage.getItem(_dashCollapseKey)) || {}; } catch(e) { return {}; }
+}
+function _saveDashCollapse(s) {
+  try { localStorage.setItem(_dashCollapseKey, JSON.stringify(s)); } catch(e) {}
+}
+function _makePanelCollapsible(panelId, defaultCollapsed) {
+  var panel = document.getElementById(panelId);
+  if (!panel) return;
+  var head = panel.querySelector('.panel-head');
+  if (!head) return;
+  if (!head.querySelector('.panel-chevron')) {
+    var chev = document.createElement('span');
+    chev.className = 'panel-chevron';
+    chev.innerHTML = '&#9660;';
+    head.appendChild(chev);
+  }
+  head.classList.add('collapsible');
+  head.onclick = function() {
+    var cur = panel.classList.contains('collapsed');
+    var s = _getDashCollapse();
+    s[panelId] = !cur;
+    _saveDashCollapse(s);
+    panel.classList.toggle('collapsed', !cur);
+  };
+  var s = _getDashCollapse();
+  var collapsed = typeof s[panelId] === 'boolean' ? s[panelId] : !!defaultCollapsed;
+  panel.classList.toggle('collapsed', collapsed);
+}
+
 function buildDashboard(filtered) {
   _buildKPI(filtered);
   _buildPipeline(filtered);
@@ -590,6 +622,7 @@ function buildDashboard(filtered) {
   _buildBauStrategic(filtered);
   _buildAssigneeCompact(filtered);
   buildStatusChart(filtered);
+  _makePanelCollapsible('dash-status-chart');
 }
 
 /* ── Section 1: KPI Strip ── */
@@ -707,6 +740,7 @@ function _buildPipeline(data) {
 
   el.innerHTML = '<div class="panel-head"><div><div class="panel-title">Delivery & action required</div><div class="panel-sub">Active delivery · budget · pipeline — sorted by urgency</div></div></div>'+
     '<div class="panel-body">'+(rows||'<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">No active items</div>')+'</div>';
+  _makePanelCollapsible('dash-delivery');
 }
 
 /* ── Section 2B: Health Matrix ── */
@@ -755,6 +789,7 @@ function _buildHealthMatrix(data) {
 
   el.innerHTML = '<div class="panel-head"><div><div class="panel-title">Health matrix</div><div class="panel-sub">Assignee × status</div></div></div>'+
     '<div class="panel-body"><div class="tbl-scroll">'+table+'</div></div>';
+  _makePanelCollapsible('dash-health');
 }
 
 /* ── Section 3A: ROI Scatter (inline SVG) ── */
@@ -840,6 +875,7 @@ function _buildScatter(data) {
       '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;overflow:visible">'+quadSvg+axes+xTicks+yTicks+axisLabels+bubbles+'</svg>'+
       legend+
     '</div>';
+  _makePanelCollapsible('dash-scatter', true);
 }
 
 /* ── Section 3B: Confidence × Status Heatmap ── */
@@ -900,13 +936,14 @@ function _buildConfHeatmap(data) {
         bars+
       '</div>'+
     '</div>';
+  _makePanelCollapsible('dash-conf-heatmap');
 }
 
 /* ── Section 4A: Business Impact Coverage ── */
 function _buildImpactCoverage(data) {
   var el = document.getElementById('dash-impact'); if (!el) return;
   var active = data.filter(function(d){ return d.Status !== 'Parking Lot'; });
-  if (!active.length) { el.innerHTML = '<div class="panel-head"><div><div class="panel-title">Business impact (score) coverage</div></div></div><div class="panel-body"><div style="color:var(--text3);font-size:12px;padding:20px">No data</div></div>'; return; }
+  if (!active.length) { el.innerHTML = '<div class="panel-head"><div><div class="panel-title">Business impact (score) coverage</div></div></div><div class="panel-body"><div style="color:var(--text3);font-size:12px;padding:20px">No data</div></div>'; _makePanelCollapsible('dash-impact'); return; }
 
   var bars = GOAL_FIELDS.map(function(goal) {
     var contributors = active.filter(function(d){ return (parseFloat(d[goal])||0) > 0; });
@@ -926,6 +963,7 @@ function _buildImpactCoverage(data) {
 
   el.innerHTML = '<div class="panel-head"><div><div class="panel-title">Business impact (score) coverage</div><div class="panel-sub">% of active initiatives contributing to each goal</div></div></div>'+
     '<div class="panel-body" style="padding-top:10px">'+bars+'</div>';
+  _makePanelCollapsible('dash-impact');
 }
 
 /* ── Section 4B: BAU vs Strategic ── */
@@ -985,6 +1023,7 @@ function _buildBauStrategic(data) {
       '<div style="display:flex;align-items:center;margin-bottom:14px">'+donut+legend+'</div>'+
       '<table style="width:100%;border-collapse:collapse"><thead>'+tHead+'</thead><tbody>'+tBody+'</tbody></table>'+
     '</div>';
+  _makePanelCollapsible('dash-bau');
 }
 
 /* ── Section 5: Assignee lollipop chart ── */
@@ -1048,6 +1087,7 @@ function _buildAssigneeCompact(data) {
       '</div>'+
       rows+
     '</div>';
+  _makePanelCollapsible('dash-assignee');
 }
 
 /* Render initiatives */

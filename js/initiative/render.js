@@ -746,7 +746,6 @@ function _buildPipeline(data) {
 /* ── Section 2B: Health Matrix ── */
 function _buildHealthMatrix(data) {
   var el = document.getElementById('dash-health'); if (!el) return;
-  var COL_STATUSES = ['Delivery', 'Discovery', 'Ready for Delivery', 'Delayed'];
   var assignees = [];
   data.forEach(function(d) {
     var name = (d['Assignee'] && d['Assignee'].displayName) || d['Assignee.displayName'] || '';
@@ -756,38 +755,35 @@ function _buildHealthMatrix(data) {
 
   function cellStyle(col, count) {
     if (!count) return 'background:transparent;color:var(--text3)';
-    if (col === 'Delivery') return 'background:rgba(64,184,168,0.15);color:var(--teal);font-weight:600';
-    if (col === 'Delayed')  return 'background:rgba(224,96,80,0.2);color:var(--down);font-weight:600';
-    return 'background:rgba(212,160,64,0.15);color:var(--amber);font-weight:600';
+    var map = {
+      'Parking Lot':        'background:rgba(158,152,144,.18);color:#9E9890;font-weight:600',
+      'Budget Approval':    'background:rgba(224,120,120,.18);color:var(--down);font-weight:600',
+      'Discovery':          'background:rgba(212,168,80,.18);color:var(--amber);font-weight:600',
+      'Ready for Delivery': 'background:rgba(155,143,224,.18);color:var(--purple);font-weight:600',
+      'Delivery':           'background:rgba(107,174,212,.18);color:var(--teal);font-weight:600',
+      'Done':               'background:rgba(109,191,154,.18);color:var(--up);font-weight:600'
+    };
+    return map[col] || 'background:rgba(88,166,255,.12);color:var(--accent);font-weight:600';
   }
 
+  var thStyle = 'text-align:center;font-size:10px;font-weight:600;color:var(--text3);padding:6px 4px;border-bottom:1px solid var(--border);white-space:nowrap';
   var thead = '<tr><th style="text-align:left;font-size:10px;font-weight:600;color:var(--text3);padding:6px 8px;border-bottom:1px solid var(--border)">Assignee</th>'+
-    COL_STATUSES.map(function(c){ return '<th style="text-align:center;font-size:10px;font-weight:600;color:var(--text3);padding:6px 4px;border-bottom:1px solid var(--border);white-space:nowrap">'+c+'</th>'; }).join('')+
-  '</tr>';
+    STAGES.map(function(c){ return '<th style="'+thStyle+'">'+c+'</th>'; }).join('')+'</tr>';
 
   var tbody = assignees.map(function(name) {
-    var cells = COL_STATUSES.map(function(col) {
-      var count;
-      if (col === 'Delayed') {
-        count = data.filter(function(d) {
-          var an = (d['Assignee'] && d['Assignee'].displayName) || d['Assignee.displayName'] || '';
-          var m = (d['Project Monitoring Status']||'').toLowerCase();
-          return an === name && (m.includes('delayed') || m.includes('at risk'));
-        }).length;
-      } else {
-        count = data.filter(function(d) {
-          var an = (d['Assignee'] && d['Assignee'].displayName) || d['Assignee.displayName'] || '';
-          return an === name && d.Status === col;
-        }).length;
-      }
-      return '<td style="text-align:center;padding:6px 4px;font-size:12px;border-radius:4px;'+cellStyle(col, count)+'">'+(count||'—')+'</td>';
+    var cells = STAGES.map(function(col) {
+      var count = data.filter(function(d) {
+        var an = (d['Assignee'] && d['Assignee'].displayName) || d['Assignee.displayName'] || '';
+        return an === name && d.Status === col;
+      }).length;
+      return '<td style="text-align:center;padding:6px 4px;font-size:12px;border-radius:4px;'+cellStyle(col,count)+'">'+(count||'—')+'</td>';
     }).join('');
     return '<tr><td style="font-size:11px;color:var(--text2);padding:6px 8px;white-space:nowrap">'+_firstName(name)+'</td>'+cells+'</tr>';
   }).join('');
 
   var table = '<table style="width:100%;border-collapse:collapse"><thead>'+thead+'</thead><tbody>'+tbody+'</tbody></table>';
 
-  el.innerHTML = '<div class="panel-head"><div><div class="panel-title">Health matrix</div><div class="panel-sub">Assignee × status</div></div></div>'+
+  el.innerHTML = '<div class="panel-head"><div><div class="panel-title">Health matrix</div><div class="panel-sub">Assignee × lifecycle status</div></div></div>'+
     '<div class="panel-body"><div class="tbl-scroll">'+table+'</div></div>';
   _makePanelCollapsible('dash-health');
 }
@@ -878,90 +874,87 @@ function _buildScatter(data) {
   _makePanelCollapsible('dash-scatter', true);
 }
 
-/* ── Section 3B: Confidence × Status Heatmap ── */
+/* ── Section 3B: Roadmap Year Plan × Status ── */
 function _buildConfHeatmap(data) {
   var el = document.getElementById('dash-conf-heatmap'); if (!el) return;
-  var CONF_BANDS = [
-    { label: 'High (4–5)',   fn: function(d){ var c=parseInt(d['Confident'])||0; return c>=4; } },
-    { label: 'Medium (2–3)', fn: function(d){ var c=parseInt(d['Confident'])||0; return c>=2 && c<=3; } },
-    { label: 'Not set (0–1)',fn: function(d){ var c=parseInt(d['Confident'])||0; return c<=1; } }
-  ];
-  var COL_STATUSES = ['Delivery','Discovery','Ready for Delivery','Delayed'];
 
-  function cellBg(col, count, confBand) {
+  /* Collect distinct years from Roadmap Year Plan field */
+  var yearSet = {};
+  data.forEach(function(d) {
+    (d['Roadmap Year Plan'] || '').split(';').forEach(function(v) {
+      var m = v.trim().match(/^ROADMAP_(\d{4})$/);
+      if (m) yearSet[m[1]] = true;
+    });
+  });
+  var years = Object.keys(yearSet).sort();
+
+  function _cellStyle(col, count) {
     if (!count) return 'background:var(--surface2);color:var(--text3)';
-    if (col === 'Delayed') return 'background:rgba(224,96,80,0.25);color:var(--down);font-weight:700';
-    if (col === 'Delivery' && confBand === 0) return 'background:rgba(74,158,92,0.25);color:var(--up);font-weight:700';
-    if (confBand === 1) return 'background:rgba(212,160,64,0.2);color:var(--amber);font-weight:700';
-    return 'background:rgba(64,184,168,0.15);color:var(--teal);font-weight:700';
+    var map = {
+      'Parking Lot':        'background:rgba(158,152,144,.18);color:#9E9890;font-weight:700',
+      'Budget Approval':    'background:rgba(224,120,120,.2);color:var(--down);font-weight:700',
+      'Discovery':          'background:rgba(212,168,80,.2);color:var(--amber);font-weight:700',
+      'Ready for Delivery': 'background:rgba(155,143,224,.2);color:var(--purple);font-weight:700',
+      'Delivery':           'background:rgba(107,174,212,.2);color:var(--teal);font-weight:700',
+      'Done':               'background:rgba(109,191,154,.2);color:var(--up);font-weight:700'
+    };
+    return map[col] || 'background:rgba(88,166,255,.12);color:var(--accent);font-weight:700';
   }
 
-  var thead = '<tr><th style="text-align:left;font-size:10px;font-weight:600;color:var(--text3);padding:6px 8px;border-bottom:1px solid var(--border)">Confidence</th>'+
-    COL_STATUSES.map(function(c){ return '<th style="text-align:center;font-size:10px;font-weight:600;color:var(--text3);padding:6px 4px;border-bottom:1px solid var(--border);white-space:nowrap">'+c+'</th>'; }).join('')+
-  '</tr>';
+  var thStyle = 'text-align:center;font-size:10px;font-weight:600;color:var(--text3);padding:6px 4px;border-bottom:1px solid var(--border);white-space:nowrap';
+  var thead = '<tr><th style="text-align:left;font-size:10px;font-weight:600;color:var(--text3);padding:6px 8px;border-bottom:1px solid var(--border)">Year Plan</th>'+
+    STAGES.map(function(c){ return '<th style="'+thStyle+'">'+c+'</th>'; }).join('')+'</tr>';
 
-  var tbody = CONF_BANDS.map(function(band, bi) {
-    var cells = COL_STATUSES.map(function(col) {
-      var count;
-      if (col === 'Delayed') {
-        count = data.filter(function(d){ var m=(d['Project Monitoring Status']||'').toLowerCase(); return band.fn(d) && (m.includes('delayed')||m.includes('at risk')); }).length;
-      } else {
-        count = data.filter(function(d){ return band.fn(d) && d.Status === col; }).length;
-      }
-      return '<td style="text-align:center;padding:8px 4px;font-size:13px;border-radius:3px;'+cellBg(col,count,bi)+'">'+(count||'—')+'</td>';
+  var tbody = (years.length ? years : ['—']).map(function(yr) {
+    var key = 'ROADMAP_' + yr;
+    var cells = STAGES.map(function(col) {
+      var count = data.filter(function(d) {
+        var ys = (d['Roadmap Year Plan'] || '').split(';').map(function(v){ return v.trim(); });
+        return ys.indexOf(key) >= 0 && d.Status === col;
+      }).length;
+      return '<td style="text-align:center;padding:7px 4px;font-size:12px;border-radius:3px;'+_cellStyle(col,count)+'">'+(count||'—')+'</td>';
     }).join('');
-    return '<tr><td style="font-size:10px;color:var(--text2);padding:6px 8px;white-space:nowrap">'+band.label+'</td>'+cells+'</tr>';
+    return '<tr><td style="font-size:11px;color:var(--text2);padding:6px 8px;white-space:nowrap;font-weight:600">'+yr+'</td>'+cells+'</tr>';
   }).join('');
 
-  /* Avg confidence per status bar */
-  var ACTIVE_STATUSES = ['Delivery','Discovery','Ready for Delivery'];
-  var bars = ACTIVE_STATUSES.map(function(st) {
-    var items = data.filter(function(d){ return d.Status === st; });
-    var avg = items.length ? items.reduce(function(s,d){ return s+(parseInt(d['Confident'])||0); },0)/items.length : 0;
-    var pct = avg / 5 * 100;
-    return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">'+
-      '<div style="font-size:10px;color:var(--text2);width:120px;flex-shrink:0;white-space:nowrap">'+st+'</div>'+
-      '<div style="flex:1;height:8px;background:var(--surface2);border-radius:3px;overflow:hidden">'+
-        '<div style="width:'+pct+'%;height:100%;background:var(--accent);border-radius:3px"></div>'+
-      '</div>'+
-      '<div style="font-size:10px;color:var(--text2);width:26px;text-align:right">'+avg.toFixed(1)+'</div>'+
-    '</div>';
-  }).join('');
-
-  el.innerHTML = '<div class="panel-head"><div><div class="panel-title">Confidence × status</div><div class="panel-sub">Team confidence level per delivery stage</div></div></div>'+
-    '<div class="panel-body">'+
-      '<div class="tbl-scroll"><table style="width:100%;border-collapse:collapse"><thead>'+thead+'</thead><tbody>'+tbody+'</tbody></table></div>'+
-      '<div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--border)">'+
-        '<div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Avg confidence by status</div>'+
-        bars+
-      '</div>'+
-    '</div>';
+  el.innerHTML = '<div class="panel-head"><div><div class="panel-title">Roadmap Year Plan × status</div><div class="panel-sub">Initiatives per year plan × lifecycle stage</div></div></div>'+
+    '<div class="panel-body"><div class="tbl-scroll"><table style="width:100%;border-collapse:collapse"><thead>'+thead+'</thead><tbody>'+tbody+'</tbody></table></div></div>';
   _makePanelCollapsible('dash-conf-heatmap');
 }
 
-/* ── Section 4A: Business Impact Coverage ── */
+/* ── Section 4A: Project Goal Distribution ── */
 function _buildImpactCoverage(data) {
   var el = document.getElementById('dash-impact'); if (!el) return;
-  var active = data.filter(function(d){ return d.Status !== 'Parking Lot'; });
-  if (!active.length) { el.innerHTML = '<div class="panel-head"><div><div class="panel-title">Business impact (score) coverage</div></div></div><div class="panel-body"><div style="color:var(--text3);font-size:12px;padding:20px">No data</div></div>'; _makePanelCollapsible('dash-impact'); return; }
+  if (!data.length) { el.innerHTML = '<div class="panel-head"><div><div class="panel-title">Project Goal distribution</div></div></div><div class="panel-body"><div style="color:var(--text3);font-size:12px;padding:20px">No data</div></div>'; _makePanelCollapsible('dash-impact'); return; }
 
-  var bars = GOAL_FIELDS.map(function(goal) {
-    var contributors = active.filter(function(d){ return (parseFloat(d[goal])||0) > 0; });
-    var pct = Math.round(contributors.length / active.length * 100);
-    var avg = contributors.length ? contributors.reduce(function(s,d){ return s+(parseFloat(d[goal])||0); },0)/contributors.length : 0;
-    var col = GOAL_COLORS[goal] || 'var(--accent)';
+  /* Count by Project Goal field */
+  var counts = {};
+  data.forEach(function(d) {
+    var g = (d['Project Goal'] || '').trim();
+    if (!g) g = '(not set)';
+    counts[g] = (counts[g] || 0) + 1;
+  });
+  var goals = Object.keys(counts).sort(function(a, b) { return counts[b] - counts[a]; });
+  var maxCount = counts[goals[0]] || 1;
+  var total = data.length;
+
+  var bars = goals.map(function(goal, i) {
+    var count = counts[goal];
+    var pct = Math.round(count / total * 100);
+    var barPct = Math.round(count / maxCount * 100);
+    var col = GOAL_COLORS[goal] || ['var(--accent)','var(--teal)','var(--purple)','var(--up)','var(--amber)'][i % 5];
     return '<div style="margin-bottom:8px">'+
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">'+
         '<div style="font-size:11px;color:var(--text);font-weight:500;line-height:1.3">'+goal+'</div>'+
-        '<div style="font-size:10px;color:var(--text2);white-space:nowrap;margin-left:8px">'+pct+'% <span style="color:var(--text3)">('+contributors.length+'/'+active.length+')</span> <span style="color:var(--text3);margin-left:4px">avg '+avg.toFixed(0)+'%</span></div>'+
+        '<div style="font-size:10px;color:var(--text2);white-space:nowrap;margin-left:8px">'+count+' <span style="color:var(--text3)">('+pct+'%)</span></div>'+
       '</div>'+
       '<div style="height:10px;background:var(--surface2);border-radius:3px;overflow:hidden">'+
-        '<div style="width:'+pct+'%;height:100%;background:'+col+';border-radius:3px;transition:width .4s"></div>'+
+        '<div style="width:'+barPct+'%;height:100%;background:'+col+';border-radius:3px;transition:width .4s"></div>'+
       '</div>'+
     '</div>';
   }).join('');
 
-  el.innerHTML = '<div class="panel-head"><div><div class="panel-title">Business impact (score) coverage</div><div class="panel-sub">% of active initiatives contributing to each goal</div></div></div>'+
+  el.innerHTML = '<div class="panel-head"><div><div class="panel-title">Project Goal distribution</div><div class="panel-sub">Initiatives count per project goal</div></div></div>'+
     '<div class="panel-body" style="padding-top:10px">'+bars+'</div>';
   _makePanelCollapsible('dash-impact');
 }

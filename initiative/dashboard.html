@@ -44,6 +44,10 @@
 
     <!-- Left column -->
     <div>
+      <div class="panel" id="dash-status-chart">
+        <div class="panel-head"><div><div class="panel-title">By lifecycle status</div><div class="panel-sub">Count &amp; % of all items</div></div></div>
+        <div class="panel-body" style="position:relative;height:220px"><canvas id="c-status"></canvas></div>
+      </div>
       <div class="panel" id="dash-conf-heatmap"></div>
       <div class="panel" id="dash-bau"></div>
       <div class="panel" id="dash-impact"></div>
@@ -52,10 +56,6 @@
     <!-- Right column -->
     <div>
       <div class="panel" id="dash-delivery"></div>
-      <div class="panel" id="dash-status-chart">
-        <div class="panel-head"><div><div class="panel-title">By lifecycle status</div><div class="panel-sub">Count &amp; % of all items</div></div></div>
-        <div class="panel-body" style="position:relative;height:220px"><canvas id="c-status"></canvas></div>
-      </div>
       <div class="panel" id="dash-health"></div>
       <div class="panel" id="dash-assignee"></div>
       <div class="panel" id="dash-scatter"></div>

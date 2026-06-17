@@ -321,7 +321,7 @@ function renderSummary(){
   _loadSumFilters();
   _saveSumFilters();
   /* hideNoDate button is rendered inline in tl-status-head — no separate sync needed */
-  var filtered=filterYear(allData,sumYearFilter);
+  var filtered=filterYear(allData,sumYearFilter).filter(function(d){return(d['Roadmap Status']||'')!=="Won't do";});
   renderYF('yf-sum',sumYearFilter,function(btn,val){sumYearFilter=toggleYF(sumYearFilter,val);renderSummary();});
 
   /* Stage dropdown */
@@ -1050,7 +1050,7 @@ function _buildAssigneeCompact(data) {
 
 /* Render initiatives */
 function renderInitiatives(){
-  var filtered=showNoYear?filterNoYear(allData):filterYear(allData,initYearFilter);
+  var filtered=(showNoYear?filterNoYear(allData):filterYear(allData,initYearFilter)).filter(function(d){return(d['Roadmap Status']||'')!=="Won't do";});
   renderYF('yf-init',initYearFilter,function(btn,val){initYearFilter=toggleYF(initYearFilter,val);showNoYear=false;document.getElementById('btn-no-year').classList.remove('active');renderInitiatives();});
   buildDashboard(filtered);
 }
@@ -1442,7 +1442,7 @@ function renderRoadmap(){
   /* filter data */
   var yearKey='ROADMAP_'+rmYearFilter;
   var filtered=allData.filter(function(d){
-    if((d['Roadmap Status']||'').trim()==="Won't Do") return false;
+    if((d['Roadmap Status']||'').trim()==="Won't do") return false;
     return (d['Roadmap Year Plan']||'').split(';').some(function(v){return v.trim()===yearKey;});
   });
   if(rmComponentFilter.length>0){

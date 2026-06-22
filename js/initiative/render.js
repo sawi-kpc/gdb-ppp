@@ -206,7 +206,8 @@ function renderTimeline(data){
     var aLine=(aS||aE)?'<span><span style="color:'+(isD?'#E24B4A':'#1D9E75')+';font-weight:600;min-width:40px;display:inline-block">Actual</span>'+fmtMonYear(aS)+' → '+(aE?fmtMonYear(aE):'In progress')+'</span>':'';
     var dLine=(tLine||aLine)?'<div class="tl-date-line">'+[tLine,aLine].filter(Boolean).join('<br>')+'</div>':'';
     var emoji=mon?(isD?'🆘 ':isR?'⚠️ ':isT?'✅ ':''):'';
-    return'<div class="tl-row '+rowCls+'"><div class="tl-label"><div class="tl-key-line">'+jiraLink(d.Key)+'</div><div class="tl-name" title="'+d.Summary+'">'+emoji+d.Summary+'</div>'+dLine+'</div><div class="tl-track">'+todayColBg+(todayP!==null?'<div class="tl-today-v" style="left:'+todayP.toFixed(2)+'%"><div class="tl-today-dot-v"></div></div>':'')+glMarker+' '+(hasPlan||hasActual?planBar+actBar:'<div class="tl-no-date">No date set</div>')+'</div><div class="tl-status-col">'+(mon?monBadge(mon):sPill(d.Status))+'</div></div>';
+    var glLabel=glDate?'<span style="font-size:9px;color:var(--purple);font-weight:600;margin-left:6px">◆ '+fmtMonYear(glDate)+'</span>':'';
+    return'<div class="tl-row '+rowCls+'"><div class="tl-label"><div class="tl-key-line">'+jiraLink(d.Key)+glLabel+'</div><div class="tl-name" title="'+d.Summary+'">'+emoji+d.Summary+'</div>'+dLine+'</div><div class="tl-track">'+todayColBg+(todayP!==null?'<div class="tl-today-v" style="left:'+todayP.toFixed(2)+'%"></div>':'')+glMarker+' '+(hasPlan||hasActual?planBar+actBar:'<div class="tl-no-date">No date set</div>')+'</div><div class="tl-status-col">'+(mon?monBadge(mon):sPill(d.Status))+'</div></div>';
   }).join('');
   var tlInner=document.getElementById('tl-inner');
   var focusHtml='<div style="display:flex;flex-direction:column;justify-content:center;height:100%;padding:4px 10px 4px 0;gap:4px">'+

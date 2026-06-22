@@ -196,14 +196,17 @@ function renderTimeline(data){
     var rowCls=isD?'row-delayed':isR?'row-atrisk':isT?'row-ontrack':'';
     var tS=getStart(d['Target Project Start']||''),tE=getEnd(d['Target Project End']||'');
     var aS=getStart(d['Actual Project Start']||''),aE=getEnd(d['Actual Project End']||'');
+    var glDate=getStart(d['Go-live Date']||'');
     var hasPlan=tS&&tE,hasActual=!!aS;
     var planBar=hasPlan?'<div class="tl-bar tl-bar-plan" style="left:'+pct(tS).toFixed(2)+'%;width:'+wPct(tS,tE).toFixed(2)+'%"></div>':'';
     var actBar=hasActual?'<div class="tl-bar '+(isD?'tl-bar-actual-del':'tl-bar-actual-ok')+'" style="left:'+pct(aS).toFixed(2)+'%;width:'+(aE?wPct(aS,aE).toFixed(2):Math.max(.5,((Math.min(today,END)-new Date(aS))/totalMs*100)).toFixed(2))+'%"></div>':'';
+    var glP=glDate?pct(glDate):null;
+    var glMarker=(glP!==null&&glP>=0&&glP<=100)?'<div class="tl-golive-v" style="left:'+glP.toFixed(2)+'%"><div class="tl-golive-diamond"></div></div>':'';
     var tLine=(tS||tE)?'<span><span style="color:var(--accent);font-weight:600;min-width:40px;display:inline-block">Target</span>'+fmtMonYear(tS)+' → '+fmtMonYear(tE)+'</span>':'';
     var aLine=(aS||aE)?'<span><span style="color:'+(isD?'#E24B4A':'#1D9E75')+';font-weight:600;min-width:40px;display:inline-block">Actual</span>'+fmtMonYear(aS)+' → '+(aE?fmtMonYear(aE):'In progress')+'</span>':'';
     var dLine=(tLine||aLine)?'<div class="tl-date-line">'+[tLine,aLine].filter(Boolean).join('<br>')+'</div>':'';
     var emoji=mon?(isD?'🆘 ':isR?'⚠️ ':isT?'✅ ':''):'';
-    return'<div class="tl-row '+rowCls+'"><div class="tl-label"><div class="tl-key-line">'+jiraLink(d.Key)+'</div><div class="tl-name" title="'+d.Summary+'">'+emoji+d.Summary+'</div>'+dLine+'</div><div class="tl-track">'+todayColBg+(todayP!==null?'<div class="tl-today-v" style="left:'+todayP.toFixed(2)+'%"><div class="tl-today-dot-v"></div></div>':'')+' '+(hasPlan||hasActual?planBar+actBar:'<div class="tl-no-date">No date set</div>')+'</div><div class="tl-status-col">'+(mon?monBadge(mon):sPill(d.Status))+'</div></div>';
+    return'<div class="tl-row '+rowCls+'"><div class="tl-label"><div class="tl-key-line">'+jiraLink(d.Key)+'</div><div class="tl-name" title="'+d.Summary+'">'+emoji+d.Summary+'</div>'+dLine+'</div><div class="tl-track">'+todayColBg+(todayP!==null?'<div class="tl-today-v" style="left:'+todayP.toFixed(2)+'%"><div class="tl-today-dot-v"></div></div>':'')+glMarker+' '+(hasPlan||hasActual?planBar+actBar:'<div class="tl-no-date">No date set</div>')+'</div><div class="tl-status-col">'+(mon?monBadge(mon):sPill(d.Status))+'</div></div>';
   }).join('');
   var tlInner=document.getElementById('tl-inner');
   var focusHtml='<div style="display:flex;flex-direction:column;justify-content:center;height:100%;padding:4px 10px 4px 0;gap:4px">'+

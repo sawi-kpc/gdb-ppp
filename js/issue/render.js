@@ -901,8 +901,7 @@ function _priBadgeCls(p) {
 /* ── Build single card ───────────────────────────────────── */
 function buildCard(d) {
   var overdue     = isOverdue(d.Due, d.Status);
-  var multiCh     = (d.Components||'').split(';').filter(Boolean).length >= 3;
-  var firstComp   = (d.Components||'').split(';')[0].trim();
+  var allComps    = (d.Components||'').split(';').map(function(c){return c.trim();}).filter(Boolean);
   var timelineHtml = buildIncidentTimeline(d);
   var dueFmt      = _fmtDate(d.Due);
 
@@ -920,9 +919,9 @@ function buildCard(d) {
   if (d.Severity) {
     metaParts.push('<span class="sev-badge '+_sevCls(d.Severity)+'">'+d.Severity+'</span>');
   }
-  if (firstComp) {
+  if (allComps.length) {
     if (metaParts.length) metaParts.push('<span class="meta-sep">·</span>');
-    metaParts.push('<span class="comp-chip">'+firstComp+'</span>');
+    allComps.forEach(function(c){ metaParts.push('<span class="comp-chip">'+c+'</span>'); });
   }
   if (dueFmt && d.Status !== 'Done') {
     if (metaParts.length) metaParts.push('<span class="meta-sep">·</span>');
@@ -941,7 +940,6 @@ function buildCard(d) {
   return '<div class="icard '+cls+'">'+
     '<div class="icard-top">'+
       '<span class="ikey"><a href="'+ISSUE_JIRA_BASE+d.Key+'" target="_blank">'+d.Key+' ↗</a></span>'+
-      (multiCh ? '<span class="tag multi-ch">Multi-channel</span>' : '')+
       (!d.Assignee && d.Status !== 'Done' ? '<span class="tag unassigned-tag">Unassigned</span>' : '')+
       '<span class="icard-pri">'+priBadge+'</span>'+
     '</div>'+

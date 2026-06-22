@@ -180,8 +180,8 @@ table.dt tr:hover td { background: var(--border); }
 .tl-col-bg{position:absolute;top:0;bottom:0;background:rgba(26,58,92,.03);pointer-events:none}
 .tl-today-v{position:absolute;top:0;bottom:0;width:1.5px;background:var(--text);opacity:.4;z-index:3}
 .tl-today-dot-v{position:absolute;top:2px;width:7px;height:7px;background:var(--text);border-radius:50%;left:-3px}
-.tl-golive-v{position:absolute;top:0;bottom:0;width:1.5px;background:var(--purple);opacity:.85;z-index:4}
-.tl-golive-diamond{position:absolute;top:1px;left:-4px;width:8px;height:8px;background:var(--purple);transform:rotate(45deg)}
+.tl-golive-v{position:absolute;top:0;bottom:0;width:0;z-index:4}
+.tl-golive-diamond{position:absolute;top:50%;left:-5px;width:10px;height:10px;background:var(--purple);transform:translateY(-50%) rotate(45deg);opacity:.9}
 .tl-bar{position:absolute;border-radius:3px;min-width:3px;z-index:2}
 .tl-bar-plan{background:var(--accent);height:9px;top:10px;opacity:.85}
 .tl-bar-actual-ok{background:var(--up);height:9px;top:24px}

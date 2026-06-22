@@ -120,6 +120,14 @@ function fmtDate(d){
   if(isNaN(dt.getTime())){var p=d.split('-');return p.length>=3?parseInt(p[2])+' '+GDB.FULL_MONTHS[+p[1]-1]+' '+p[0]:'—';}
   return dt.getDate()+' '+GDB.FULL_MONTHS[dt.getMonth()]+' '+dt.getFullYear();
 }
+/* fmtFullDate: "22 June 2026" — for go-live label */
+function fmtFullDate(d){
+  if(!d)return'—';
+  var dt=new Date(d);
+  if(isNaN(dt.getTime()))return'—';
+  return dt.getDate()+' '+GDB.FULL_MONTHS[dt.getMonth()]+' '+dt.getFullYear();
+}
+
 /* fmtMonYear: short format "Oct 2025" — for timeline target/actual dates */
 function fmtMonYear(d){
   if(!d)return'—';
@@ -206,7 +214,7 @@ function renderTimeline(data){
     var aLine=(aS||aE)?'<span><span style="color:'+(isD?'#E24B4A':'#1D9E75')+';font-weight:600;min-width:40px;display:inline-block">Actual</span>'+fmtMonYear(aS)+' → '+(aE?fmtMonYear(aE):'In progress')+'</span>':'';
     var dLine=(tLine||aLine)?'<div class="tl-date-line">'+[tLine,aLine].filter(Boolean).join('<br>')+'</div>':'';
     var emoji=mon?(isD?'🆘 ':isR?'⚠️ ':isT?'✅ ':''):'';
-    var glLabel=glDate?'<span style="font-size:9px;color:var(--purple);font-weight:600;margin-left:6px">◆ '+fmtMonYear(glDate)+'</span>':'';
+    var glLabel=glDate?'<span style="font-size:9px;color:var(--purple);font-weight:600;margin-left:6px">◆ Go-live: '+fmtFullDate(glDate)+'</span>':'';
     return'<div class="tl-row '+rowCls+'"><div class="tl-label"><div class="tl-key-line">'+jiraLink(d.Key)+glLabel+'</div><div class="tl-name" title="'+d.Summary+'">'+emoji+d.Summary+'</div>'+dLine+'</div><div class="tl-track">'+todayColBg+(todayP!==null?'<div class="tl-today-v" style="left:'+todayP.toFixed(2)+'%"></div>':'')+glMarker+' '+(hasPlan||hasActual?planBar+actBar:'<div class="tl-no-date">No date set</div>')+'</div><div class="tl-status-col">'+(mon?monBadge(mon):sPill(d.Status))+'</div></div>';
   }).join('');
   var tlInner=document.getElementById('tl-inner');

@@ -154,6 +154,7 @@ table.dt tr:last-child td { border-bottom: none; }
 table.dt tr:hover td { background: var(--border); }
 
 /* ══ TIMELINE (ported from style.css + dark theme) ══ */
+.tl-head-wrap{position:sticky;top:calc(var(--header-h) + var(--nav-h));z-index:20;background:var(--surface);overflow:hidden;border-bottom:1px solid var(--border)}
 .tl-container{overflow-x:auto}
 .tl-inner{min-width:860px}
 .tl-qtr-row{display:flex;border-radius:5px 5px 0 0;overflow:hidden;border:1px solid var(--border);border-bottom:none;background:var(--surface2)}

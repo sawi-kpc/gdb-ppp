@@ -235,7 +235,15 @@ function renderTimeline(data){
       '<span style="'+_togLabel+'">No-date</span>'+
     '</button>'+
   '</div>';
-  if(tlInner)tlInner.innerHTML='<div class="tl-header"><div class="tl-label-head">'+focusHtml+'</div><div class="tl-grid-head"><div class="tl-qtr-row">'+qtrHtml+'</div><div class="tl-month-row">'+monHtml+'</div></div><div class="tl-status-head">'+noDateBtnHtml+'</div></div>'+rowsHtml;
+  var tlHeadInner=document.getElementById('tl-head-inner');
+  var headerHtml='<div class="tl-header"><div class="tl-label-head">'+focusHtml+'</div><div class="tl-grid-head"><div class="tl-qtr-row">'+qtrHtml+'</div><div class="tl-month-row">'+monHtml+'</div></div><div class="tl-status-head">'+noDateBtnHtml+'</div></div>';
+  if(tlHeadInner) tlHeadInner.innerHTML=headerHtml;
+  if(tlInner) tlInner.innerHTML=rowsHtml;
+  /* Sync horizontal scroll between tl-container and sticky header */
+  var tlCont=document.getElementById('tl-container');
+  if(tlCont && tlHeadInner){
+    tlCont.onscroll=function(){ tlHeadInner.style.transform='translateX(-'+this.scrollLeft+'px)'; };
+  }
 }
 
 /* Charts */

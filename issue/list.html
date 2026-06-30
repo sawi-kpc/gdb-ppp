@@ -146,7 +146,17 @@
             </div>
           </div>
         </div>
-        <div class="ctrl-sep"></div>
+        <!-- Assignee dropdown -->
+        <div style="position:relative" id="issue-assignee-dropdown-wrap">
+          <button onclick="toggleIssueDropdown('issue-assignee-dropdown-panel')" style="height:28px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);font-size:11.5px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap">
+            <span id="issue-assignee-btn-label" data-empty="All Assignees">All Assignees</span>
+            <span style="font-size:9px;color:var(--text3)">▾</span>
+          </button>
+          <div id="issue-assignee-dropdown-panel" style="display:none;position:absolute;top:32px;left:0;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.18);padding:8px 0;min-width:200px;white-space:nowrap">
+            <div id="issue-assignee-checkbox-list"></div>
+          </div>
+        </div>
+        <div style="flex:1"></div>
         <div class="ctrl-search">
           <input type="text" id="issue-search" placeholder="Search…" oninput="applyFilters()">
         </div>
@@ -192,7 +202,7 @@ function toggleIssueDropdown(panelId) {
   panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
 }
 document.addEventListener('click', function(e) {
-  ['status-dropdown-wrap','comp-dropdown-wrap'].forEach(function(id) {
+  ['status-dropdown-wrap','comp-dropdown-wrap','issue-assignee-dropdown-wrap'].forEach(function(id) {
     var wrap = document.getElementById(id);
     if (wrap && !wrap.contains(e.target)) {
       var panel = wrap.querySelector('[id$="-panel"]');

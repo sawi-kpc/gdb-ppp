@@ -9,6 +9,7 @@ var _filterPriorities = [];   /* multi-select array */
 var _filterSeverities = [];   /* multi-select array */
 var _filterComp       = [];   /* multi-select array */
 var _filterGroups     = [];   /* multi-select array */
+var _filterAssignee   = '';   /* single-select; '' = all */
 var _searchQ        = '';
 var _sortCol        = 'FailureOccurs';
 var _sortAsc        = false;   /* desc — newest first */
@@ -23,7 +24,7 @@ function _saveIssueFilters(){
   GDB.saveFilters('gdb_filter_issue_list', {
     _filterStatuses:_filterStatuses, _filterPriorities:_filterPriorities,
     _filterSeverities:_filterSeverities, _filterComp:_filterComp,
-    _filterGroups:_filterGroups, _searchQ:_searchQ,
+    _filterGroups:_filterGroups, _filterAssignee:_filterAssignee, _searchQ:_searchQ,
     _sortCol:_sortCol, _sortAsc:_sortAsc,
     _activeView:_activeView, _chartGroupBy:_chartGroupBy, _tablePage:_tablePage
   });
@@ -35,7 +36,8 @@ function _loadIssueFilters(){
   if(Array.isArray(f._filterPriorities)) _filterPriorities=f._filterPriorities;
   if(Array.isArray(f._filterSeverities)) _filterSeverities=f._filterSeverities;
   if(Array.isArray(f._filterComp))       _filterComp=f._filterComp;
-  if(Array.isArray(f._filterGroups))     _filterGroups=f._filterGroups;
+  if(Array.isArray(f._filterGroups))       _filterGroups=f._filterGroups;
+  if(typeof f._filterAssignee==='string')  _filterAssignee=f._filterAssignee;
   if(f._searchQ)        _searchQ=f._searchQ;
   if(f._sortCol)        _sortCol=f._sortCol;
   if(typeof f._sortAsc==='boolean')  _sortAsc=f._sortAsc;
@@ -720,7 +722,33 @@ function populateFilters(data) {
   GDB.buildCheckDropdown({wrapperId:'priority-dropdown-wrap', btnLabelId:'priority-btn-label', listId:'priority-checkbox-list', values:priorities.sort(), colorMap:PRIORITY_COLOR, activeArr:_filterPriorities, toggleFn:'onIssuePriorityToggle'});
   GDB.buildCheckDropdown({wrapperId:'severity-dropdown-wrap', btnLabelId:'severity-btn-label', listId:'severity-checkbox-list', values:severities.sort(), colorMap:SEVERITY_COLOR, activeArr:_filterSeverities, toggleFn:'onIssueSeverityToggle'});
   GDB.buildCheckDropdown({wrapperId:'group-dropdown-wrap',    btnLabelId:'group-btn-label',    listId:'group-checkbox-list',    values:groups.sort(),     colorMap:null,           activeArr:_filterGroups,     toggleFn:'onIssueGroupToggle'});
+  buildIssueAssigneeFilter(data);
 }
+
+function buildIssueAssigneeFilter(data){
+  var assignees=Array.from(new Set((data||[]).map(function(d){return(d.Assignee||'').trim().split(' ')[0];}).filter(Boolean))).sort();
+  var listEl=document.getElementById('issue-assignee-checkbox-list'); if(!listEl) return;
+  function _row(v,label,active){
+    return '<label style="display:flex;align-items:center;gap:8px;padding:5px 12px;cursor:pointer;font-size:12px;color:var(--text);white-space:nowrap" '+
+      'onmouseover="this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'\'" onclick="onIssueAssigneeSelect(\''+v+'\')">'+
+      '<span style="width:8px;height:8px;border-radius:50%;background:'+(active?'var(--accent)':'var(--border)')+';display:inline-block;flex-shrink:0"></span>'+
+      '<span style="'+(active?'color:var(--accent);font-weight:600':'')+'">' +label+'</span></label>';
+  }
+  listEl.innerHTML=_row('','All Assignees',!_filterAssignee)+
+    assignees.map(function(v){return _row(v,v,_filterAssignee===v);}).join('');
+  var lbl=document.getElementById('issue-assignee-btn-label');
+  if(lbl) lbl.textContent=_filterAssignee||(lbl.dataset.empty||'All Assignees');
+  var wrap=document.getElementById('issue-assignee-dropdown-wrap');
+  var btn=wrap&&wrap.querySelector('button');
+  if(btn) btn.style.borderColor=_filterAssignee?'var(--accent)':'var(--border)';
+}
+function onIssueAssigneeSelect(v){
+  _filterAssignee=_filterAssignee===v?'':v;
+  var p=document.getElementById('issue-assignee-dropdown-panel'); if(p) p.style.display='none';
+  buildIssueAssigneeFilter(window.issueData||[]);
+  applyFilters();
+}
+function clearIssueAssignee(){ _filterAssignee=''; buildIssueAssigneeFilter(window.issueData||[]); applyFilters(); }
 
 /* ── Filter + sort pipeline ──────────────────────────────── */
 function applyFilters() {
@@ -745,6 +773,7 @@ function applyFilters() {
       if (!_filterComp.some(function(f){ return comps.indexOf(f) >= 0; })) return false;
     }
     if (_filterGroups.length > 0 && _filterGroups.indexOf(_getGroupSafe(d)) < 0) return false;
+    if (_filterAssignee && (d.Assignee||'').trim().split(' ')[0] !== _filterAssignee) return false;
     if (_searchQ) {
       var q = _searchQ.toLowerCase();
       var hay = ((d.Key||'')+' '+(d.Summary||'')+' '+(d.Assignee||'')+' '+(d.Components||'')).toLowerCase();

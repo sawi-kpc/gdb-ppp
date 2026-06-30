@@ -96,10 +96,20 @@
         </div>
       </div>
 
-      <!-- Priority select (unchanged) -->
-      <select class="ctrl-select" id="filter-priority" onchange="onDropdownChange()" style="height:26px;padding:0 8px;font-size:11.5px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);outline:none">
-        <option value="all">All priorities</option>
-      </select>
+      <!-- Priority dropdown -->
+      <div style="position:relative" id="priority-dropdown-wrap">
+        <button id="priority-dropdown-btn" onclick="toggleSupportDropdown('priority-dropdown-panel')"
+          style="height:26px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);font-size:11.5px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap">
+          <span id="priority-btn-label" data-empty="All Priorities">All Priorities</span>
+          <span style="font-size:9px;color:var(--text3)">▾</span>
+        </button>
+        <div id="priority-dropdown-panel" style="display:none;position:absolute;top:30px;left:0;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.18);padding:8px 0;min-width:160px">
+          <div id="priority-checkbox-list"></div>
+          <div style="border-top:1px solid var(--border);margin-top:6px;padding:6px 12px 2px">
+            <button onclick="clearSupportPriority()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Clear all</button>
+          </div>
+        </div>
+      </div>
 
       <div style="width:1px;height:20px;background:var(--border);flex-shrink:0"></div>
 
@@ -129,6 +139,21 @@
           <div id="label-checkbox-list"></div>
           <div style="border-top:1px solid var(--border);margin-top:6px;padding:6px 12px 2px">
             <button onclick="clearSupportLabel()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Clear all</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Assignee dropdown -->
+      <div style="position:relative" id="assignee-dropdown-wrap">
+        <button id="assignee-dropdown-btn" onclick="toggleSupportDropdown('assignee-dropdown-panel')"
+          style="height:26px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);font-size:11.5px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap">
+          <span id="assignee-btn-label" data-empty="All Assignees">All Assignees</span>
+          <span style="font-size:9px;color:var(--text3)">▾</span>
+        </button>
+        <div id="assignee-dropdown-panel" style="display:none;position:absolute;top:30px;left:0;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.18);padding:8px 0;min-width:200px;white-space:nowrap">
+          <div id="assignee-checkbox-list"></div>
+          <div style="border-top:1px solid var(--border);margin-top:6px;padding:6px 12px 2px">
+            <button onclick="clearSupportAssignee()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Clear all</button>
           </div>
         </div>
       </div>

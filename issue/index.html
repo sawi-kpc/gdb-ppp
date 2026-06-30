@@ -149,12 +149,32 @@
           </div>
         </div>
         <div class="ctrl-sep"></div>
-        <select class="ctrl-select" id="filter-priority" onchange="onDropdownChange()">
-          <option value="all">All priority</option>
-        </select>
-        <select class="ctrl-select" id="filter-severity" onchange="onDropdownChange()">
-          <option value="all">All severity</option>
-        </select>
+        <!-- Priority dropdown -->
+        <div style="position:relative" id="priority-dropdown-wrap">
+          <button onclick="toggleIssueDropdown('priority-dropdown-panel')" style="height:28px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);font-size:11.5px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap">
+            <span id="priority-btn-label" data-empty="All Priorities">All Priorities</span>
+            <span style="font-size:9px;color:var(--text3)">▾</span>
+          </button>
+          <div id="priority-dropdown-panel" style="display:none;position:absolute;top:32px;left:0;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.18);padding:8px 0;min-width:160px">
+            <div id="priority-checkbox-list"></div>
+            <div style="border-top:1px solid var(--border);margin-top:6px;padding:6px 12px 2px">
+              <button onclick="clearIssuePriority()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Clear all</button>
+            </div>
+          </div>
+        </div>
+        <!-- Severity dropdown -->
+        <div style="position:relative" id="severity-dropdown-wrap">
+          <button onclick="toggleIssueDropdown('severity-dropdown-panel')" style="height:28px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);font-size:11.5px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap">
+            <span id="severity-btn-label" data-empty="All Severities">All Severities</span>
+            <span style="font-size:9px;color:var(--text3)">▾</span>
+          </button>
+          <div id="severity-dropdown-panel" style="display:none;position:absolute;top:32px;left:0;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.18);padding:8px 0;min-width:160px">
+            <div id="severity-checkbox-list"></div>
+            <div style="border-top:1px solid var(--border);margin-top:6px;padding:6px 12px 2px">
+              <button onclick="clearIssueSeverity()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Clear all</button>
+            </div>
+          </div>
+        </div>
         <!-- Component dropdown -->
         <div style="position:relative" id="comp-dropdown-wrap">
           <button id="comp-dropdown-btn" onclick="toggleIssueDropdown('comp-dropdown-panel')"
@@ -169,9 +189,19 @@
             </div>
           </div>
         </div>
-        <select class="ctrl-select" id="filter-group" onchange="onDropdownChange()">
-          <option value="all">All issue groups</option>
-        </select>
+        <!-- Group dropdown -->
+        <div style="position:relative" id="group-dropdown-wrap">
+          <button onclick="toggleIssueDropdown('group-dropdown-panel')" style="height:28px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);font-size:11.5px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap">
+            <span id="group-btn-label" data-empty="All Groups">All Groups</span>
+            <span style="font-size:9px;color:var(--text3)">▾</span>
+          </button>
+          <div id="group-dropdown-panel" style="display:none;position:absolute;top:32px;left:0;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.18);padding:8px 0;min-width:200px">
+            <div id="group-checkbox-list"></div>
+            <div style="border-top:1px solid var(--border);margin-top:6px;padding:6px 12px 2px">
+              <button onclick="clearIssueGroup()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Clear all</button>
+            </div>
+          </div>
+        </div>
         <div style="flex:1"></div>
         <div class="ctrl-search">
           <input type="text" id="issue-search" placeholder="Search…" oninput="applyFilters()">

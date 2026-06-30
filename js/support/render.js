@@ -39,12 +39,13 @@ function statusTag(s){
 function isOverdue(due,status){ return GDB.isOverdue(due,status); }
 
 /* ── State ───────────────────────────────────────────────── */
-var activeStatuses=[];  /* multi-select; empty = all */
+var activeStatuses  =[];  /* multi-select; empty = all */
 var _taskPage = 1;
 var _taskPageSize = 20;
-var activeGroups  =[];  /* multi-select; empty = all */
-var activePriority='all';
-var activeLabels  =[];  /* multi-select; empty = all */
+var activeGroups      =[];  /* multi-select; empty = all */
+var activePriorities  =[];  /* multi-select; empty = all */
+var activeLabels      =[];  /* multi-select; empty = all */
+var activeAssignees =[];  /* multi-select; empty = all */
 var searchQ='', sortCol='Due', sortAsc=false, showOverdueOnly=false;
 
 /* ── Filter state persistence (localStorage) ─────────────── */
@@ -52,7 +53,8 @@ var _supportFiltersLoaded=false;
 function _saveSupportFilters(){
   GDB.saveFilters('gdb_filter_support_list', {
     activeStatuses:activeStatuses, activeGroups:activeGroups,
-    activePriority:activePriority, activeLabels:activeLabels,
+    activePriorities:activePriorities, activeLabels:activeLabels,
+    activeAssignees:activeAssignees,
     searchQ:searchQ, sortCol:sortCol, sortAsc:sortAsc, _taskPage:_taskPage,
     showOverdueOnly:showOverdueOnly
   });
@@ -60,10 +62,12 @@ function _saveSupportFilters(){
 function _loadSupportFilters(){
   if(_supportFiltersLoaded)return; _supportFiltersLoaded=true;
   var f=GDB.loadFilters('gdb_filter_support_list'); if(!f)return;
-  if(Array.isArray(f.activeStatuses)) activeStatuses=f.activeStatuses;
-  if(Array.isArray(f.activeGroups))   activeGroups=f.activeGroups;
-  if(f.activePriority)                activePriority=f.activePriority;
-  if(Array.isArray(f.activeLabels))   activeLabels=f.activeLabels;
+  function _noAll(a){ return Array.isArray(a) ? a.filter(function(v){return v!=='all';}) : []; }
+  if(Array.isArray(f.activeStatuses))   activeStatuses   = _noAll(f.activeStatuses);
+  if(Array.isArray(f.activeGroups))     activeGroups     = _noAll(f.activeGroups);
+  if(Array.isArray(f.activePriorities)) activePriorities = _noAll(f.activePriorities);
+  if(Array.isArray(f.activeLabels))     activeLabels     = _noAll(f.activeLabels);
+  if(Array.isArray(f.activeAssignees))  activeAssignees  = _noAll(f.activeAssignees);
   if(f.searchQ)                       searchQ=f.searchQ;
   if(f.sortCol)                       sortCol=f.sortCol;
   if(typeof f.sortAsc==='boolean')       sortAsc=f.sortAsc;
@@ -169,6 +173,10 @@ function buildLabelFilter(data){
   )).sort();
   GDB.buildCheckDropdown({wrapperId:'label-dropdown-wrap', btnLabelId:'label-btn-label', listId:'label-checkbox-list', values:labels, colorMap:null, activeArr:activeLabels, toggleFn:'onSupportLabelToggle'});
 }
+function buildAssigneeFilter(data){
+  var assignees=Array.from(new Set(data.map(function(d){return (d.Assignee||'').trim().split(' ')[0];}).filter(Boolean))).sort();
+  GDB.buildCheckDropdown({wrapperId:'assignee-dropdown-wrap', btnLabelId:'assignee-btn-label', listId:'assignee-checkbox-list', values:assignees, colorMap:null, activeArr:activeAssignees, toggleFn:'onSupportAssigneeToggle'});
+}
 
 function _supportToggle(arr, val, buildFn) {
   var i = arr.indexOf(val); if (i >= 0) arr.splice(i,1); else arr.push(val);
@@ -187,13 +195,14 @@ function onSupportGroupToggle(v){ _supportToggle(activeGroups, v, buildGroupFilt
 function clearSupportGroup(){ _supportClear(activeGroups, buildGroupFilter, 'group-dropdown-panel'); }
 function onSupportLabelToggle(v){ _supportToggle(activeLabels, v, buildLabelFilter); var p=document.getElementById('label-dropdown-panel'); if(p)p.style.display='block'; }
 function clearSupportLabel(){ _supportClear(activeLabels, buildLabelFilter, 'label-dropdown-panel'); }
+function onSupportAssigneeToggle(v){ _supportToggle(activeAssignees, v, buildAssigneeFilter); var p=document.getElementById('assignee-dropdown-panel'); if(p)p.style.display='block'; }
+function clearSupportAssignee(){ _supportClear(activeAssignees, buildAssigneeFilter, 'assignee-dropdown-panel'); }
+function onSupportPriorityToggle(v){ _supportToggle(activePriorities, v, buildPriorityDropdown); var p=document.getElementById('priority-dropdown-panel'); if(p)p.style.display='block'; }
+function clearSupportPriority(){ _supportClear(activePriorities, buildPriorityDropdown, 'priority-dropdown-panel'); }
 
+var SUPPORT_PRIORITY_COLORS={'Highest':'var(--down)','High':'#f97316','Medium':'var(--amber)','Low':'var(--up)','Lowest':'var(--text3)'};
 function buildPriorityDropdown(data){
-  var el=document.getElementById('filter-priority');
-  if(!el) return;
-  var PRIORITIES=['Highest','High','Medium','Low','Lowest'];
-  el.innerHTML='<option value="all">All priorities</option>'+
-    PRIORITIES.map(function(p){return '<option value="'+p+'">'+p+'</option>';}).join('');
+  GDB.buildCheckDropdown({wrapperId:'priority-dropdown-wrap', btnLabelId:'priority-btn-label', listId:'priority-checkbox-list', values:['Highest','High','Medium','Low','Lowest'], colorMap:SUPPORT_PRIORITY_COLORS, activeArr:activePriorities, toggleFn:'onSupportPriorityToggle'});
 }
 
 /* ── Build task table ────────────────────────────────────── */
@@ -306,15 +315,16 @@ function getFiltered(){
     var _g = (d.Group && d.Group.trim()) ? d.Group.trim() : 'other';
     var okStatus  = activeStatuses.length===0 || activeStatuses.indexOf(d.Status)!==-1;
     var okGroup   = activeGroups.length===0   || activeGroups.indexOf(_g)!==-1;
-    var okPriority= activePriority==='all'    || d.Priority===activePriority;
+    var okPriority= activePriorities.length===0 || activePriorities.indexOf(d.Priority)!==-1;
     var okLabels  = activeLabels.length===0   || activeLabels.some(function(l){
                       return (d.Labels||'').split(';').map(function(x){return x.trim();}).indexOf(l)!==-1;
                     });
+    var okAssignee= activeAssignees.length===0 || activeAssignees.indexOf((d.Assignee||'').trim().split(' ')[0])!==-1;
     var q=searchQ.toLowerCase();
     var okSearch = !q||d.Key.toLowerCase().includes(q)||d.Summary.toLowerCase().includes(q)||
                    (d.Assignee||'').toLowerCase().includes(q);
     var okOverdue = !showOverdueOnly || isOverdue(d.Due, d.Status);
-    return okStatus&&okGroup&&okPriority&&okLabels&&okSearch&&okOverdue;
+    return okStatus&&okGroup&&okPriority&&okLabels&&okAssignee&&okSearch&&okOverdue;
   }).sort(function(a,b){
     /* Date columns: parse to timestamp so "Mar 2026" sorts correctly */
     if(sortCol==='Due'||sortCol==='Created'||sortCol==='Updated'){
@@ -494,21 +504,18 @@ function init(){
   if (el) el.textContent = 'Last updated: '+new Date().toLocaleString('en-GB',{day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
   /* restore DOM state from loaded filters */
   var se=document.getElementById('search'); if(se&&searchQ)se.value=searchQ;
-  var fp=document.getElementById('filter-priority'); if(fp)fp.value=activePriority;
+  /* priority is now checkbox dropdown, no DOM restore needed */
   buildStrip(supportData);
   buildGroupChart(supportData);
   buildAssigneeTable(supportData);
   buildStatusDropdown(supportData);
   buildGroupFilter(supportData);
   buildLabelFilter(supportData);
+  buildAssigneeFilter(supportData);
   buildPriorityDropdown(supportData);
   buildTaskTable(getFiltered());
   buildSupportTrendChart(supportData);
   buildPatterns(supportData);
-}
-function onDropdownChange() {
-  activePriority = document.getElementById('filter-priority') ? document.getElementById('filter-priority').value : 'all';
-  applyFilters();
 }
 
 function _goPage(n) {

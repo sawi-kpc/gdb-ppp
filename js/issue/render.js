@@ -4,11 +4,11 @@
 ══════════════════════════════════════════════════════════════ */
 
 /* ── State ───────────────────────────────────────────────── */
-var _filterStatuses = {};   /* multi-select: {} = show all */
-var _filterPriority = 'all';
-var _filterSeverity = 'all';
-var _filterComp     = [];   /* multi-select array */
-var _filterGroup    = 'all';
+var _filterStatuses   = {};   /* multi-select: {} = show all */
+var _filterPriorities = [];   /* multi-select array */
+var _filterSeverities = [];   /* multi-select array */
+var _filterComp       = [];   /* multi-select array */
+var _filterGroups     = [];   /* multi-select array */
 var _searchQ        = '';
 var _sortCol        = 'FailureOccurs';
 var _sortAsc        = false;   /* desc — newest first */
@@ -21,9 +21,9 @@ var _chartGroupBy   = 'week'; /* 'week' | 'month' */
 var _issueFiltersLoaded = false;
 function _saveIssueFilters(){
   GDB.saveFilters('gdb_filter_issue_list', {
-    _filterStatuses:_filterStatuses, _filterPriority:_filterPriority,
-    _filterSeverity:_filterSeverity, _filterComp:_filterComp,
-    _filterGroup:_filterGroup, _searchQ:_searchQ,
+    _filterStatuses:_filterStatuses, _filterPriorities:_filterPriorities,
+    _filterSeverities:_filterSeverities, _filterComp:_filterComp,
+    _filterGroups:_filterGroups, _searchQ:_searchQ,
     _sortCol:_sortCol, _sortAsc:_sortAsc,
     _activeView:_activeView, _chartGroupBy:_chartGroupBy, _tablePage:_tablePage
   });
@@ -32,10 +32,10 @@ function _loadIssueFilters(){
   if(_issueFiltersLoaded)return; _issueFiltersLoaded=true;
   var f=GDB.loadFilters('gdb_filter_issue_list'); if(!f)return;
   if(f._filterStatuses&&typeof f._filterStatuses==='object') _filterStatuses=f._filterStatuses;
-  if(f._filterPriority) _filterPriority=f._filterPriority;
-  if(f._filterSeverity) _filterSeverity=f._filterSeverity;
-  if(Array.isArray(f._filterComp))  _filterComp=f._filterComp;
-  if(f._filterGroup)    _filterGroup=f._filterGroup;
+  if(Array.isArray(f._filterPriorities)) _filterPriorities=f._filterPriorities;
+  if(Array.isArray(f._filterSeverities)) _filterSeverities=f._filterSeverities;
+  if(Array.isArray(f._filterComp))       _filterComp=f._filterComp;
+  if(Array.isArray(f._filterGroups))     _filterGroups=f._filterGroups;
   if(f._searchQ)        _searchQ=f._searchQ;
   if(f._sortCol)        _sortCol=f._sortCol;
   if(typeof f._sortAsc==='boolean')  _sortAsc=f._sortAsc;
@@ -717,21 +717,9 @@ function populateFilters(data) {
     toggleFn:'onIssueCompToggle'
   });
 
-  function fillSelect(id, values) {
-    var sel = document.getElementById(id);
-    if (!sel) return;
-    var cur = sel.value;
-    while (sel.options.length > 1) sel.remove(1);
-    values.sort().forEach(function(v){
-      var o = document.createElement('option');
-      o.value = o.textContent = v;
-      sel.appendChild(o);
-    });
-    if (cur) sel.value = cur;
-  }
-  fillSelect('filter-priority', priorities);
-  fillSelect('filter-severity', severities);
-  fillSelect('filter-group',    groups);
+  GDB.buildCheckDropdown({wrapperId:'priority-dropdown-wrap', btnLabelId:'priority-btn-label', listId:'priority-checkbox-list', values:priorities.sort(), colorMap:PRIORITY_COLOR, activeArr:_filterPriorities, toggleFn:'onIssuePriorityToggle'});
+  GDB.buildCheckDropdown({wrapperId:'severity-dropdown-wrap', btnLabelId:'severity-btn-label', listId:'severity-checkbox-list', values:severities.sort(), colorMap:SEVERITY_COLOR, activeArr:_filterSeverities, toggleFn:'onIssueSeverityToggle'});
+  GDB.buildCheckDropdown({wrapperId:'group-dropdown-wrap',    btnLabelId:'group-btn-label',    listId:'group-checkbox-list',    values:groups.sort(),     colorMap:null,           activeArr:_filterGroups,     toggleFn:'onIssueGroupToggle'});
 }
 
 /* ── Filter + sort pipeline ──────────────────────────────── */
@@ -750,15 +738,13 @@ function applyFilters() {
     /* multi-select status */
     var activeStatuses = Object.keys(_filterStatuses).filter(function(k){ return _filterStatuses[k]; });
     if (activeStatuses.length > 0 && activeStatuses.indexOf(d.Status) < 0) return false;
-    if (_filterPriority !== 'all' && d.Priority !== _filterPriority) return false;
-    if (_filterSeverity !== 'all' && d.Severity !== _filterSeverity) return false;
+    if (_filterPriorities.length > 0 && _filterPriorities.indexOf(d.Priority) < 0) return false;
+    if (_filterSeverities.length > 0 && _filterSeverities.indexOf(d.Severity) < 0) return false;
     if (_filterComp.length > 0) {
       var comps = (d.Components||'').split(';').map(function(c){return c.trim();});
       if (!_filterComp.some(function(f){ return comps.indexOf(f) >= 0; })) return false;
     }
-    if (_filterGroup !== 'all') {
-      if (_getGroupSafe(d) !== _filterGroup) return false;
-    }
+    if (_filterGroups.length > 0 && _filterGroups.indexOf(_getGroupSafe(d)) < 0) return false;
     if (_searchQ) {
       var q = _searchQ.toLowerCase();
       var hay = ((d.Key||'')+' '+(d.Summary||'')+' '+(d.Assignee||'')+' '+(d.Components||'')).toLowerCase();
@@ -806,12 +792,13 @@ function clearIssueComp() {
   applyFilters();
 }
 
-function onDropdownChange() {
-  _filterPriority = (document.getElementById('filter-priority')||{}).value || 'all';
-  _filterSeverity = (document.getElementById('filter-severity')||{}).value || 'all';
-  _filterGroup    = (document.getElementById('filter-group')||{}).value || 'all';
-  applyFilters();
-}
+function _issueToggle(arr, val) { var i=arr.indexOf(val);if(i>=0)arr.splice(i,1);else arr.push(val); populateFilters(window.issueData||[]); var p=document.getElementById('priority-dropdown-panel');if(p)p.style.display='block'; applyFilters(); }
+function onIssuePriorityToggle(v){ _filterPriorities.indexOf(v)>=0?_filterPriorities.splice(_filterPriorities.indexOf(v),1):_filterPriorities.push(v); populateFilters(window.issueData||[]); var p=document.getElementById('priority-dropdown-panel');if(p)p.style.display='block'; applyFilters(); }
+function onIssueSeverityToggle(v){ _filterSeverities.indexOf(v)>=0?_filterSeverities.splice(_filterSeverities.indexOf(v),1):_filterSeverities.push(v); populateFilters(window.issueData||[]); var p=document.getElementById('severity-dropdown-panel');if(p)p.style.display='block'; applyFilters(); }
+function onIssueGroupToggle(v)   { _filterGroups.indexOf(v)>=0?_filterGroups.splice(_filterGroups.indexOf(v),1):_filterGroups.push(v); populateFilters(window.issueData||[]); var p=document.getElementById('group-dropdown-panel');if(p)p.style.display='block'; applyFilters(); }
+function clearIssuePriority(){ _filterPriorities=[]; var p=document.getElementById('priority-dropdown-panel');if(p)p.style.display='none'; populateFilters(window.issueData||[]); applyFilters(); }
+function clearIssueSeverity(){ _filterSeverities=[]; var p=document.getElementById('severity-dropdown-panel');if(p)p.style.display='none'; populateFilters(window.issueData||[]); applyFilters(); }
+function clearIssueGroup()   { _filterGroups=[]; var p=document.getElementById('group-dropdown-panel');if(p)p.style.display='none'; populateFilters(window.issueData||[]); applyFilters(); }
 
 function sortIssueBy(col) {
   if (_sortCol === col) _sortAsc = !_sortAsc;
@@ -1073,9 +1060,6 @@ function _renderIssues() {
   if (!hasTableEl && hasBoardEl) _activeView = 'board';
   /* restore DOM state from loaded filters */
   var se=document.getElementById('issue-search'); if(se&&_searchQ)se.value=_searchQ;
-  var fp=document.getElementById('filter-priority'); if(fp)fp.value=_filterPriority;
-  var fs=document.getElementById('filter-severity'); if(fs)fs.value=_filterSeverity;
-  var fg=document.getElementById('filter-group'); if(fg)fg.value=_filterGroup;
   var data = window.issueData || [];
   data.forEach(function(d){ d.Status = _normaliseStatus(d.Status); });
   populateFilters(data);

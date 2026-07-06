@@ -52,12 +52,11 @@ var STATUSES = [
   { key:'Investigating', label:'Investigating',  color:'var(--amber)'  },
   { key:'In Progress',   label:'In Progress',    color:'var(--accent)' },
   { key:'Resolved',      label:'Resolved',       color:'var(--teal)'   },
-  { key:'Done',          label:'Done',           color:'var(--up)'     },
+  { key:'Closed',        label:'Closed',         color:'var(--up)'     },
 ];
 
 function _normaliseStatus(s) {
   if (!s) return 'Open';
-  if (s === 'Closed') return 'Done';
   return s;
 }
 
@@ -91,7 +90,7 @@ function _secToH(sec) {
 function statusTag(s) {
   s = _normaliseStatus(s);
   var cls = { Open:'open','In Progress':'in-progress',Investigating:'investigating',
-              Resolved:'resolved',Done:'done' };
+              Resolved:'resolved',Done:'done',Closed:'done' };
   return '<span class="stag '+(cls[s]||'open')+'">'+s+'</span>';
 }
 
@@ -289,10 +288,10 @@ function buildKPI(data) {
   var total    = data.length;
   var open     = data.filter(function(d){ return d.Status === 'Open' || d.Status === 'Investigating'; }).length;
   var inprog   = data.filter(function(d){ return d.Status === 'In Progress'; }).length;
-  var done     = data.filter(function(d){ return d.Status === 'Done' || d.Status === 'Resolved'; }).length;
+  var done     = data.filter(function(d){ return d.Status === 'Closed' || d.Status === 'Resolved'; }).length;
   var critical = data.filter(function(d){ return d.Severity === 'Critical' || d.Priority === 'Highest'; }).length;
   var overdue  = data.filter(function(d){ return isOverdue(d.Due, d.Status); }).length;
-  var unassigned = data.filter(function(d){ return !d.Assignee && d.Status !== 'Done'; }).length;
+  var unassigned = data.filter(function(d){ return !d.Assignee && d.Status !== 'Closed'; }).length;
 
   el.innerHTML =
     kpiCard('TOTAL ISSUES', total, 'all statuses', 'accent') +
@@ -452,13 +451,13 @@ function buildHeatmapChart(data) {
   var el = document.getElementById('chart-priority');
   if (!el) return;
 
-  var STATUS_ORDER = ['Open','Investigating','In Progress','Resolved','Done'];
+  var STATUS_ORDER = ['Open','Investigating','In Progress','Resolved','Closed'];
   var STATUS_COLORS = {
     'Open':          {bg:'rgba(224,120,120,.3)', fg:'#E8A0A0'},
     'Investigating': {bg:'rgba(212,168,80,.3)',  fg:'#D4B870'},
     'In Progress':   {bg:'rgba(107,174,212,.3)', fg:'#88C0E0'},
     'Resolved':      {bg:'rgba(109,191,154,.3)', fg:'#80D0B0'},
-    'Done':          {bg:'rgba(109,191,154,.2)', fg:'#6DBF9A'},
+    'Closed':        {bg:'rgba(109,191,154,.2)', fg:'#6DBF9A'},
   };
 
   /* collect comp × status */
@@ -684,13 +683,14 @@ function buildPerfHeatmap(data) {
 /* ── Shared checkbox-dropdown builder ───────────────────── */
 var STATUS_COLORS = {
   'Open': 'var(--down)', 'Investigating': 'var(--amber)',
-  'In Progress': 'var(--accent)', 'Resolved': 'var(--teal)', 'Done': 'var(--up)'
+  'In Progress': 'var(--accent)', 'Resolved': 'var(--teal)', 'Closed': 'var(--up)',
+  'Closed (Not Archived)': 'var(--up)', 'Closed (Archived)': 'var(--purple)'
 };
 
 /* ── Populate filter dropdowns ───────────────────────────── */
 function populateFilters(data) {
   var priorities = [], severities = [], comps = [], groups = [];
-  var allStatuses = ['Open','Investigating','In Progress','Resolved','Done'];
+  var allStatuses = ['Open','Investigating','In Progress','Resolved','Closed (Not Archived)','Closed (Archived)'];
   data.forEach(function(d) {
     if (d.Priority && priorities.indexOf(d.Priority) < 0) priorities.push(d.Priority);
     if (d.Severity && severities.indexOf(d.Severity) < 0) severities.push(d.Severity);
@@ -765,7 +765,15 @@ function applyFilters() {
   var out = raw.filter(function(d) {
     /* multi-select status */
     var activeStatuses = Object.keys(_filterStatuses).filter(function(k){ return _filterStatuses[k]; });
-    if (activeStatuses.length > 0 && activeStatuses.indexOf(d.Status) < 0) return false;
+    if (activeStatuses.length > 0) {
+      var hasNotArchived = activeStatuses.indexOf('Closed (Not Archived)') >= 0;
+      var hasArchived    = activeStatuses.indexOf('Closed (Archived)') >= 0;
+      var regularStatuses = activeStatuses.filter(function(s){ return s !== 'Closed (Not Archived)' && s !== 'Closed (Archived)'; });
+      var matchesRegular     = regularStatuses.length > 0 && regularStatuses.indexOf(d.Status) >= 0;
+      var matchesNotArchived = hasNotArchived && d.Status === 'Closed' && (!d.FixVersion || d.FixVersion.trim() === '');
+      var matchesArchived    = hasArchived    && d.Status === 'Closed' && d.FixVersion && d.FixVersion.trim() !== '';
+      if (!matchesRegular && !matchesNotArchived && !matchesArchived) return false;
+    }
     if (_filterPriorities.length > 0 && _filterPriorities.indexOf(d.Priority) < 0) return false;
     if (_filterSeverities.length > 0 && _filterSeverities.indexOf(d.Severity) < 0) return false;
     if (_filterComp.length > 0) {
@@ -850,7 +858,7 @@ function switchView(view) {
 }
 
 /* ── Hidden status columns (persisted in memory) ─────────── */
-var _hiddenCols = { 'Done': true };   /* Done hidden by default */
+var _hiddenCols = { 'Closed': true };   /* Closed hidden by default */
 
 function toggleStatusCol(key) {
   _hiddenCols[key] = !_hiddenCols[key];
@@ -923,7 +931,7 @@ function buildCard(d) {
 
   /* ── overdue warning ── */
   var overdueWarn = '';
-  if (overdue && d.Status !== 'Done' && d.Status !== 'Resolved') {
+  if (overdue && d.Status !== 'Closed' && d.Status !== 'Resolved') {
     overdueWarn = '<div class="overdue-warn">'+
       '<span class="ow-icon">⚠</span>'+
       '<div class="ow-body">Overdue since '+dueFmt+'. This issue has passed its due date and requires immediate attention.</div>'+
@@ -939,7 +947,7 @@ function buildCard(d) {
     if (metaParts.length) metaParts.push('<span class="meta-sep">·</span>');
     allComps.forEach(function(c){ metaParts.push('<span class="comp-chip">'+c+'</span>'); });
   }
-  if (dueFmt && d.Status !== 'Done') {
+  if (dueFmt && d.Status !== 'Closed') {
     if (metaParts.length) metaParts.push('<span class="meta-sep">·</span>');
     metaParts.push('<span class="meta-due'+(overdue?' overdue':'')+'">'+dueFmt+'</span>');
   }
@@ -951,12 +959,12 @@ function buildCard(d) {
     : '';
 
   var cls = {Open:'open','In Progress':'in-progress',Investigating:'investigating',
-             Resolved:'resolved',Done:'done'}[d.Status] || 'open';
+             Resolved:'resolved',Done:'done',Closed:'done'}[d.Status] || 'open';
 
   return '<div class="icard '+cls+'">'+
     '<div class="icard-top">'+
       '<span class="ikey"><a href="'+ISSUE_JIRA_BASE+d.Key+'" target="_blank">'+d.Key+' ↗</a></span>'+
-      (!d.Assignee && d.Status !== 'Done' ? '<span class="tag unassigned-tag">Unassigned</span>' : '')+
+      (!d.Assignee && d.Status !== 'Closed' ? '<span class="tag unassigned-tag">Unassigned</span>' : '')+
       '<span class="icard-pri">'+priBadge+'</span>'+
     '</div>'+
     '<div class="isummary">'+d.Summary+'</div>'+
@@ -1036,7 +1044,7 @@ function buildTable(data) {
       } else if (staleWarn) {
         dueCell += '<div class="tbl-warn">⚠ Open &gt;1 week</div>';
       }
-    } else if (staleWarn && d.Status !== 'Done') {
+    } else if (staleWarn && d.Status !== 'Closed') {
       dueCell = '—<div class="tbl-warn">⚠ Open &gt;1 week</div>';
     }
 

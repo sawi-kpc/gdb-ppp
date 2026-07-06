@@ -193,6 +193,7 @@ function getIssues() {
         CorrectionBegins:  _get(raw, ['Failure correction begins', 'Failure correction',
                                       'Custom field (Failure correction begins)']),
         FailureResolved:   _get(raw, ['Failure resolved',   'Custom field (Failure resolved)']),
+        FixVersion:        _get(raw, ['Fix versions', 'Fix version/s', 'Fix Versions', 'Fix Version/s', 'Fix Version', 'Fix version', 'fix versions', 'fix version/s', 'fix version', 'fixVersion', 'fixVersions']),
       };
     });
 
@@ -247,6 +248,7 @@ function getSupports() {
         Due:         _s(_get(raw, ['Due date', 'Due']))   || _s(r[7]),
         Assignee:    assignee,
         Priority:    _s(_get(raw, ['Priority']))          || _s(r[10]),
+        FixVersion:  _s(_get(raw, ['Fix versions', 'Fix version/s', 'Fix Versions', 'Fix Version/s', 'Fix Version', 'Fix version', 'fix versions', 'fix version/s', 'fix version'])),
         TimeSpentSec: _parseSec(tRaw),
       };
     });

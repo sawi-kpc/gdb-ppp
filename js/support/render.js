@@ -155,10 +155,10 @@ function buildAssigneeTable(data){
 }
 
 /* ── Shared dropdown builder ─────────────────────────────── */
-var SUPPORT_STATUS_COLORS = {'To do':'var(--amber)','In Progress':'var(--accent)','Done':'var(--up)'};
+var SUPPORT_STATUS_COLORS = {'To do':'var(--amber)','In Progress':'var(--accent)','Done':'var(--up)','Done (Not Archived)':'var(--up)','Done (Archived)':'var(--purple)'};
 
 function buildStatusDropdown(data) {
-  GDB.buildCheckDropdown({wrapperId:'status-dropdown-wrap', btnLabelId:'status-btn-label', listId:'status-checkbox-list', values:['To do','In Progress','Done'], colorMap:SUPPORT_STATUS_COLORS, activeArr:activeStatuses, toggleFn:'onSupportStatusToggle'});
+  GDB.buildCheckDropdown({wrapperId:'status-dropdown-wrap', btnLabelId:'status-btn-label', listId:'status-checkbox-list', values:['To do','In Progress','Done (Not Archived)','Done (Archived)'], colorMap:SUPPORT_STATUS_COLORS, activeArr:activeStatuses, toggleFn:'onSupportStatusToggle'});
 }
 function buildGroupFilter(data){
   var groups=Array.from(new Set(data.map(function(d){
@@ -331,7 +331,13 @@ function buildPatterns(data){
 function getFiltered(){
   return supportData.filter(function(d){
     var _g = (d.Group && d.Group.trim()) ? d.Group.trim() : 'other';
-    var okStatus  = activeStatuses.length===0 || activeStatuses.indexOf(d.Status)!==-1;
+    var hasNotArchived = activeStatuses.indexOf('Done (Not Archived)') >= 0;
+    var hasArchived    = activeStatuses.indexOf('Done (Archived)') >= 0;
+    var regularStatuses = activeStatuses.filter(function(s){ return s !== 'Done (Not Archived)' && s !== 'Done (Archived)'; });
+    var matchesRegular     = regularStatuses.length > 0 && regularStatuses.indexOf(d.Status) >= 0;
+    var matchesNotArchived = hasNotArchived && d.Status === 'Done' && (!d.FixVersion || d.FixVersion.trim() === '');
+    var matchesArchived    = hasArchived    && d.Status === 'Done' && d.FixVersion && d.FixVersion.trim() !== '';
+    var okStatus = activeStatuses.length === 0 || matchesRegular || matchesNotArchived || matchesArchived;
     var okGroup   = activeGroups.length===0   || activeGroups.indexOf(_g)!==-1;
     var okPriority= activePriorities.length===0 || activePriorities.indexOf(d.Priority)!==-1;
     var okLabels  = activeLabels.length===0   || activeLabels.some(function(l){

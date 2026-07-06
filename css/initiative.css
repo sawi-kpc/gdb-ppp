@@ -189,7 +189,9 @@ table.dt tr:hover td { background: var(--border); }
 .tl-bar-actual-ok{background:var(--up);height:9px;top:24px}
 .tl-bar-actual-del{background:var(--down);height:9px;top:24px}
 .tl-no-date{font-size:9.5px;color:var(--border);font-style:italic;padding-left:8px;display:flex;align-items:center;height:100%}
-.tl-status-col{width:100px;flex-shrink:0;padding:0 0 0 8px;display:flex;align-items:center}
+.tl-status-col{width:100px;flex-shrink:0;padding:0 0 0 8px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:4px}
+.doc-icon-link{display:inline-flex;align-items:center;color:var(--accent);text-decoration:none;opacity:.75}
+.doc-icon-link:hover{opacity:1}
 .tab-dropdown-wrap{position:relative;display:flex;align-items:center}
 .tab-dropdown-wrap:hover .tab-dropdown-menu{display:block}
 .tab-dropdown-menu{display:none;position:absolute;top:100%;left:0;background:var(--text);border-top:2px solid var(--accent);min-width:140px;z-index:100;box-shadow:0 4px 12px rgba(0,0,0,.25)}

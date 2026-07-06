@@ -118,6 +118,8 @@ function getProjects() {
   var projectMap   = {};
   var projectOrder = [];
 
+  var docIdx = headers.indexOf('Document');
+
   data.slice(1).forEach(function(r) {
     var key = _s(r[0]);
     if (!key) return;
@@ -129,6 +131,7 @@ function getProjects() {
         Status:            _s(r[4]),
         RoadmapStatus:     _s(r[5]),
         MonitoringStatus:  _s(r[6]),
+        Document:          docIdx >= 0 ? _s(r[docIdx]) : '',
         initiatives:       []
       };
       projectOrder.push(key);

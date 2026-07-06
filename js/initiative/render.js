@@ -215,7 +215,9 @@ function renderTimeline(data){
     var dLine=(tLine||aLine)?'<div class="tl-date-line">'+[tLine,aLine].filter(Boolean).join('<br>')+'</div>':'';
     var emoji=mon?(isD?'🆘 ':isR?'⚠️ ':isT?'✅ ':''):'';
     var glLabel=glDate?'<span style="font-size:9px;color:var(--purple);font-weight:600;margin-left:6px">◆ Go-live: '+fmtFullDate(glDate)+'</span>':'';
-    return'<div class="tl-row '+rowCls+'"><div class="tl-label"><div class="tl-key-line">'+jiraLink(d.Key)+glLabel+'</div><div class="tl-name" title="'+d.Summary+'">'+emoji+d.Summary+'</div>'+dLine+'</div><div class="tl-track">'+todayColBg+(todayP!==null?'<div class="tl-today-v" style="left:'+todayP.toFixed(2)+'%"></div>':'')+glMarker+' '+(hasPlan||hasActual?planBar+actBar:'<div class="tl-no-date">No date set</div>')+'</div><div class="tl-status-col">'+(mon?monBadge(mon):sPill(d.Status))+'</div></div>';
+    var docUrl=String(d['Document']||'').replace(/^"|"$/g,'').trim();
+    var docLink=docUrl?'<a href="'+docUrl+'" target="_blank" class="doc-icon-link" title="Confluence document"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></a>':'';
+    return'<div class="tl-row '+rowCls+'"><div class="tl-label"><div class="tl-key-line">'+jiraLink(d.Key)+glLabel+'</div><div class="tl-name" title="'+d.Summary+'">'+emoji+d.Summary+'</div>'+dLine+'</div><div class="tl-track">'+todayColBg+(todayP!==null?'<div class="tl-today-v" style="left:'+todayP.toFixed(2)+'%"></div>':'')+glMarker+' '+(hasPlan||hasActual?planBar+actBar:'<div class="tl-no-date">No date set</div>')+'</div><div class="tl-status-col" style="flex-direction:column;align-items:center;justify-content:center;gap:4px">'+docLink+(mon?monBadge(mon):sPill(d.Status))+'</div></div>';
   }).join('');
   var tlInner=document.getElementById('tl-inner');
   var focusHtml='<div style="display:flex;flex-direction:column;justify-content:center;height:100%;padding:4px 10px 4px 0;gap:4px">'+
@@ -1341,9 +1343,14 @@ function _renderListPage() {
           '<td>'+monHtml+'</td>'+
           '<td style="font-size:11px">'+fd(d['Target Project Start'])+'</td>'+
           '<td style="font-size:11px">'+fd(d['Target Project End'])+'</td>'+
+          '<td style="text-align:center">'+
+            (String(d['Document']||'').replace(/^"|"$/g,'').trim()
+              ? '<a href="'+String(d['Document']||'').replace(/^"|"$/g,'').trim()+'" target="_blank" class="doc-icon-link" title="Confluence document"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></a>'
+              : '<span style="color:var(--text3)">—</span>')+
+          '</td>'+
         '</tr>';
       }).join('')
-    :'<tr><td colspan="11" style="text-align:center;color:var(--text3);padding:24px">No initiatives match this filter.</td></tr>';
+    :'<tr><td colspan="12" style="text-align:center;color:var(--text3);padding:24px">No initiatives match this filter.</td></tr>';
 }
 
 function listSortBy(col){

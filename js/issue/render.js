@@ -17,6 +17,7 @@ var _activeView     = 'board';
 var _tablePage      = 1;
 var _tablePageSize  = 20;
 var _chartGroupBy   = 'week'; /* 'week' | 'month' */
+var _hideArchived   = true;   /* hide Closed+FixVersion issues by default */
 
 /* ── Filter state persistence (localStorage) ─────────────── */
 var _issueFiltersLoaded = false;
@@ -26,7 +27,8 @@ function _saveIssueFilters(){
     _filterSeverities:_filterSeverities, _filterComp:_filterComp,
     _filterGroups:_filterGroups, _filterAssignee:_filterAssignee, _searchQ:_searchQ,
     _sortCol:_sortCol, _sortAsc:_sortAsc,
-    _activeView:_activeView, _chartGroupBy:_chartGroupBy, _tablePage:_tablePage
+    _activeView:_activeView, _chartGroupBy:_chartGroupBy, _tablePage:_tablePage,
+    _hideArchived:_hideArchived
   });
 }
 function _loadIssueFilters(){
@@ -44,6 +46,7 @@ function _loadIssueFilters(){
   if(f._activeView)     _activeView=f._activeView;
   if(f._chartGroupBy)   _chartGroupBy=f._chartGroupBy;
   if(f._tablePage>0)    _tablePage=f._tablePage;
+  if(typeof f._hideArchived==='boolean') _hideArchived=f._hideArchived;
 }
 
 /* ── Status board columns ────────────────────────────────── */
@@ -782,6 +785,7 @@ function applyFilters() {
     }
     if (_filterGroups.length > 0 && _filterGroups.indexOf(_getGroupSafe(d)) < 0) return false;
     if (_filterAssignee && (d.Assignee||'').trim().split(' ')[0] !== _filterAssignee) return false;
+    if (_hideArchived && d.Status === 'Closed' && d.FixVersion && d.FixVersion.trim() !== '') return false;
     if (_searchQ) {
       var q = _searchQ.toLowerCase();
       var hay = ((d.Key||'')+' '+(d.Summary||'')+' '+(d.Assignee||'')+' '+(d.Components||'')).toLowerCase();
@@ -801,6 +805,13 @@ function applyFilters() {
   buildCharts(out);
   if (_activeView === 'board') buildBoard(out);
   else                         buildTable(out);
+}
+
+function toggleHideArchived() {
+  _hideArchived = !_hideArchived;
+  var btn = document.getElementById('btn-hide-archived');
+  if (btn) btn.classList.toggle('active', _hideArchived);
+  applyFilters();
 }
 
 function onIssueStatusToggle(v) {
@@ -1097,6 +1108,7 @@ function _renderIssues() {
   if (!hasTableEl && hasBoardEl) _activeView = 'board';
   /* restore DOM state from loaded filters */
   var se=document.getElementById('issue-search'); if(se&&_searchQ)se.value=_searchQ;
+  var btnHA=document.getElementById('btn-hide-archived'); if(btnHA) btnHA.classList.toggle('active',_hideArchived);
   var data = window.issueData || [];
   data.forEach(function(d){ d.Status = _normaliseStatus(d.Status); });
   populateFilters(data);

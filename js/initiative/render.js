@@ -160,10 +160,10 @@ function toggleHideNoDate(){hideNoDate=!hideNoDate;renderSummary();}
 function _monBreakdown(deliveryItems){
   var mon=function(kw){return deliveryItems.filter(function(d){return(d['Project Monitoring Status']||'').toLowerCase().includes(kw);}).length;};
   var onTrack=mon('track'), atRisk=mon('risk'), delayed=mon('delay');
-  return '<span style="display:flex;flex-direction:column;gap:2px;font-size:10px;font-weight:600;line-height:1.4;text-align:left;margin-left:8px">'
-    +'<span style="color:var(--up)">● '+onTrack+' On track</span>'
-    +'<span style="color:var(--amber)">● '+atRisk+' At risk</span>'
-    +'<span style="color:var(--down)">● '+delayed+' Delayed</span>'
+  return '<span style="display:flex;flex-direction:column;gap:1px;font-size:9px;font-weight:700;line-height:1.5;text-align:left;margin-left:6px">'
+    +'<span style="color:var(--up)">● '+onTrack+'</span>'
+    +'<span style="color:var(--amber)">● '+atRisk+'</span>'
+    +'<span style="color:var(--down)">● '+delayed+'</span>'
     +'</span>';
 }
 function buildMetrics(data,id){

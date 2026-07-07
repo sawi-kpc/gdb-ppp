@@ -157,18 +157,34 @@ function toggleNoYearList(btn){showNoYearList=!showNoYearList;btn.classList.togg
 function toggleHideNoDate(){hideNoDate=!hideNoDate;renderSummary();}
 
 /* Metrics */
+function _monBreakdown(deliveryItems){
+  var mon=function(kw){return deliveryItems.filter(function(d){return(d['Project Monitoring Status']||'').toLowerCase().includes(kw);}).length;};
+  var onTrack=mon('track'), atRisk=mon('risk'), delayed=mon('delay');
+  return '<span style="display:flex;flex-direction:column;gap:2px;font-size:10px;font-weight:600;line-height:1.4;text-align:left;margin-left:8px">'
+    +'<span style="color:var(--up)">● '+onTrack+' On track</span>'
+    +'<span style="color:var(--amber)">● '+atRisk+' At risk</span>'
+    +'<span style="color:var(--down)">● '+delayed+' Delayed</span>'
+    +'</span>';
+}
 function buildMetrics(data,id){
   var el=document.getElementById(id); if(!el)return;
   var s=function(st){return data.filter(function(d){return d.Status===st;}).length;};
+  var dlItems=data.filter(function(d){return d.Status==='Delivery';});
+  var dlBrk=_monBreakdown(dlItems);
   el.innerHTML=[
-    {l:'Total',          v:data.length,              s:'All initiatives',       cls:'m-total'},
-    {l:'Parking Lot',    v:s('Parking Lot'),          s:'Backlog / not planned', cls:'m-value'},
-    {l:'Budget Approval',v:s('Budget Approval'),      s:'Awaiting decision',     cls:'m-value'},
-    {l:'Discovery',      v:s('Discovery'),            s:'Preparing, Solution',   cls:'m-value'},
-    {l:'Ready for Delivery',v:s('Ready for Delivery'),s:'Requirement is ready',  cls:'m-value'},
-    {l:'Delivery',       v:s('Delivery'),             s:'In development',        cls:'m-value'},
-    {l:'Done',           v:s('Done'),                 s:'Done this cycle',       cls:'m-value'},
-  ].map(function(m){return'<div class="m-card"><div class="m-label">'+m.l+'</div><div class="'+m.cls+'">'+m.v+'</div><div class="m-sub">'+m.s+'</div></div>';}).join('');
+    {l:'Total',          v:data.length,              s:'All initiatives',       cls:'m-total', extra:''},
+    {l:'Parking Lot',    v:s('Parking Lot'),          s:'Backlog / not planned', cls:'m-value', extra:''},
+    {l:'Budget Approval',v:s('Budget Approval'),      s:'Awaiting decision',     cls:'m-value', extra:''},
+    {l:'Discovery',      v:s('Discovery'),            s:'Preparing, Solution',   cls:'m-value', extra:''},
+    {l:'Ready for Delivery',v:s('Ready for Delivery'),s:'Requirement is ready',  cls:'m-value', extra:''},
+    {l:'Delivery',       v:s('Delivery'),             s:'In development',        cls:'m-value', extra:dlBrk},
+    {l:'Done',           v:s('Done'),                 s:'Done this cycle',       cls:'m-value', extra:''},
+  ].map(function(m){
+    var inner=m.extra
+      ?'<div style="display:flex;align-items:center;justify-content:center"><div class="'+m.cls+'">'+m.v+'</div>'+m.extra+'</div>'
+      :'<div class="'+m.cls+'">'+m.v+'</div>';
+    return'<div class="m-card"><div class="m-label">'+m.l+'</div>'+inner+'<div class="m-sub">'+m.s+'</div></div>';
+  }).join('');
 }
 
 /* Timeline render */
@@ -649,11 +665,13 @@ function buildDashboard(filtered) {
 function _buildKPI(data) {
   var el = document.getElementById('dash-kpi'); if (!el) return;
   var s = function(st){ return data.filter(function(d){ return d.Status===st; }).length; };
-  function mc(label, val, sub, color) {
-    return '<div class="kpi-card">'+
-      '<div class="kpi-label">'+label+'</div>'+
-      '<div class="kpi-value" style="color:'+(color||'var(--accent)')+'">'+val+'</div>'+
-      '<div class="kpi-meta">'+sub+'</div></div>';
+  var dlItems = data.filter(function(d){ return d.Status==='Delivery'; });
+  var dlBrk = _monBreakdown(dlItems);
+  function mc(label, val, sub, color, extra) {
+    var inner = extra
+      ? '<div style="display:flex;align-items:center;justify-content:center"><div class="kpi-value" style="color:'+(color||'var(--accent)')+'">'+val+'</div>'+extra+'</div>'
+      : '<div class="kpi-value" style="color:'+(color||'var(--accent)')+'">'+val+'</div>';
+    return '<div class="kpi-card"><div class="kpi-label">'+label+'</div>'+inner+'<div class="kpi-meta">'+sub+'</div></div>';
   }
   el.innerHTML =
     mc('Total',               data.length,               'All initiatives',       'var(--accent)') +
@@ -661,7 +679,7 @@ function _buildKPI(data) {
     mc('Budget Approval',     s('Budget Approval'),       'Awaiting decision',     'var(--amber)') +
     mc('Discovery',           s('Discovery'),             'Preparing, Solution',   'var(--purple)') +
     mc('Ready for Delivery',  s('Ready for Delivery'),    'Requirement is ready',  'var(--teal)') +
-    mc('Delivery',            s('Delivery'),              'In development',        'var(--accent)') +
+    mc('Delivery',            s('Delivery'),              'In development',        'var(--accent)', dlBrk) +
     mc('Done',                s('Done'),                  'Done this cycle',       'var(--up)');
 }
 

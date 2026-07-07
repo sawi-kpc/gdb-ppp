@@ -172,17 +172,17 @@ function buildMetrics(data,id){
   var dlItems=data.filter(function(d){return d.Status==='Delivery';});
   var dlBrk=_monBreakdown(dlItems);
   el.innerHTML=[
-    {l:'Total',          v:data.length,              s:'All initiatives',       cls:'m-total', extra:''},
-    {l:'Parking Lot',    v:s('Parking Lot'),          s:'Backlog / not planned', cls:'m-value', extra:''},
-    {l:'Budget Approval',v:s('Budget Approval'),      s:'Awaiting decision',     cls:'m-value', extra:''},
-    {l:'Discovery',      v:s('Discovery'),            s:'Preparing, Solution',   cls:'m-value', extra:''},
-    {l:'Ready for Delivery',v:s('Ready for Delivery'),s:'Requirement is ready',  cls:'m-value', extra:''},
-    {l:'Delivery',       v:s('Delivery'),             s:'In development',        cls:'m-value', extra:dlBrk},
-    {l:'Done',           v:s('Done'),                 s:'Done this cycle',       cls:'m-value', extra:''},
+    {l:'Total',             v:data.length,              s:'All initiatives',       c:'var(--accent)',  extra:''},
+    {l:'Parking Lot',       v:s('Parking Lot'),          s:'Backlog / not planned', c:'var(--text3)',   extra:''},
+    {l:'Budget Approval',   v:s('Budget Approval'),      s:'Awaiting decision',     c:'var(--amber)',   extra:''},
+    {l:'Discovery',         v:s('Discovery'),            s:'Preparing, Solution',   c:'var(--purple)',  extra:''},
+    {l:'Ready for Delivery',v:s('Ready for Delivery'),   s:'Requirement is ready',  c:'var(--teal)',    extra:''},
+    {l:'Delivery',          v:s('Delivery'),             s:'In development',        c:'var(--accent)',  extra:dlBrk},
+    {l:'Done',              v:s('Done'),                 s:'Done this cycle',       c:'var(--up)',      extra:''},
   ].map(function(m){
     var inner=m.extra
-      ?'<div style="display:flex;align-items:center;justify-content:center"><div class="'+m.cls+'">'+m.v+'</div>'+m.extra+'</div>'
-      :'<div class="'+m.cls+'">'+m.v+'</div>';
+      ?'<div style="display:flex;align-items:center;justify-content:center"><div class="m-value" style="color:'+m.c+'">'+m.v+'</div>'+m.extra+'</div>'
+      :'<div class="m-value" style="color:'+m.c+'">'+m.v+'</div>';
     return'<div class="m-card"><div class="m-label">'+m.l+'</div>'+inner+'<div class="m-sub">'+m.s+'</div></div>';
   }).join('');
 }
@@ -601,8 +601,10 @@ function _finalScore(d) {
 }
 function _monColor(mon) {
   if (!mon) return 'var(--text3)';
-  if (mon.toLowerCase().includes('delayed') || mon.toLowerCase().includes('at risk')) return 'var(--down)';
-  if (mon.toLowerCase().includes('on track')) return 'var(--up)';
+  var m = mon.toLowerCase();
+  if (m.includes('delay')) return 'var(--down)';
+  if (m.includes('risk'))  return 'var(--amber)';
+  if (m.includes('track')) return 'var(--up)';
   return 'var(--accent)';
 }
 function _initials(name) {
@@ -650,6 +652,7 @@ function _makePanelCollapsible(panelId, defaultCollapsed) {
 
 function buildDashboard(filtered) {
   _buildKPI(filtered);
+  _buildPlatformMatrix(filtered);
   _buildPipeline(filtered);
   _buildHealthMatrix(filtered);
   _buildScatter(filtered);
@@ -669,9 +672,9 @@ function _buildKPI(data) {
   var dlBrk = _monBreakdown(dlItems);
   function mc(label, val, sub, color, extra) {
     var inner = extra
-      ? '<div style="display:flex;align-items:center;justify-content:center"><div class="kpi-value" style="color:'+(color||'var(--accent)')+'">'+val+'</div>'+extra+'</div>'
-      : '<div class="kpi-value" style="color:'+(color||'var(--accent)')+'">'+val+'</div>';
-    return '<div class="kpi-card"><div class="kpi-label">'+label+'</div>'+inner+'<div class="kpi-meta">'+sub+'</div></div>';
+      ? '<div style="display:flex;align-items:center;justify-content:center"><div class="m-value" style="color:'+(color||'var(--accent)')+'">'+val+'</div>'+extra+'</div>'
+      : '<div class="m-value" style="color:'+(color||'var(--accent)')+'">'+val+'</div>';
+    return '<div class="m-card"><div class="m-label">'+label+'</div>'+inner+'<div class="m-sub">'+sub+'</div></div>';
   }
   el.innerHTML =
     mc('Total',               data.length,               'All initiatives',       'var(--accent)') +
@@ -681,6 +684,94 @@ function _buildKPI(data) {
     mc('Ready for Delivery',  s('Ready for Delivery'),    'Requirement is ready',  'var(--teal)') +
     mc('Delivery',            s('Delivery'),              'In development',        'var(--accent)', dlBrk) +
     mc('Done',                s('Done'),                  'Done this cycle',       'var(--up)');
+}
+
+/* ── Platform × Status Matrix ── */
+function _buildPlatformMatrix(data) {
+  var el = document.getElementById('dash-platform-matrix'); if (!el) return;
+
+  var STATUS_COLS = ['Parking Lot','Budget Approval','Discovery','Ready for Delivery','Delivery','Done'];
+  var ST_COLOR = {
+    'Parking Lot':        'var(--text3)',
+    'Budget Approval':    'var(--amber)',
+    'Discovery':          'var(--purple)',
+    'Ready for Delivery': 'var(--teal)',
+    'Delivery':           'var(--accent)',
+    'Done':               'var(--up)'
+  };
+  var ST_BG = {
+    'Parking Lot':        'rgba(158,152,144,.15)',
+    'Budget Approval':    'rgba(212,168,80,.15)',
+    'Discovery':          'rgba(155,143,224,.15)',
+    'Ready for Delivery': 'rgba(34,211,164,.15)',
+    'Delivery':           'rgba(88,166,255,.15)',
+    'Done':               'rgba(63,185,80,.15)'
+  };
+  var SHORT = { 'Ready for Delivery':'RFD', 'Budget Approval':'Budget', 'Parking Lot':'Parking' };
+
+  /* Collect platforms */
+  var platSet = {};
+  data.forEach(function(d) {
+    (d['Components']||'').split(';').forEach(function(c) {
+      c = c.trim();
+      if (c && c.toLowerCase() !== 'new-or-undefined') platSet[c] = true;
+    });
+  });
+  var platforms = Object.keys(platSet);
+  if (!platforms.length) { el.innerHTML = ''; return; }
+
+  /* Count matrix: platform → status → count */
+  var mx = {};
+  platforms.forEach(function(p) { mx[p] = {}; });
+  data.forEach(function(d) {
+    if (STATUS_COLS.indexOf(d.Status) < 0) return;
+    (d['Components']||'').split(';').forEach(function(c) {
+      c = c.trim();
+      if (c && mx[c]) mx[c][d.Status] = (mx[c][d.Status]||0) + 1;
+    });
+  });
+
+  /* Sort platforms by total desc */
+  platforms.sort(function(a, b) {
+    var ta = STATUS_COLS.reduce(function(s,st){ return s+(mx[a][st]||0); }, 0);
+    var tb = STATUS_COLS.reduce(function(s,st){ return s+(mx[b][st]||0); }, 0);
+    return tb - ta;
+  });
+
+  var thS = 'text-align:center;font-size:10px;font-weight:600;padding:6px 8px;border-bottom:1px solid var(--border);white-space:nowrap';
+  var thead = '<tr>'+
+    '<th style="text-align:left;font-size:10px;font-weight:600;color:var(--text3);padding:6px 8px;border-bottom:1px solid var(--border)">Platform</th>'+
+    STATUS_COLS.map(function(s){ return '<th style="'+thS+';color:'+ST_COLOR[s]+'">'+(SHORT[s]||s)+'</th>'; }).join('')+
+    '<th style="'+thS+';color:var(--text2)">Total</th>'+
+    '</tr>';
+
+  var tbody = platforms.map(function(p) {
+    var total = STATUS_COLS.reduce(function(s,st){ return s+(mx[p][st]||0); }, 0);
+    var cells = STATUS_COLS.map(function(st) {
+      var v = mx[p][st]||0;
+      var cellStyle = v
+        ? 'font-weight:600;color:'+ST_COLOR[st]+';background:'+ST_BG[st]+';border-radius:4px'
+        : 'color:var(--text3)';
+      return '<td style="text-align:center;padding:6px 8px;font-size:12px;'+cellStyle+'">'+(v||'—')+'</td>';
+    }).join('');
+    return '<tr style="border-bottom:1px solid var(--border)">'+
+      '<td style="font-size:11px;font-weight:500;color:var(--text2);padding:6px 8px;white-space:nowrap">'+p+'</td>'+
+      cells+
+      '<td style="text-align:center;padding:6px 8px;font-size:12px;font-weight:700;color:var(--text)">'+total+'</td>'+
+      '</tr>';
+  }).join('');
+
+  el.innerHTML =
+    '<div class="panel-head"><div>'+
+      '<div class="panel-title">By platform</div>'+
+      '<div class="panel-sub">Initiative count per platform × lifecycle status</div>'+
+    '</div></div>'+
+    '<div class="panel-body"><div class="tbl-scroll">'+
+      '<table style="width:100%;border-collapse:collapse">'+
+        '<thead>'+thead+'</thead><tbody>'+tbody+'</tbody>'+
+      '</table>'+
+    '</div></div>';
+  _makePanelCollapsible('dash-platform-matrix');
 }
 
 /* ── Section 2A: Unified Delivery & Action panel ── */
@@ -716,13 +807,13 @@ function _buildPipeline(data) {
     return null;
   }
 
-  /* Sort: delayed → missing-comp → at-risk → budget → ready → on-track */
+  /* Sort: budget approval → delivery delayed → delivery at risk → delivery on track → ready for delivery */
   function _sortOrder(d) {
-    if (_missingComp(d)) return 0;
+    if (d.Status === 'Budget Approval') return 0;
     var mon = (d['Project Monitoring Status'] || '').toLowerCase();
-    if (mon.includes('delay')) return 1;
-    if (mon.includes('risk'))  return 2;
-    if (d.Status === 'Budget Approval')    return 3;
+    if (d.Status === 'Delivery' && mon.includes('delay')) return 1;
+    if (d.Status === 'Delivery' && mon.includes('risk'))  return 2;
+    if (d.Status === 'Delivery') return 3;
     if (d.Status === 'Ready for Delivery') return 4;
     return 5;
   }

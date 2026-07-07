@@ -4,7 +4,7 @@
 ══════════════════════════════════════════════ */
 
 var charts={};
-var sumYearFilter=['ROADMAP_2026'],initYearFilter=['all'],showNoYear=false,showNoYearTl=false,showNoYearList=false,sumStageFilter=[],hideNoDate=false,sumSearchQuery='';
+var sumYearFilter=['ROADMAP_2026'],initYearFilter=['all'],sumStageFilter=[],hideNoDate=false,sumSearchQuery='';
 var sumRoadmapFilter=[];
 var listYearFilter=['ROADMAP_2026'];
 var listAssigneeFilter='all';
@@ -49,14 +49,13 @@ function _saveListFilters(){
     listPMRoleFilter:listPMRoleFilter,
     listAssigneeFilter:listAssigneeFilter, listSearchQuery:listSearchQuery,
     _listSortCol:_listSortCol, _listSortAsc:_listSortAsc, _listPage:_listPage,
-    listHideWontDo:listHideWontDo, showNoYearList:showNoYearList
+    listHideWontDo:listHideWontDo
   });
 }
 function _loadListFilters(){
   if(_filtersLoadedList)return; _filtersLoadedList=true;
   var f=GDB.loadFilters('gdb_filter_initiative_list'); if(!f)return;
   if(Array.isArray(f.listYearFilter)&&f.listYearFilter.length) listYearFilter=f.listYearFilter;
-  if(typeof f.showNoYearList==='boolean') showNoYearList=f.showNoYearList;
   if(Array.isArray(f.listStatusFilter))    listStatusFilter=f.listStatusFilter;
   if(Array.isArray(f.listRoadmapFilter))   listRoadmapFilter=f.listRoadmapFilter;
   if(Array.isArray(f.listComponentFilter)) listComponentFilter=f.listComponentFilter;
@@ -73,7 +72,7 @@ function _saveSumFilters(){
     sumYearFilter:sumYearFilter, sumStageFilter:sumStageFilter,
     sumRoadmapFilter:sumRoadmapFilter, sumComponentFilter:sumComponentFilter,
     sumPMRoleFilter:sumPMRoleFilter,
-    sumSearchQuery:sumSearchQuery, hideNoDate:hideNoDate, showNoYearTl:showNoYearTl,
+    sumSearchQuery:sumSearchQuery, hideNoDate:hideNoDate,
     _tlStart:_tlStart, _tlEnd:_tlEnd
   });
 }
@@ -81,7 +80,6 @@ function _loadSumFilters(){
   if(_filtersLoadedSum)return; _filtersLoadedSum=true;
   var f=GDB.loadFilters('gdb_filter_initiative_timeline'); if(!f)return;
   if(Array.isArray(f.sumYearFilter)&&f.sumYearFilter.length) sumYearFilter=f.sumYearFilter;
-  if(typeof f.showNoYearTl==='boolean') showNoYearTl=f.showNoYearTl;
   if(Array.isArray(f.sumStageFilter))     sumStageFilter=f.sumStageFilter;
   if(Array.isArray(f.sumRoadmapFilter))   sumRoadmapFilter=f.sumRoadmapFilter;
   if(Array.isArray(f.sumComponentFilter)) sumComponentFilter=f.sumComponentFilter;
@@ -148,12 +146,25 @@ function countBy(arr,key){return arr.reduce(function(a,d){var v=d[key]||'(none)'
 /* Year filter */
 function getYears(){var s=new Set();allData.forEach(function(d){(d['Roadmap Year Plan']||'').split(';').forEach(function(y){if(y.trim())s.add(y.trim());});});return['all'].concat(Array.from(s).sort());}
 function renderYF(id,arr,cb){var _el=document.getElementById(id);if(!_el)return;_el.innerHTML=getYears().map(function(y){return'<button class="fb-btn '+(arr.includes(y)?'active':'')+'" onclick="('+cb.toString()+')(this,\''+y+'\')">'+( y==='all'?'All years':y.replace('ROADMAP_',''))+'</button>';}).join('');}
-function toggleYF(arr,val){if(val==='all')return['all'];var w=arr.filter(function(x){return x!=='all';});var i=w.indexOf(val);if(i>=0){w.splice(i,1);return w.length===0?['all']:w;}return w.concat([val]);}
-function filterYear(data,arr){if(arr.includes('all'))return data;return data.filter(function(d){var ys=(d['Roadmap Year Plan']||'').split(';').map(function(x){return x.trim();});return arr.some(function(y){return ys.includes(y);});});}
-function filterNoYear(data){return data.filter(function(d){return!(d['Roadmap Year Plan']||'').trim();});}
-function toggleNoYear(btn){showNoYear=!showNoYear;btn.classList.toggle('active',showNoYear);renderInitiatives();}
-function toggleNoYearTl(btn){showNoYearTl=!showNoYearTl;btn.classList.toggle('active',showNoYearTl);renderSummary();}
-function toggleNoYearList(btn){showNoYearList=!showNoYearList;btn.classList.toggle('active',showNoYearList);renderList();}
+function toggleYF(arr,val){
+  if(val==='all')return['all'];
+  var w=arr.filter(function(x){return x!=='all';});
+  var i=w.indexOf(val);
+  if(i>=0){w.splice(i,1);return w.length===0?['all']:w;}
+  return w.concat([val]);
+}
+function filterYear(data,arr){
+  if(arr.includes('all'))return data;
+  return data.filter(function(d){
+    var ys=(d['Roadmap Year Plan']||'').split(';').map(function(x){return x.trim();}).filter(Boolean);
+    if(arr.includes('NO_YEAR')&&ys.length===0)return true;
+    return arr.some(function(y){return y!=='NO_YEAR'&&ys.includes(y);});
+  });
+}
+function _syncNoYearBtn(id,arr){var b=document.getElementById(id);if(b)b.classList.toggle('active',arr.includes('NO_YEAR'));}
+function toggleNoYear(btn){initYearFilter=toggleYF(initYearFilter,'NO_YEAR');_syncNoYearBtn('btn-no-year',initYearFilter);renderInitiatives();}
+function toggleNoYearTl(btn){sumYearFilter=toggleYF(sumYearFilter,'NO_YEAR');_syncNoYearBtn('btn-no-year-tl',sumYearFilter);renderSummary();}
+function toggleNoYearList(btn){listYearFilter=toggleYF(listYearFilter,'NO_YEAR');_syncNoYearBtn('btn-no-year-list',listYearFilter);renderList();}
 function toggleHideNoDate(){hideNoDate=!hideNoDate;renderSummary();}
 
 /* Metrics */
@@ -371,9 +382,9 @@ function renderSummary(){
   _loadSumFilters();
   _saveSumFilters();
   /* hideNoDate button is rendered inline in tl-status-head — no separate sync needed */
-  var filtered=(showNoYearTl?filterNoYear(allData):filterYear(allData,sumYearFilter)).filter(function(d){return(d['Roadmap Status']||'')!=="Won't do";});
-  renderYF('yf-sum',sumYearFilter,function(btn,val){sumYearFilter=toggleYF(sumYearFilter,val);showNoYearTl=false;var b=document.getElementById('btn-no-year-tl');if(b)b.classList.remove('active');renderSummary();});
-  var _bnyTl=document.getElementById('btn-no-year-tl');if(_bnyTl)_bnyTl.classList.toggle('active',showNoYearTl);
+  var filtered=filterYear(allData,sumYearFilter).filter(function(d){return(d['Roadmap Status']||'')!=="Won't do";});
+  renderYF('yf-sum',sumYearFilter,function(btn,val){sumYearFilter=toggleYF(sumYearFilter,val);_syncNoYearBtn('btn-no-year-tl',sumYearFilter);renderSummary();});
+  _syncNoYearBtn('btn-no-year-tl',sumYearFilter);
 
   /* Stage dropdown */
   GDB.buildCheckDropdown({wrapperId:'stage-dropdown-wrap', btnLabelId:'stage-btn-label', listId:'stage-checkbox-list', values:STAGES, activeArr:sumStageFilter, colorMap:SC, toggleFn:'onSumStageToggle'});
@@ -1287,8 +1298,9 @@ function _buildAssigneeCompact(data) {
 
 /* Render initiatives */
 function renderInitiatives(){
-  var filtered=(showNoYear?filterNoYear(allData):filterYear(allData,initYearFilter)).filter(function(d){return(d['Roadmap Status']||'')!=="Won't do";});
-  renderYF('yf-init',initYearFilter,function(btn,val){initYearFilter=toggleYF(initYearFilter,val);showNoYear=false;document.getElementById('btn-no-year').classList.remove('active');renderInitiatives();});
+  var filtered=filterYear(allData,initYearFilter).filter(function(d){return(d['Roadmap Status']||'')!=="Won't do";});
+  renderYF('yf-init',initYearFilter,function(btn,val){initYearFilter=toggleYF(initYearFilter,val);_syncNoYearBtn('btn-no-year',initYearFilter);renderInitiatives();});
+  _syncNoYearBtn('btn-no-year',initYearFilter);
   buildDashboard(filtered);
 }
 
@@ -1300,11 +1312,10 @@ function renderList(){
   /* Year filter */
   renderYF('yf-list',listYearFilter,function(btn,val){
     listYearFilter=toggleYF(listYearFilter,val);
-    showNoYearList=false;
-    var b=document.getElementById('btn-no-year-list');if(b)b.classList.remove('active');
+    _syncNoYearBtn('btn-no-year-list',listYearFilter);
     renderList();
   });
-  var _bnyList=document.getElementById('btn-no-year-list');if(_bnyList)_bnyList.classList.toggle('active',showNoYearList);
+  _syncNoYearBtn('btn-no-year-list',listYearFilter);
 
   /* Assignee dropdown — collect unique names (primary + 2nd) */
   var allAssignees=new Set();
@@ -1384,7 +1395,7 @@ function renderList(){
   if(searchEl&&searchEl.value!==listSearchQuery)searchEl.value=listSearchQuery;
 
   /* Filter data */
-  var filtered=showNoYearList?filterNoYear(allData):filterYear(allData,listYearFilter);
+  var filtered=filterYear(allData,listYearFilter);
   if(listStatusFilter.length>0){
     filtered=filtered.filter(function(d){ return listStatusFilter.indexOf(d.Status||'')>=0; });
   }

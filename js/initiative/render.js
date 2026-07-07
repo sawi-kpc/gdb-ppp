@@ -4,7 +4,7 @@
 ══════════════════════════════════════════════ */
 
 var charts={};
-var sumYearFilter=['ROADMAP_2026'],initYearFilter=['all'],showNoYear=false,sumStageFilter=[],hideNoDate=false,sumSearchQuery='';
+var sumYearFilter=['ROADMAP_2026'],initYearFilter=['all'],showNoYear=false,showNoYearTl=false,showNoYearList=false,sumStageFilter=[],hideNoDate=false,sumSearchQuery='';
 var sumRoadmapFilter=[];
 var listYearFilter=['ROADMAP_2026'];
 var listAssigneeFilter='all';
@@ -49,13 +49,14 @@ function _saveListFilters(){
     listPMRoleFilter:listPMRoleFilter,
     listAssigneeFilter:listAssigneeFilter, listSearchQuery:listSearchQuery,
     _listSortCol:_listSortCol, _listSortAsc:_listSortAsc, _listPage:_listPage,
-    listHideWontDo:listHideWontDo
+    listHideWontDo:listHideWontDo, showNoYearList:showNoYearList
   });
 }
 function _loadListFilters(){
   if(_filtersLoadedList)return; _filtersLoadedList=true;
   var f=GDB.loadFilters('gdb_filter_initiative_list'); if(!f)return;
   if(Array.isArray(f.listYearFilter)&&f.listYearFilter.length) listYearFilter=f.listYearFilter;
+  if(typeof f.showNoYearList==='boolean') showNoYearList=f.showNoYearList;
   if(Array.isArray(f.listStatusFilter))    listStatusFilter=f.listStatusFilter;
   if(Array.isArray(f.listRoadmapFilter))   listRoadmapFilter=f.listRoadmapFilter;
   if(Array.isArray(f.listComponentFilter)) listComponentFilter=f.listComponentFilter;
@@ -72,7 +73,7 @@ function _saveSumFilters(){
     sumYearFilter:sumYearFilter, sumStageFilter:sumStageFilter,
     sumRoadmapFilter:sumRoadmapFilter, sumComponentFilter:sumComponentFilter,
     sumPMRoleFilter:sumPMRoleFilter,
-    sumSearchQuery:sumSearchQuery, hideNoDate:hideNoDate,
+    sumSearchQuery:sumSearchQuery, hideNoDate:hideNoDate, showNoYearTl:showNoYearTl,
     _tlStart:_tlStart, _tlEnd:_tlEnd
   });
 }
@@ -80,6 +81,7 @@ function _loadSumFilters(){
   if(_filtersLoadedSum)return; _filtersLoadedSum=true;
   var f=GDB.loadFilters('gdb_filter_initiative_timeline'); if(!f)return;
   if(Array.isArray(f.sumYearFilter)&&f.sumYearFilter.length) sumYearFilter=f.sumYearFilter;
+  if(typeof f.showNoYearTl==='boolean') showNoYearTl=f.showNoYearTl;
   if(Array.isArray(f.sumStageFilter))     sumStageFilter=f.sumStageFilter;
   if(Array.isArray(f.sumRoadmapFilter))   sumRoadmapFilter=f.sumRoadmapFilter;
   if(Array.isArray(f.sumComponentFilter)) sumComponentFilter=f.sumComponentFilter;
@@ -150,28 +152,23 @@ function toggleYF(arr,val){if(val==='all')return['all'];var w=arr.filter(functio
 function filterYear(data,arr){if(arr.includes('all'))return data;return data.filter(function(d){var ys=(d['Roadmap Year Plan']||'').split(';').map(function(x){return x.trim();});return arr.some(function(y){return ys.includes(y);});});}
 function filterNoYear(data){return data.filter(function(d){return!(d['Roadmap Year Plan']||'').trim();});}
 function toggleNoYear(btn){showNoYear=!showNoYear;btn.classList.toggle('active',showNoYear);renderInitiatives();}
+function toggleNoYearTl(btn){showNoYearTl=!showNoYearTl;btn.classList.toggle('active',showNoYearTl);renderSummary();}
+function toggleNoYearList(btn){showNoYearList=!showNoYearList;btn.classList.toggle('active',showNoYearList);renderList();}
 function toggleHideNoDate(){hideNoDate=!hideNoDate;renderSummary();}
 
 /* Metrics */
 function buildMetrics(data,id){
-  var dv=data.filter(function(d){return d.Status==='Delivery';}).length;
-  var dl=data.filter(function(d){return(d['Project Monitoring Status']||'').toLowerCase().includes('delay');}).length;
-  var ar=data.filter(function(d){return(d['Project Monitoring Status']||'').toLowerCase().includes('risk');}).length;
-  var pl=data.filter(function(d){return d.Status==='Discovery'||d.Status==='Ready for Delivery';}).length;
-  var bg=data.filter(function(d){return d.Status==='Budget Approval';}).length;
-  var dn=data.filter(function(d){return d.Status==='Done';}).length;
-  var pk=data.filter(function(d){return d.Status==='Parking Lot';}).length;
-  var el=document.getElementById(id);
-  if(!el)return;
+  var el=document.getElementById(id); if(!el)return;
+  var s=function(st){return data.filter(function(d){return d.Status===st;}).length;};
   el.innerHTML=[
-    {l:'Total',v:data.length,s:'All initiatives',cls:'m-total'},
-    {l:'Active delivery',v:dv,s:'In delivery now',cls:'m-info'},
-    {l:'Needs attention',v:dl+ar,s:'Delayed or at risk',cls:'m-danger'},
-    {l:'In pipeline',v:pl,s:'Discovery / RFD',cls:'m-purple'},
-    {l:'Budget approval',v:bg,s:'Awaiting decision',cls:'m-danger'},
-    {l:'Completed',v:dn,s:'Done this cycle',cls:'m-green'},
-    {l:'Parking lot',v:pk,s:'Backlog / not planned',cls:'m-gray'},
-  ].map(function(m){return'<div class="m-card '+m.cls+'"><div class="m-label">'+m.l+'</div><div class="m-value">'+m.v+'</div><div class="m-sub">'+m.s+'</div></div>';}).join('');
+    {l:'Total',          v:data.length,              s:'All initiatives',       cls:'m-total'},
+    {l:'Parking Lot',    v:s('Parking Lot'),          s:'Backlog / not planned', cls:'m-value'},
+    {l:'Budget Approval',v:s('Budget Approval'),      s:'Awaiting decision',     cls:'m-value'},
+    {l:'Discovery',      v:s('Discovery'),            s:'Preparing, Solution',   cls:'m-value'},
+    {l:'Ready for Delivery',v:s('Ready for Delivery'),s:'Requirement is ready',  cls:'m-value'},
+    {l:'Delivery',       v:s('Delivery'),             s:'In development',        cls:'m-value'},
+    {l:'Done',           v:s('Done'),                 s:'Done this cycle',       cls:'m-value'},
+  ].map(function(m){return'<div class="m-card"><div class="m-label">'+m.l+'</div><div class="'+m.cls+'">'+m.v+'</div><div class="m-sub">'+m.s+'</div></div>';}).join('');
 }
 
 /* Timeline render */
@@ -345,8 +342,9 @@ function renderSummary(){
   _loadSumFilters();
   _saveSumFilters();
   /* hideNoDate button is rendered inline in tl-status-head — no separate sync needed */
-  var filtered=filterYear(allData,sumYearFilter).filter(function(d){return(d['Roadmap Status']||'')!=="Won't do";});
-  renderYF('yf-sum',sumYearFilter,function(btn,val){sumYearFilter=toggleYF(sumYearFilter,val);renderSummary();});
+  var filtered=(showNoYearTl?filterNoYear(allData):filterYear(allData,sumYearFilter)).filter(function(d){return(d['Roadmap Status']||'')!=="Won't do";});
+  renderYF('yf-sum',sumYearFilter,function(btn,val){sumYearFilter=toggleYF(sumYearFilter,val);showNoYearTl=false;var b=document.getElementById('btn-no-year-tl');if(b)b.classList.remove('active');renderSummary();});
+  var _bnyTl=document.getElementById('btn-no-year-tl');if(_bnyTl)_bnyTl.classList.toggle('active',showNoYearTl);
 
   /* Stage dropdown */
   GDB.buildCheckDropdown({wrapperId:'stage-dropdown-wrap', btnLabelId:'stage-btn-label', listId:'stage-checkbox-list', values:STAGES, activeArr:sumStageFilter, colorMap:SC, toggleFn:'onSumStageToggle'});
@@ -650,32 +648,21 @@ function buildDashboard(filtered) {
 /* ── Section 1: KPI Strip ── */
 function _buildKPI(data) {
   var el = document.getElementById('dash-kpi'); if (!el) return;
-  var total    = data.length;
-  var active   = data.filter(function(d){ return d.Status === 'Delivery'; }).length;
-  var attn     = data.filter(function(d){ var m = (d['Project Monitoring Status']||'').toLowerCase(); return m.includes('delayed') || m.includes('at risk'); }).length;
-  var pipeline = data.filter(function(d){ return d.Status === 'Discovery' || d.Status === 'Ready for Delivery'; }).length;
-  var budget   = data.filter(function(d){ return d.Status === 'Budget Approval'; }).length;
-  var done     = data.filter(function(d){ return d.Status === 'Done'; }).length;
-  var parking  = data.filter(function(d){ return d.Status === 'Parking Lot'; }).length;
+  var s = function(st){ return data.filter(function(d){ return d.Status===st; }).length; };
   function mc(label, val, sub, color) {
-    var clsMap = {'var(--accent)':'accent','var(--up)':'green','var(--purple)':'purple','var(--amber)':'orange'};
-    var cardCls = clsMap[color] || '';
-    var topStyle = color === 'var(--teal)' ? 'border-top-color:var(--teal);' :
-                   color === 'var(--down)' ? 'border-top-color:var(--down);' :
-                   color === 'var(--text3)' ? '' : '';
-    return '<div class="kpi-card '+cardCls+'" style="'+topStyle+'">'+
+    return '<div class="kpi-card">'+
       '<div class="kpi-label">'+label+'</div>'+
       '<div class="kpi-value" style="color:'+(color||'var(--accent)')+'">'+val+'</div>'+
       '<div class="kpi-meta">'+sub+'</div></div>';
   }
   el.innerHTML =
-    mc('Total', total, 'All initiatives', 'var(--accent)') +
-    mc('Active delivery', active, 'In delivery now', 'var(--teal)') +
-    mc('Needs attention', attn, 'Delayed / at risk', attn > 0 ? 'var(--down)' : 'var(--text3)') +
-    mc('In pipeline', pipeline, 'Discovery / RFD', 'var(--purple)') +
-    mc('Budget approval', budget, 'Awaiting decision', 'var(--amber)') +
-    mc('Completed', done, 'Done this cycle', 'var(--up)') +
-    mc('Parking lot', parking, 'Backlog / not planned', 'var(--text3)');
+    mc('Total',               data.length,               'All initiatives',       'var(--accent)') +
+    mc('Parking Lot',         s('Parking Lot'),           'Backlog / not planned', 'var(--text3)') +
+    mc('Budget Approval',     s('Budget Approval'),       'Awaiting decision',     'var(--amber)') +
+    mc('Discovery',           s('Discovery'),             'Preparing, Solution',   'var(--purple)') +
+    mc('Ready for Delivery',  s('Ready for Delivery'),    'Requirement is ready',  'var(--teal)') +
+    mc('Delivery',            s('Delivery'),              'In development',        'var(--accent)') +
+    mc('Done',                s('Done'),                  'Done this cycle',       'var(--up)');
 }
 
 /* ── Section 2A: Unified Delivery & Action panel ── */
@@ -1120,8 +1107,11 @@ function renderList(){
   /* Year filter */
   renderYF('yf-list',listYearFilter,function(btn,val){
     listYearFilter=toggleYF(listYearFilter,val);
+    showNoYearList=false;
+    var b=document.getElementById('btn-no-year-list');if(b)b.classList.remove('active');
     renderList();
   });
+  var _bnyList=document.getElementById('btn-no-year-list');if(_bnyList)_bnyList.classList.toggle('active',showNoYearList);
 
   /* Assignee dropdown — collect unique names (primary + 2nd) */
   var allAssignees=new Set();
@@ -1202,7 +1192,7 @@ function renderList(){
   if(searchEl&&searchEl.value!==listSearchQuery)searchEl.value=listSearchQuery;
 
   /* Filter data */
-  var filtered=filterYear(allData,listYearFilter);
+  var filtered=showNoYearList?filterNoYear(allData):filterYear(allData,listYearFilter);
   if(listStatusFilter.length>0){
     filtered=filtered.filter(function(d){ return listStatusFilter.indexOf(d.Status||'')>=0; });
   }

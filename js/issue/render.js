@@ -690,6 +690,19 @@ var STATUS_COLORS = {
   'Closed (Not Archived)': 'var(--up)', 'Closed (Archived)': 'var(--purple)'
 };
 
+/* ── Platform order + component sort helper ─────────────── */
+var _PLT_ORDER = [
+  'kingpower-commerce-th','kingpower-commerce-cn','taihaitao-commerce-cn',
+  'jd-phamacy-marketplace-cn','kingpower-douyin-social-commerce',
+  'firster-commerce','firster-tiktok-social-commerce',
+  'new-or-undefined','manual-operations'
+];
+function _sortCompVals(vals) {
+  var ordered = _PLT_ORDER.filter(function(p){ return vals.indexOf(p) >= 0; });
+  var rest = vals.filter(function(v){ return _PLT_ORDER.indexOf(v) < 0; }).sort();
+  return ordered.concat(rest).concat(['(missing component)']);
+}
+
 /* ── Populate filter dropdowns ───────────────────────────── */
 function populateFilters(data) {
   var priorities = [], severities = [], comps = [], groups = [];
@@ -714,10 +727,9 @@ function populateFilters(data) {
   });
 
   /* Component checkbox dropdown */
-  comps.sort();
   GDB.buildCheckDropdown({
     wrapperId:'comp-dropdown-wrap', btnLabelId:'comp-btn-label',
-    listId:'comp-checkbox-list', values:comps,
+    listId:'comp-checkbox-list', values:_sortCompVals(comps),
     colorMap:null, isChecked:function(v){ return _filterComp.indexOf(v) >= 0; },
     toggleFn:'onIssueCompToggle'
   });
@@ -780,8 +792,10 @@ function applyFilters() {
     if (_filterPriorities.length > 0 && _filterPriorities.indexOf(d.Priority) < 0) return false;
     if (_filterSeverities.length > 0 && _filterSeverities.indexOf(d.Severity) < 0) return false;
     if (_filterComp.length > 0) {
-      var comps = (d.Components||'').split(';').map(function(c){return c.trim();});
-      if (!_filterComp.some(function(f){ return comps.indexOf(f) >= 0; })) return false;
+      var comps = (d.Components||'').split(';').map(function(c){return c.trim();}).filter(Boolean);
+      var hasMissing = _filterComp.indexOf('(missing component)') >= 0;
+      var regular = _filterComp.filter(function(f){ return f !== '(missing component)'; });
+      if (!((hasMissing && comps.length === 0) || regular.some(function(f){ return comps.indexOf(f) >= 0; }))) return false;
     }
     if (_filterGroups.length > 0 && _filterGroups.indexOf(_getGroupSafe(d)) < 0) return false;
     if (_filterAssignee && (d.Assignee||'').trim().split(' ')[0] !== _filterAssignee) return false;

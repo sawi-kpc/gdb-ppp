@@ -1715,7 +1715,7 @@ function renderRoadmap(){
   allYears.sort();
   var yrEl=document.getElementById('rm-year-btns');
   if(yrEl) yrEl.innerHTML=allYears.map(function(y){
-    return '<button class="rm-yr-btn'+(y===rmYearFilter?' on':'')+'" onclick="onRmYearChange('+y+')">'+y+'</button>';
+    return '<button class="fb-btn'+(y===rmYearFilter?' active':'')+'" onclick="onRmYearChange('+y+')">'+y+'</button>';
   }).join('');
 
   /* filter data */

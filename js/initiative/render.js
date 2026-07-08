@@ -238,7 +238,7 @@ function renderTimeline(data){
     var tLine=(tS||tE)?'<span><span style="color:var(--accent);font-weight:600;min-width:40px;display:inline-block">Target</span>'+fmtMonYear(tS)+' → '+fmtMonYear(tE)+'</span>':'';
     var aLine=(aS||aE)?'<span><span style="color:'+(isD?'#E24B4A':'#1D9E75')+';font-weight:600;min-width:40px;display:inline-block">Actual</span>'+fmtMonYear(aS)+' → '+(aE?fmtMonYear(aE):'In progress')+'</span>':'';
     var dLine=(tLine||aLine)?'<div class="tl-date-line">'+[tLine,aLine].filter(Boolean).join('<br>')+'</div>':'';
-    var doneTag='<span style="font-size:9px;font-weight:700;color:#fff;background:var(--accent);border-radius:3px;padding:1px 5px;margin-right:4px;letter-spacing:.04em;vertical-align:middle">DONE</span>';
+    var doneTag='<span style="font-size:9px;font-weight:700;color:#fff;background:#1a56db;border-radius:3px;padding:1px 5px;margin-right:4px;letter-spacing:.04em;vertical-align:middle">DONE</span>';
     var emoji=isDone?doneTag:mon?(isD?'🆘 ':isR?'⚠️ ':isT?'✅ ':''):'';
     var glLabel=glDate?'<span style="font-size:9px;color:var(--purple);font-weight:600;margin-left:6px">◆ Go-live: '+fmtFullDate(glDate)+'</span>':'';
     var docUrl=String(d['Document']||'').replace(/^"|"$/g,'').trim();

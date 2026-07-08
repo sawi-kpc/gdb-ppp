@@ -43,7 +43,7 @@ var _auth = firebase.auth();
    Safari fires onAuthStateChanged(null) then user — ignore null
 ────────────────────────────────────────────────────────────── */
 _auth.onAuthStateChanged(function(user) {
-  if (user) window.location.href = 'channel/';
+  if (user) window.location.href = 'initiative/';
   /* null = not logged in or Safari still loading — stay on login page */
 });
 
@@ -55,7 +55,7 @@ function doLogin() {
   if (!email || !pass) { err.textContent = 'Please enter email and password.'; return; }
   err.textContent = ''; btn.disabled = true; btn.textContent = 'Signing in\u2026';
   _auth.signInWithEmailAndPassword(email, pass)
-    .then(function() { window.location.href = 'channel/'; })
+    .then(function() { window.location.href = 'initiative/'; })
     .catch(function(e) {
       var msg = 'Login failed. Check your credentials.';
       if (e.code === 'auth/user-not-found')    msg = 'Email not found.';

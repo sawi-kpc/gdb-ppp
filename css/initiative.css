@@ -171,7 +171,7 @@ table.dt tr:hover td { background: var(--border); }
 .tl-status-head{width:100px;flex-shrink:0}
 .tl-row{display:flex;align-items:stretch;min-height:52px;border-bottom:1px solid rgba(48,54,61,0.5)}
 .tl-row:last-child{border-bottom:none}
-.tl-row.row-ontrack{background:rgba(63,185,80,.10)}
+.tl-row.row-ontrack{background:rgba(63,185,80,.10);border-left:3px solid rgba(63,185,80,.60)}
 .tl-row.row-atrisk{background:rgba(245,158,11,.18);border-left:3px solid rgba(245,158,11,.60)}
 .tl-row.row-delayed{background:rgba(248,81,73,.13);border-left:3px solid rgba(248,81,73,.60)}
 .tl-row.row-done{background:rgba(88,166,255,.10);border-left:3px solid rgba(88,166,255,.45)}

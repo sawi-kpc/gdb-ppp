@@ -304,7 +304,7 @@ tr:hover td { background: var(--surface2); }
   width: 100%; padding: 10px; background: #1a3a5c;
   color: #fff; border: none; border-radius: 6px;
   font-size: 13px; font-weight: 600; cursor: pointer;
-  transition: background .15s; margin-top: 4px;
+  transition: background .15s; margin-top: 4px; white-space: nowrap;
 }
 .auth-btn:hover { background: #254f7a; }
 .auth-btn:disabled { opacity: .6; cursor: not-allowed; }

@@ -329,10 +329,12 @@ function gdbAuthGuard(onUser) {
       .then(function(authenticated) {
         if (!authenticated) { kc.login(); return; }
         var tp = kc.tokenParsed || {};
-        var user = {
-          displayName: tp.name || tp.preferred_username || tp.email || 'User',
-          email: tp.email || ''
-        };
+        var rawName = tp.name || tp.preferred_username || tp.email || 'User';
+        var isEmail = rawName.indexOf('@') >= 0;
+        var displayName = isEmail
+          ? rawName.toLowerCase()
+          : rawName.replace(/\b\w/g, function(c){ return c.toUpperCase(); });
+        var user = { displayName: displayName, email: tp.email || '' };
         setGdbUser(user);
         if (typeof onUser === 'function') onUser(user, kc);
       })

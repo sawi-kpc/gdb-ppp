@@ -41,7 +41,7 @@
           }
           /* Not logged in — enable login button */
           btn.disabled = false;
-          btn.textContent = 'Sign in with Keycloak';
+          btn.textContent = 'Sign in with King Power Account';
           btn.addEventListener('click', function() {
             btn.disabled = true;
             btn.textContent = 'Redirecting…';
@@ -52,7 +52,7 @@
           console.error('[KC] check-sso failed', e);
           err.textContent = 'Cannot reach authentication service. Check your network.';
           btn.disabled = false;
-          btn.textContent = 'Sign in with Keycloak';
+          btn.textContent = 'Sign in with King Power Account';
           btn.addEventListener('click', function() {
             btn.disabled = true;
             btn.textContent = 'Redirecting…';

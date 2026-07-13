@@ -1446,7 +1446,7 @@ function renderList(){
   var rsBtnLabel=document.getElementById('rs-btn-label');
   if(rsBtnLabel){
     rsBtnLabel.textContent=listRoadmapFilter.length===0
-      ?'All statuses'
+      ?'All Roadmap Status'
       :listRoadmapFilter.length===1
         ?listRoadmapFilter[0]
         :listRoadmapFilter.length+' selected';

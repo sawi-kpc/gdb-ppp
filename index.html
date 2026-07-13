@@ -7,7 +7,6 @@
 <link rel="stylesheet" href="css/shared.css">
 <style>body{padding-top:0;}</style>
 <script>
-/* Set default dark theme before render to avoid flash */
 (function(){
   var theme = localStorage.getItem('gdb_theme') || 'dark';
   document.documentElement.setAttribute('data-theme', theme);
@@ -18,58 +17,62 @@
 <div class="auth-card">
   <div class="auth-logo">GDB</div>
   <div class="auth-sub">King Power Digital Commerce Dashboard</div>
-  <label class="auth-label" for="auth-email">Email</label>
-  <input class="auth-input" type="email" id="auth-email" placeholder="your@email.com" autocomplete="email">
-  <label class="auth-label" for="auth-password">Password</label>
-  <input class="auth-input" type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password">
-  <button class="auth-btn" id="auth-login-btn">Sign in</button>
+  <button class="auth-btn" id="auth-login-btn">Sign in with Keycloak</button>
   <span class="auth-error" id="auth-error"></span>
 </div>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+<script src="js/keycloak-config.js"></script>
 <script>
-firebase.initializeApp({
-  apiKey:'AIzaSyCaS5kLNbm5lSLRHd1rdr0sXRCS5lB_Rgc',
-  authDomain:'gdb-dashboard-prod.firebaseapp.com',
-  projectId:'gdb-dashboard-prod',
-  storageBucket:'gdb-dashboard-prod.firebasestorage.app',
-  messagingSenderId:'170622130981',
-  appId:'1:170622130981:web:23302ed9a5ce4e82ac58cc'
-});
+(function() {
+  var btn = document.getElementById('auth-login-btn');
+  var err = document.getElementById('auth-error');
 
-var _auth = firebase.auth();
+  function loadKcAndInit() {
+    var s = document.createElement('script');
+    s.src = KC_CONFIG.url + '/js/keycloak.js';
+    s.onload = function() {
+      var kc = new Keycloak(KC_CONFIG);
+      /* check-sso: silent redirect — if already logged in, go straight to app */
+      kc.init({ onLoad: 'check-sso' })
+        .then(function(authenticated) {
+          if (authenticated) {
+            window.location.href = 'initiative/';
+            return;
+          }
+          /* Not logged in — enable login button */
+          btn.disabled = false;
+          btn.textContent = 'Sign in with Keycloak';
+          btn.addEventListener('click', function() {
+            btn.disabled = true;
+            btn.textContent = 'Redirecting…';
+            kc.login({ redirectUri: window.location.origin + '/gdb-ppp/initiative/' });
+          });
+        })
+        .catch(function(e) {
+          console.error('[KC] check-sso failed', e);
+          err.textContent = 'Cannot reach authentication service. Check your network.';
+          btn.disabled = false;
+          btn.textContent = 'Sign in with Keycloak';
+          btn.addEventListener('click', function() {
+            btn.disabled = true;
+            btn.textContent = 'Redirecting…';
+            kc.login({ redirectUri: window.location.origin + '/gdb-ppp/initiative/' });
+          });
+        });
+    };
+    s.onerror = function() {
+      err.textContent = 'Authentication service unavailable (' + KC_CONFIG.url + ')';
+      btn.disabled = false;
+      btn.textContent = 'Retry';
+      btn.addEventListener('click', function() { window.location.reload(); });
+    };
+    document.head.appendChild(s);
+  }
 
-/* ── Safari ITP fix: wait for stable auth state ──────────────
-   Safari fires onAuthStateChanged(null) then user — ignore null
-────────────────────────────────────────────────────────────── */
-_auth.onAuthStateChanged(function(user) {
-  if (user) window.location.href = 'initiative/';
-  /* null = not logged in or Safari still loading — stay on login page */
-});
-
-function doLogin() {
-  var email = document.getElementById('auth-email').value.trim();
-  var pass  = document.getElementById('auth-password').value;
-  var btn   = document.getElementById('auth-login-btn');
-  var err   = document.getElementById('auth-error');
-  if (!email || !pass) { err.textContent = 'Please enter email and password.'; return; }
-  err.textContent = ''; btn.disabled = true; btn.textContent = 'Signing in\u2026';
-  _auth.signInWithEmailAndPassword(email, pass)
-    .then(function() { window.location.href = 'initiative/'; })
-    .catch(function(e) {
-      var msg = 'Login failed. Check your credentials.';
-      if (e.code === 'auth/user-not-found')    msg = 'Email not found.';
-      if (e.code === 'auth/wrong-password')    msg = 'Incorrect password.';
-      if (e.code === 'auth/invalid-credential') msg = 'Invalid email or password.';
-      if (e.code === 'auth/too-many-requests') msg = 'Too many attempts. Try again later.';
-      err.textContent = msg; btn.disabled = false; btn.textContent = 'Sign in';
-    });
-}
-
-document.getElementById('auth-login-btn').addEventListener('click', doLogin);
-document.getElementById('auth-password').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') doLogin();
-});
+  btn.disabled = true;
+  btn.textContent = 'Connecting…';
+  loadKcAndInit();
+})();
 </script>
 </body>
 </html>

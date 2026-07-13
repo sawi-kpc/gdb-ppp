@@ -217,7 +217,9 @@ function buildGdbHeader(opts) {
   var signoutBtn = document.getElementById('gdb-signout-btn');
   if (signoutBtn) {
     signoutBtn.addEventListener('click', function() {
-      if (typeof firebase !== 'undefined' && firebase.auth) {
+      if (window._kc) {
+        window._kc.logout({ redirectUri: window.location.origin + '/gdb-ppp/' });
+      } else if (typeof firebase !== 'undefined' && firebase.auth) {
         firebase.auth().signOut().then(function() {
           window.location.href = '/gdb-ppp/';
         });
@@ -313,41 +315,45 @@ function setGdbUpdateTime(ts) {
   });
 }
 
-/* ── AUTH GUARD ──────────────────────────── */
+/* ── AUTH GUARD (Keycloak) ───────────────── */
 function gdbAuthGuard(onUser) {
-  if (!firebase.apps.length) {
-    firebase.initializeApp({
-      apiKey:            'AIzaSyCaS5kLNbm5lSLRHd1rdr0sXRCS5lB_Rgc',
-      authDomain:        'gdb-dashboard-prod.firebaseapp.com',
-      projectId:         'gdb-dashboard-prod',
-      storageBucket:     'gdb-dashboard-prod.firebasestorage.app',
-      messagingSenderId: '170622130981',
-      appId:             '1:170622130981:web:23302ed9a5ce4e82ac58cc'
-    });
+  function _boot() {
+    /* KC_CONFIG defined in js/keycloak-config.js */
+    var cfg = (typeof KC_CONFIG !== 'undefined') ? KC_CONFIG : {
+      url: 'https://iam.kingpower.com', realm: 'f1-bof', clientId: 'github-auth'
+    };
+    var kc = new Keycloak(cfg);
+    window._kc = kc;
+
+    kc.init({ onLoad: 'login-required' })
+      .then(function(authenticated) {
+        if (!authenticated) { kc.login(); return; }
+        var tp = kc.tokenParsed || {};
+        var user = {
+          displayName: tp.name || tp.preferred_username || tp.email || 'User',
+          email: tp.email || ''
+        };
+        setGdbUser(user);
+        if (typeof onUser === 'function') onUser(user, kc);
+      })
+      .catch(function(err) {
+        console.error('[KC] init failed', err);
+        window.location.href = '/gdb-ppp/';
+      });
   }
-  var _auth = firebase.auth();
 
-  /* ── Safari ITP fix: wait up to 4s for auth state ────────
-     Safari fires onAuthStateChanged(null) first while loading
-     session from localStorage, then fires again with user.
-     We wait for a non-null result OR 4s timeout before redirect.
-  ────────────────────────────────────────────────────────── */
-  var _resolved = false;
-  var _redirectTimer = setTimeout(function() {
-    if (!_resolved) {
-      _resolved = true;
-      _unsub();
-      window.location.href = '/gdb-ppp/';
-    }
-  }, 4000); /* 4s timeout — longer than Safari's ITP delay */
+  if (window.Keycloak) { _boot(); return; }
 
-  var _unsub = _auth.onAuthStateChanged(function(user) {
-    if (!user) return; /* Safari fires null first — ignore, wait for real state */
-    if (_resolved) return;
-    _resolved = true;
-    clearTimeout(_redirectTimer);
-    _unsub();
-    setGdbUser(user);
-    if (typeof onUser === 'function') onUser(user, _auth);
-  });
+  /* Dynamically load Keycloak adapter then boot */
+  var s = document.createElement('script');
+  var kcBase = (typeof KC_CONFIG !== 'undefined') ? KC_CONFIG.url : 'https://iam.kingpower.com';
+  s.src = kcBase + '/js/keycloak.js';
+  s.onload = _boot;
+  s.onerror = function() {
+    document.body.innerHTML = '<div style="padding:60px;text-align:center;font-family:sans-serif">' +
+      '<h2>Authentication service unavailable</h2>' +
+      '<p style="color:#888">Cannot reach Keycloak at ' + kcBase + '</p>' +
+      '<a href="/gdb-ppp/" style="color:#58a6ff">Back to login</a></div>';
+  };
+  document.head.appendChild(s);
 }

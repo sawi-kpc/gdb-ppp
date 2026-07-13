@@ -285,6 +285,8 @@ tr:hover td { background: var(--surface2); }
   background: #fff; border-radius: 12px;
   padding: 36px 32px; width: auto; min-width: 360px; max-width: 90vw;
   box-shadow: 0 8px 32px rgba(0,0,0,.12);
+  text-align: center;
+  display: flex; flex-direction: column; align-items: center;
 }
 .auth-logo {
   font-size: 22px; font-weight: 800; color: #1a3a5c;

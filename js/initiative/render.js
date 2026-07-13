@@ -209,8 +209,9 @@ function renderTimeline(data){
   tlData=tlData.slice().sort(function(a,b){var as=getStart(a['Target Project Start']||''),bs=getStart(b['Target Project Start']||'');if(!as&&!bs)return 0;if(!as)return 1;if(!bs)return-1;return new Date(as)-new Date(bs);});
   var mCols=[];var cy=sy,cm=sm-1;
   while(new Date(cy,cm,1)<=END){mCols.push({year:cy,month:cm});cm++;if(cm>11){cm=0;cy++;}}
-  function pct(ds){if(!ds)return null;var d=new Date(ds);if(d<START)return 0;if(d>END)return 100;return((d-START)/totalMs*100);}
-  function wPct(s,e){var ds=new Date(s),de=new Date(e),cs=Math.max(ds,START),ce=Math.min(de,END);if(ce<=cs)return 0.8;return((ce-cs)/totalMs*100);}
+  function _localDate(ds){var p=ds.split('-').map(Number);return new Date(p[0],p[1]-1,p[2]);}
+  function pct(ds){if(!ds)return null;var d=_localDate(ds);if(d<START)return 0;if(d>END)return 100;return((d-START)/totalMs*100);}
+  function wPct(s,e){var ds=_localDate(s),de=_localDate(e),cs=Math.max(ds,START),ce=Math.min(de,END);if(ce<=cs)return 0.8;return((ce-cs)/totalMs*100);}
   /* Time-based widths so bars align with month columns */
   function mW(mc){
     var ms=new Date(mc.year,mc.month,1),me=new Date(mc.year,mc.month+1,1);

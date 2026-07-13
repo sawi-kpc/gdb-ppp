@@ -209,19 +209,35 @@ function renderTimeline(data){
   tlData=tlData.slice().sort(function(a,b){var as=getStart(a['Target Project Start']||''),bs=getStart(b['Target Project Start']||'');if(!as&&!bs)return 0;if(!as)return 1;if(!bs)return-1;return new Date(as)-new Date(bs);});
   var mCols=[];var cy=sy,cm=sm-1;
   while(new Date(cy,cm,1)<=END){mCols.push({year:cy,month:cm});cm++;if(cm>11){cm=0;cy++;}}
-  var nM=mCols.length;
-  var qtrs=[];var cur=null;
-  mCols.forEach(function(mc){var ql='Q'+(Math.floor(mc.month/3)+1)+' '+mc.year;if(!cur||cur.label!==ql){if(cur)qtrs.push(cur);cur={label:ql,count:1};}else cur.count++;});
-  if(cur)qtrs.push(cur);
   function pct(ds){if(!ds)return null;var d=new Date(ds);if(d<START)return 0;if(d>END)return 100;return((d-START)/totalMs*100);}
   function wPct(s,e){var ds=new Date(s),de=new Date(e),cs=Math.max(ds,START),ce=Math.min(de,END);if(ce<=cs)return 0.8;return((ce-cs)/totalMs*100);}
+  /* Time-based widths so bars align with month columns */
+  function mW(mc){
+    var ms=new Date(mc.year,mc.month,1),me=new Date(mc.year,mc.month+1,1);
+    return((Math.min(me,END)-Math.max(ms,START))/totalMs*100).toFixed(3)+'%';
+  }
   var todayP=pct(today.toISOString().slice(0,10));
   var _tb=document.getElementById('today-badge');
   if(_tb)_tb.textContent='Today: '+today.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
-  var todayMonIdx=mCols.findIndex(function(mc){return mc.year===today.getFullYear()&&mc.month===today.getMonth();});
-  var todayColBg=todayMonIdx>=0?'<div class="tl-col-bg" style="left:'+(todayMonIdx/nM*100).toFixed(2)+'%;width:'+(100/nM).toFixed(2)+'%"></div>':'';
-  var qtrHtml=qtrs.map(function(q){return'<div class="tl-qtr" style="flex:'+q.count+'">'+q.label+'</div>';}).join('');
-  var monHtml=mCols.map(function(mc){return'<div class="tl-month-cell'+(today.getFullYear()===mc.year&&today.getMonth()===mc.month?' cur-month':'')+'">'+GDB.MONTHS[mc.month]+'</div>';}).join('');
+  var todayMStart=new Date(today.getFullYear(),today.getMonth(),1);
+  var todayMEnd=new Date(today.getFullYear(),today.getMonth()+1,1);
+  var _bgL=Math.max(0,(todayMStart-START)/totalMs*100);
+  var _bgW=(Math.min(todayMEnd,END)-Math.max(todayMStart,START))/totalMs*100;
+  var todayColBg=_bgW>0?'<div class="tl-col-bg" style="left:'+_bgL.toFixed(3)+'%;width:'+_bgW.toFixed(3)+'%"></div>':'';
+  /* Quarter headers — accumulate time-based spans */
+  var qtrs=[];var cur=null;
+  mCols.forEach(function(mc){
+    var ql='Q'+(Math.floor(mc.month/3)+1)+' '+mc.year;
+    var ms=new Date(mc.year,mc.month,1),me=new Date(mc.year,mc.month+1,1);
+    if(!cur||cur.label!==ql){if(cur)qtrs.push(cur);cur={label:ql,start:ms,end:me};}
+    else cur.end=me;
+  });
+  if(cur)qtrs.push(cur);
+  var qtrHtml=qtrs.map(function(q){
+    var w=((Math.min(q.end,END)-Math.max(q.start,START))/totalMs*100).toFixed(3);
+    return'<div class="tl-qtr" style="width:'+w+'%;flex:none">'+q.label+'</div>';
+  }).join('');
+  var monHtml=mCols.map(function(mc){return'<div class="tl-month-cell'+(today.getFullYear()===mc.year&&today.getMonth()===mc.month?' cur-month':'')+'" style="width:'+mW(mc)+';flex:none">'+GDB.MONTHS[mc.month]+'</div>';}).join('');
   var rowsHtml=tlData.map(function(d){
     var mon=d['Project Monitoring Status']||'';
     var isDone=d.Status==='Done';

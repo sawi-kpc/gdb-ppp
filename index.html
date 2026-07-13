@@ -45,7 +45,7 @@
           btn.addEventListener('click', function() {
             btn.disabled = true;
             btn.textContent = 'Redirecting…';
-            kc.login({ redirectUri: window.location.origin + '/gdb-ppp/initiative/' });
+            kc.login();
           });
         })
         .catch(function(e) {
@@ -56,7 +56,7 @@
           btn.addEventListener('click', function() {
             btn.disabled = true;
             btn.textContent = 'Redirecting…';
-            kc.login({ redirectUri: window.location.origin + '/gdb-ppp/initiative/' });
+            kc.login();
           });
         });
     };

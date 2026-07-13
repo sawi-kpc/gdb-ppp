@@ -12,8 +12,10 @@ var listSearchQuery='';
 var listRoadmapFilter=[];
 var listStatusFilter=[];
 var sumComponentFilter=[];
+var sumDepFilter=[];
 var sumPMRoleFilter=[];
 var listComponentFilter=[];
+var listDepFilter=[];
 var listPMRoleFilter=[];
 var _listPage=1, _listPageSize=20, _lastListFiltered=[], listHideWontDo=false;
 var _listSortCol='Start', _listSortAsc=true;
@@ -46,7 +48,7 @@ function _saveListFilters(){
   GDB.saveFilters('gdb_filter_initiative_list',{
     listYearFilter:listYearFilter, listStatusFilter:listStatusFilter,
     listRoadmapFilter:listRoadmapFilter, listComponentFilter:listComponentFilter,
-    listPMRoleFilter:listPMRoleFilter,
+    listDepFilter:listDepFilter, listPMRoleFilter:listPMRoleFilter,
     listAssigneeFilter:listAssigneeFilter, listSearchQuery:listSearchQuery,
     _listSortCol:_listSortCol, _listSortAsc:_listSortAsc, _listPage:_listPage,
     listHideWontDo:listHideWontDo
@@ -59,6 +61,7 @@ function _loadListFilters(){
   if(Array.isArray(f.listStatusFilter))    listStatusFilter=f.listStatusFilter;
   if(Array.isArray(f.listRoadmapFilter))   listRoadmapFilter=f.listRoadmapFilter;
   if(Array.isArray(f.listComponentFilter)) listComponentFilter=f.listComponentFilter;
+  if(Array.isArray(f.listDepFilter))       listDepFilter=f.listDepFilter;
   if(Array.isArray(f.listPMRoleFilter))    listPMRoleFilter=f.listPMRoleFilter;
   if(f.listAssigneeFilter!=null)           listAssigneeFilter=f.listAssigneeFilter;
   if(f.listSearchQuery)                    listSearchQuery=f.listSearchQuery;
@@ -71,7 +74,7 @@ function _saveSumFilters(){
   GDB.saveFilters('gdb_filter_initiative_timeline',{
     sumYearFilter:sumYearFilter, sumStageFilter:sumStageFilter,
     sumRoadmapFilter:sumRoadmapFilter, sumComponentFilter:sumComponentFilter,
-    sumPMRoleFilter:sumPMRoleFilter,
+    sumDepFilter:sumDepFilter, sumPMRoleFilter:sumPMRoleFilter,
     sumSearchQuery:sumSearchQuery, hideNoDate:hideNoDate,
     _tlStart:_tlStart, _tlEnd:_tlEnd
   });
@@ -83,6 +86,7 @@ function _loadSumFilters(){
   if(Array.isArray(f.sumStageFilter))     sumStageFilter=f.sumStageFilter;
   if(Array.isArray(f.sumRoadmapFilter))   sumRoadmapFilter=f.sumRoadmapFilter;
   if(Array.isArray(f.sumComponentFilter)) sumComponentFilter=f.sumComponentFilter;
+  if(Array.isArray(f.sumDepFilter))       sumDepFilter=f.sumDepFilter;
   if(Array.isArray(f.sumPMRoleFilter))    sumPMRoleFilter=f.sumPMRoleFilter;
   if(f.sumSearchQuery)                    sumSearchQuery=f.sumSearchQuery;
   if(typeof f.hideNoDate==='boolean')     hideNoDate=f.hideNoDate;
@@ -429,6 +433,14 @@ function renderSummary(){
   });
   GDB.buildCheckDropdown({wrapperId:'comp-dropdown-wrap', btnLabelId:'comp-btn-label', listId:'comp-checkbox-list', values:_sortCompVals(compVals), activeArr:sumComponentFilter, colorMap:null, toggleFn:'onSumCompToggle'});
 
+  /* Dependency System dropdown */
+  var sumDepVals=[];
+  allData.forEach(function(d){
+    (d['Dependency Systems']||'').split(';').forEach(function(v){ var t=v.trim(); if(t&&sumDepVals.indexOf(t)<0)sumDepVals.push(t); });
+  });
+  sumDepVals.sort();
+  GDB.buildCheckDropdown({wrapperId:'dep-dropdown-wrap', btnLabelId:'dep-btn-label', listId:'dep-checkbox-list', values:sumDepVals, activeArr:sumDepFilter, colorMap:null, toggleFn:'onSumDepToggle'});
+
   /* PM Role dropdown */
   var sumPMVals=[];
   allData.forEach(function(d){ var v=(d['PM Role']||'').trim(); if(v&&sumPMVals.indexOf(v)<0)sumPMVals.push(v); });
@@ -448,6 +460,12 @@ function renderSummary(){
       var hasMissing=sumComponentFilter.indexOf('(missing component)')>=0;
       var regular=sumComponentFilter.filter(function(f){return f!=='(missing component)';});
       return (hasMissing&&comps.length===0)||(regular.some(function(f){return comps.indexOf(f)>=0;}));
+    });
+  }
+  if(sumDepFilter.length>0){
+    filtered=filtered.filter(function(d){
+      var deps=(d['Dependency Systems']||'').split(';').map(function(v){return v.trim();}).filter(Boolean);
+      return sumDepFilter.some(function(f){return deps.indexOf(f)>=0;});
     });
   }
   if(sumPMRoleFilter.length>0){
@@ -487,6 +505,14 @@ function onSumCompToggle(val){
   var panel=document.getElementById('comp-dropdown-panel'); if(panel)panel.style.display='block';
 }
 function clearSumCompFilter(){ sumComponentFilter=[]; document.getElementById('comp-dropdown-panel').style.display='none'; renderSummary(); }
+
+function onSumDepToggle(val){
+  var idx=sumDepFilter.indexOf(val);
+  if(idx>=0)sumDepFilter.splice(idx,1); else sumDepFilter.push(val);
+  renderSummary();
+  var panel=document.getElementById('dep-dropdown-panel'); if(panel)panel.style.display='block';
+}
+function clearSumDepFilter(){ sumDepFilter=[]; document.getElementById('dep-dropdown-panel').style.display='none'; renderSummary(); }
 
 function onSumPMToggle(val){
   var idx=sumPMRoleFilter.indexOf(val);
@@ -1385,6 +1411,14 @@ function renderList(){
   });
   GDB.buildCheckDropdown({wrapperId:'comp-list-dropdown-wrap', btnLabelId:'comp-list-btn-label', listId:'comp-list-checkbox-list', values:_sortCompVals(listCompVals), activeArr:listComponentFilter, colorMap:null, toggleFn:'onListCompToggle'});
 
+  /* Dependency System dropdown */
+  var listDepVals=[];
+  allData.forEach(function(d){
+    (d['Dependency Systems']||'').split(';').forEach(function(v){ var t=v.trim(); if(t&&listDepVals.indexOf(t)<0)listDepVals.push(t); });
+  });
+  listDepVals.sort();
+  GDB.buildCheckDropdown({wrapperId:'dep-list-dropdown-wrap', btnLabelId:'dep-list-btn-label', listId:'dep-list-checkbox-list', values:listDepVals, activeArr:listDepFilter, colorMap:null, toggleFn:'onListDepToggle'});
+
   /* PM Role dropdown */
   var listPMVals=[];
   allData.forEach(function(d){ var v=(d['PM Role']||'').trim(); if(v&&listPMVals.indexOf(v)<0)listPMVals.push(v); });
@@ -1444,6 +1478,12 @@ function renderList(){
       var hasMissing=listComponentFilter.indexOf('(missing component)')>=0;
       var regular=listComponentFilter.filter(function(f){return f!=='(missing component)';});
       return (hasMissing&&comps.length===0)||(regular.some(function(f){return comps.indexOf(f)>=0;}));
+    });
+  }
+  if(listDepFilter.length>0){
+    filtered=filtered.filter(function(d){
+      var deps=(d['Dependency Systems']||'').split(';').map(function(v){return v.trim();}).filter(Boolean);
+      return listDepFilter.some(function(f){return deps.indexOf(f)>=0;});
     });
   }
   if(listPMRoleFilter.length>0){
@@ -1603,6 +1643,14 @@ function onListCompToggle(val){
   var panel=document.getElementById('comp-list-dropdown-panel'); if(panel)panel.style.display='block';
 }
 function clearListCompFilter(){ listComponentFilter=[]; document.getElementById('comp-list-dropdown-panel').style.display='none'; renderList(); }
+
+function onListDepToggle(val){
+  var idx=listDepFilter.indexOf(val);
+  if(idx>=0)listDepFilter.splice(idx,1); else listDepFilter.push(val);
+  renderList();
+  var panel=document.getElementById('dep-list-dropdown-panel'); if(panel)panel.style.display='block';
+}
+function clearListDepFilter(){ listDepFilter=[]; document.getElementById('dep-list-dropdown-panel').style.display='none'; renderList(); }
 
 function onListPMToggle(val){
   var idx=listPMRoleFilter.indexOf(val);

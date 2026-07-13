@@ -94,6 +94,20 @@
       </div>
     </div>
     <div class="fb-sep"></div>
+    <span class="fb-label">Dependency System:</span>
+    <div style="position:relative" id="dep-list-dropdown-wrap">
+      <button onclick="toggleDropdown('dep-list-dropdown-panel')"
+        style="height:26px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);font-size:11.5px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap">
+        <span id="dep-list-btn-label" data-empty="All Systems">All Systems</span><span style="font-size:9px;color:var(--text3)">▾</span>
+      </button>
+      <div id="dep-list-dropdown-panel" style="display:none;position:absolute;top:30px;left:0;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.18);padding:8px 0;min-width:160px">
+        <div id="dep-list-checkbox-list"></div>
+        <div style="border-top:1px solid var(--border);margin-top:6px;padding:6px 12px 2px">
+          <button onclick="clearListDepFilter()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Clear all</button>
+        </div>
+      </div>
+    </div>
+    <div class="fb-sep"></div>
     <span class="fb-label">PM Role:</span>
     <div style="position:relative" id="list-pm-dropdown-wrap">
       <button onclick="toggleDropdown('list-pm-dropdown-panel')"
@@ -203,7 +217,7 @@ function clearRsFilter() {
 }
 /* Close dropdowns when clicking outside */
 document.addEventListener('click', function(e) {
-  ['rs-dropdown-wrap', 'comp-list-dropdown-wrap', 'list-status-dropdown-wrap', 'list-pm-dropdown-wrap', 'ini-assignee-dropdown-wrap'].forEach(function(wrapId) {
+  ['rs-dropdown-wrap', 'comp-list-dropdown-wrap', 'dep-list-dropdown-wrap', 'list-status-dropdown-wrap', 'list-pm-dropdown-wrap', 'ini-assignee-dropdown-wrap'].forEach(function(wrapId) {
     var wrap = document.getElementById(wrapId);
     if (wrap && !wrap.contains(e.target)) {
       var panel = wrap.querySelector('[id$="-dropdown-panel"]');

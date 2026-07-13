@@ -315,6 +315,45 @@ function setGdbUpdateTime(ts) {
   });
 }
 
+/* ── TOKEN AUTO-REFRESH ──────────────────────
+   Refreshes Keycloak token while user is active.
+   - Checks every 5 min; refreshes if token expires within 5 min
+   - Tracks last activity via mouse/key/scroll events
+   - If user idle > 8 h → let session expire naturally
+   - If refresh fails (refresh token expired) → force re-login
+──────────────────────────────────────────── */
+function _kcStartTokenRefresh(kc) {
+  var _lastActivity = Date.now();
+  var _IDLE_LIMIT_MS = 8 * 60 * 60 * 1000;   /* 8 hours idle = expire */
+  var _CHECK_INTERVAL_MS = 5 * 60 * 1000;     /* check every 5 min     */
+  var _REFRESH_IF_UNDER_S = 5 * 60;           /* refresh if <5 min left */
+
+  /* Track user activity */
+  ['mousemove', 'keydown', 'click', 'touchstart', 'scroll'].forEach(function(evt) {
+    document.addEventListener(evt, function() { _lastActivity = Date.now(); }, { passive: true });
+  });
+
+  /* When token expires: refresh immediately if not idle */
+  kc.onTokenExpired = function() {
+    var idleMs = Date.now() - _lastActivity;
+    if (idleMs >= _IDLE_LIMIT_MS) return; /* idle too long — let it expire */
+    kc.updateToken(_REFRESH_IF_UNDER_S).catch(function() {
+      console.warn('[KC] Token refresh failed — redirecting to login');
+      kc.login();
+    });
+  };
+
+  /* Periodic check: proactively refresh before token expires */
+  setInterval(function() {
+    var idleMs = Date.now() - _lastActivity;
+    if (idleMs >= _IDLE_LIMIT_MS) return;
+    kc.updateToken(_REFRESH_IF_UNDER_S).catch(function() {
+      console.warn('[KC] Periodic refresh failed — redirecting to login');
+      kc.login();
+    });
+  }, _CHECK_INTERVAL_MS);
+}
+
 /* ── AUTH GUARD (Keycloak) ───────────────── */
 function gdbAuthGuard(onUser) {
   function _boot() {
@@ -334,6 +373,7 @@ function gdbAuthGuard(onUser) {
         var displayName = isEmail ? rawName.toLowerCase() : rawName.toUpperCase();
         var user = { displayName: displayName, email: tp.email || '' };
         setGdbUser(user);
+        _kcStartTokenRefresh(kc);
         if (typeof onUser === 'function') onUser(user, kc);
       })
       .catch(function(err) {

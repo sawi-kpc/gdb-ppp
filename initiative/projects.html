@@ -146,7 +146,7 @@
           <!-- Status -->
           <div class="dd-wrap" id="ps-wrap">
             <button class="dd-btn" id="ps-btn" onclick="projToggleDD('ps-panel')">
-              <span id="ps-lbl" data-empty="All Statuses">All Statuses</span>
+              <span id="ps-lbl" data-empty="All Lifecycle Status">All Lifecycle Status</span>
               <span style="font-size:9px;color:var(--text3)">▾</span>
             </button>
             <div class="dd-panel" id="ps-panel">
@@ -217,11 +217,7 @@ var _projStatusFilter = [];
 
 /* ── Dropdown helpers ── */
 function projBuildStatusDD() {
-  var statuses = [];
-  _allProjects.forEach(function(p) {
-    if (p.Status && statuses.indexOf(p.Status) < 0) statuses.push(p.Status);
-  });
-  statuses.sort();
+  var statuses = ['Parking Lot','Budget Approval','Discovery','Ready for Delivery','Delivery','Done'];
 
   var el = document.getElementById('ps-list'); if (!el) return;
   el.innerHTML = statuses.map(function(v) {
@@ -235,7 +231,7 @@ function projBuildStatusDD() {
 
   var lbl = document.getElementById('ps-lbl');
   var btn = document.getElementById('ps-btn');
-  if (lbl) lbl.textContent = _projStatusFilter.length === 0 ? (lbl.dataset.empty || 'All Statuses')
+  if (lbl) lbl.textContent = _projStatusFilter.length === 0 ? (lbl.dataset.empty || 'All Lifecycle Status')
     : _projStatusFilter.length === 1 ? _projStatusFilter[0]
     : _projStatusFilter.length + ' selected';
   if (btn) btn.style.borderColor = _projStatusFilter.length > 0 ? 'var(--accent)' : 'var(--border)';

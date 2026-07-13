@@ -4,7 +4,7 @@
 ══════════════════════════════════════════════ */
 
 var charts={};
-var sumYearFilter=['ROADMAP_2026'],initYearFilter=['all'],sumStageFilter=[],hideNoDate=false,sumSearchQuery='';
+var sumYearFilter=['ROADMAP_2026'],initYearFilter=['ROADMAP_2026'],sumStageFilter=[],hideNoDate=false,sumSearchQuery='';
 var sumRoadmapFilter=[];
 var listYearFilter=['ROADMAP_2026'];
 var listAssigneeFilter='all';
@@ -40,7 +40,7 @@ function _tlOptHtml(sel){
 }
 
 /* ── Filter state persistence (localStorage) ─────────────── */
-var _filtersLoadedList=false, _filtersLoadedSum=false;
+var _filtersLoadedList=false, _filtersLoadedSum=false, _filtersLoadedInit=false;
 
 function _saveListFilters(){
   GDB.saveFilters('gdb_filter_initiative_list',{
@@ -88,6 +88,15 @@ function _loadSumFilters(){
   if(typeof f.hideNoDate==='boolean')     hideNoDate=f.hideNoDate;
   if(f._tlStart)                          _tlStart=f._tlStart;
   if(f._tlEnd)                            _tlEnd=f._tlEnd;
+}
+
+function _saveInitFilters(){
+  GDB.saveFilters('gdb_filter_initiative_dash',{initYearFilter:initYearFilter});
+}
+function _loadInitFilters(){
+  if(_filtersLoadedInit)return; _filtersLoadedInit=true;
+  var f=GDB.loadFilters('gdb_filter_initiative_dash'); if(!f)return;
+  if(Array.isArray(f.initYearFilter)&&f.initYearFilter.length) initYearFilter=f.initYearFilter;
 }
 
 var STAGES=['Parking Lot','Budget Approval','Discovery','Ready for Delivery','Delivery','Done'];
@@ -1317,6 +1326,8 @@ function _buildAssigneeCompact(data) {
 
 /* Render initiatives */
 function renderInitiatives(){
+  _loadInitFilters();
+  _saveInitFilters();
   var filtered=filterYear(allData,initYearFilter).filter(function(d){return(d['Roadmap Status']||'')!=="Won't do";});
   renderYF('yf-init',initYearFilter,function(btn,val){initYearFilter=toggleYF(initYearFilter,val);_syncNoYearBtn('btn-no-year',initYearFilter);renderInitiatives();});
   _syncNoYearBtn('btn-no-year',initYearFilter);

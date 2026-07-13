@@ -211,7 +211,7 @@ function renderTimeline(data){
   while(new Date(cy,cm,1)<=END){mCols.push({year:cy,month:cm});cm++;if(cm>11){cm=0;cy++;}}
   function _localDate(ds){var p=ds.split('-').map(Number);return new Date(p[0],p[1]-1,p[2]);}
   function pct(ds){if(!ds)return null;var d=_localDate(ds);if(d<START)return 0;if(d>END)return 100;return((d-START)/totalMs*100);}
-  function wPct(s,e){var ds=_localDate(s),de=_localDate(e),cs=Math.max(ds,START),ce=Math.min(de,END);if(ce<=cs)return 0.8;return((ce-cs)/totalMs*100);}
+  function wPct(s,e){var ds=_localDate(s),de=new Date(_localDate(e).getTime()+86400000),cs=Math.max(ds,START),ce=Math.min(de,END);if(ce<=cs)return 0.8;return((ce-cs)/totalMs*100);}
   /* Time-based widths so bars align with month columns */
   function mW(mc){
     var ms=new Date(mc.year,mc.month,1),me=new Date(mc.year,mc.month+1,1);
@@ -249,7 +249,7 @@ function renderTimeline(data){
     var glDate=getStart(d['Go-live Date']||'');
     var hasPlan=tS&&tE,hasActual=!!aS;
     var planBar=hasPlan?'<div class="tl-bar tl-bar-plan" style="left:'+pct(tS).toFixed(2)+'%;width:'+wPct(tS,tE).toFixed(2)+'%"></div>':'';
-    var actBar=hasActual?'<div class="tl-bar '+(isD?'tl-bar-actual-del':'tl-bar-actual-ok')+'" style="left:'+pct(aS).toFixed(2)+'%;width:'+(aE?wPct(aS,aE).toFixed(2):Math.max(.5,((Math.min(today,END)-new Date(aS))/totalMs*100)).toFixed(2))+'%"></div>':'';
+    var actBar=hasActual?'<div class="tl-bar '+(isD?'tl-bar-actual-del':'tl-bar-actual-ok')+'" style="left:'+pct(aS).toFixed(2)+'%;width:'+(aE?wPct(aS,aE).toFixed(2):Math.max(.5,((Math.min(today,END)-_localDate(aS))/totalMs*100)).toFixed(2))+'%"></div>':'';
     var glP=glDate?pct(glDate):null;
     var glMarker=(glP!==null&&glP>=0&&glP<=100)?'<div class="tl-golive-v" style="left:'+glP.toFixed(2)+'%"><div class="tl-golive-diamond"></div></div>':'';
     var tLine=(tS||tE)?'<span><span style="color:var(--accent);font-weight:600;min-width:40px;display:inline-block">Target</span>'+fmtMonYear(tS)+' → '+fmtMonYear(tE)+'</span>':'';

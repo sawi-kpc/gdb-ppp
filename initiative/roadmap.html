@@ -325,6 +325,20 @@
 
     <div class="rm-sep"></div>
 
+    <!-- Status -->
+    <div style="position:relative" id="rm-status-wrap">
+      <button class="rm-dd-btn" onclick="toggleDropdown('rm-status-panel')">
+        <span id="rm-status-lbl" data-empty="All Statuses">All Statuses</span>
+        <span class="arr">▾</span>
+      </button>
+      <div id="rm-status-panel" style="display:none;position:absolute;top:30px;left:0;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 6px 20px rgba(0,0,0,.25);padding:8px 0;min-width:185px">
+        <div id="rm-status-list"></div>
+        <div style="border-top:1px solid var(--border);margin-top:6px;padding:5px 12px 2px">
+          <button onclick="clearRmStatusFilter()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Clear all</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Component -->
     <div style="position:relative" id="rm-comp-wrap">
       <button class="rm-dd-btn" onclick="toggleDropdown('rm-comp-panel')">
@@ -339,6 +353,20 @@
       </div>
     </div>
 
+    <!-- Dependency System -->
+    <div style="position:relative" id="rm-dep-wrap">
+      <button class="rm-dd-btn" onclick="toggleDropdown('rm-dep-panel')">
+        <span id="rm-dep-lbl" data-empty="All Systems">All Systems</span>
+        <span class="arr">▾</span>
+      </button>
+      <div id="rm-dep-panel" style="display:none;position:absolute;top:30px;left:0;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 6px 20px rgba(0,0,0,.25);padding:8px 0;min-width:160px;max-height:260px;overflow-y:auto">
+        <div id="rm-dep-list"></div>
+        <div style="border-top:1px solid var(--border);margin-top:6px;padding:5px 12px 2px">
+          <button onclick="clearRmDepFilter()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Clear all</button>
+        </div>
+      </div>
+    </div>
+
     <!-- PM Role -->
     <div style="position:relative" id="rm-pm-wrap">
       <button class="rm-dd-btn" onclick="toggleDropdown('rm-pm-panel')">
@@ -349,20 +377,6 @@
         <div id="rm-pm-list"></div>
         <div style="border-top:1px solid var(--border);margin-top:6px;padding:5px 12px 2px">
           <button onclick="clearRmPMFilter()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Clear all</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Status -->
-    <div style="position:relative" id="rm-status-wrap">
-      <button class="rm-dd-btn" onclick="toggleDropdown('rm-status-panel')">
-        <span id="rm-status-lbl" data-empty="All Statuses">All Statuses</span>
-        <span class="arr">▾</span>
-      </button>
-      <div id="rm-status-panel" style="display:none;position:absolute;top:30px;left:0;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 6px 20px rgba(0,0,0,.25);padding:8px 0;min-width:185px">
-        <div id="rm-status-list"></div>
-        <div style="border-top:1px solid var(--border);margin-top:6px;padding:5px 12px 2px">
-          <button onclick="clearRmStatusFilter()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Clear all</button>
         </div>
       </div>
     </div>
@@ -529,7 +543,7 @@ function toggleDropdown(panelId) {
   panel.style.display = isOpen ? 'none' : 'block';
 }
 document.addEventListener('click', function(e) {
-  ['rm-comp-wrap','rm-pm-wrap','rm-status-wrap'].forEach(function(id) {
+  ['rm-status-wrap','rm-comp-wrap','rm-dep-wrap','rm-pm-wrap'].forEach(function(id) {
     var wrap = document.getElementById(id);
     if (wrap && !wrap.contains(e.target)) {
       ['rm-comp-panel','rm-pm-panel','rm-status-panel'].forEach(function(pid) {

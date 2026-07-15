@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Under Maintenance — GDB Dashboard</title>
+<link rel="stylesheet" href="../css/shared.css">
+<style>
+body { padding-top: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+.maintenance-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 48px 40px;
+  max-width: 480px;
+  width: 90vw;
+  text-align: center;
+}
+.maintenance-icon { font-size: 48px; margin-bottom: 20px; }
+.maintenance-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+.maintenance-sub {
+  font-size: 14px;
+  color: var(--text2);
+  line-height: 1.7;
+  margin-bottom: 24px;
+}
+.maintenance-contact {
+  font-size: 12px;
+  color: var(--text3);
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+.maintenance-contact a {
+  color: var(--accent);
+  text-decoration: none;
+}
+</style>
+<script>
+(function(){
+  var theme = localStorage.getItem('gdb_theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', theme);
+})();
+</script>
+</head>
+<body>
+<div class="maintenance-card">
+  <div class="maintenance-icon">🔧</div>
+  <div class="maintenance-title">Under Maintenance</div>
+  <div class="maintenance-sub">
+    The GDB Dashboard is currently undergoing scheduled maintenance.<br>
+    We'll be back shortly. Thank you for your patience.
+  </div>
+  <div class="maintenance-contact">
+    Need help? Contact us at<br>
+    <a href="mailto:kpcproduct@kingpower.com">kpcproduct@kingpower.com</a>
+  </div>
+</div>
+</body>
+</html>

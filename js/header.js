@@ -4,10 +4,15 @@
    PPP: Initiatives (dropdown) + Issues + Support
 ══════════════════════════════════════════════ */
 
-/* ── Maintenance mode flag (injected at deploy time) ── */
-var GDB_MAINTENANCE = '__MAINTENANCE_MODE__';
+/* ── Maintenance mode ──────────────────────────────────
+   LOCAL DEV : change GDB_MAINTENANCE_LOCAL to true/false
+   GITHUB    : controlled by MAINTENANCE_MODE repo variable
+──────────────────────────────────────────────────────── */
+var GDB_MAINTENANCE_LOCAL = false;          /* ← edit this locally */
+var GDB_MAINTENANCE       = '__MAINTENANCE_MODE__'; /* injected at deploy */
 (function() {
-  if (GDB_MAINTENANCE === 'true' && window.location.pathname.indexOf('/maintenance') === -1) {
+  var isOn = GDB_MAINTENANCE_LOCAL === true || GDB_MAINTENANCE === 'true';
+  if (isOn && window.location.pathname.indexOf('/maintenance') === -1) {
     window.location.replace('/gdb-ppp/maintenance/');
   }
 })();

@@ -10,8 +10,9 @@
 (function(){
   var theme = localStorage.getItem('gdb_theme') || 'dark';
   document.documentElement.setAttribute('data-theme', theme);
-  var GDB_MAINTENANCE = '__MAINTENANCE_MODE__';
-  if (GDB_MAINTENANCE === 'true') window.location.replace('/gdb-ppp/maintenance/');
+  var GDB_MAINTENANCE_LOCAL = false;           /* ← edit this locally */
+  var GDB_MAINTENANCE       = '__MAINTENANCE_MODE__'; /* injected at deploy */
+  if (GDB_MAINTENANCE_LOCAL === true || GDB_MAINTENANCE === 'true') window.location.replace('/gdb-ppp/maintenance/');
 })();
 </script>
 </head>

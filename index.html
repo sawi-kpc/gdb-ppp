@@ -7,10 +7,11 @@
 <link rel="stylesheet" href="css/shared.css">
 <style>body{padding-top:0;}</style>
 <script>
-/* Set default dark theme before render to avoid flash */
 (function(){
   var theme = localStorage.getItem('gdb_theme') || 'dark';
   document.documentElement.setAttribute('data-theme', theme);
+  var GDB_MAINTENANCE = '__MAINTENANCE_MODE__';
+  if (GDB_MAINTENANCE === 'true') window.location.replace('/gdb-ppp/maintenance/');
 })();
 </script>
 </head>

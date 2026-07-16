@@ -256,7 +256,7 @@ function toggleIssueDropdown(panelId) {
   panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
 }
 document.addEventListener('click', function(e) {
-  ['status-dropdown-wrap','comp-dropdown-wrap','issue-assignee-dropdown-wrap'].forEach(function(id) {
+  ['status-dropdown-wrap','priority-dropdown-wrap','severity-dropdown-wrap','comp-dropdown-wrap','group-dropdown-wrap','issue-assignee-dropdown-wrap'].forEach(function(id) {
     var wrap = document.getElementById(id);
     if (wrap && !wrap.contains(e.target)) {
       var panel = wrap.querySelector('[id$="-panel"]');

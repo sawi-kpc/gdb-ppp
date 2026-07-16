@@ -735,7 +735,7 @@ function populateFilters(data) {
   });
 
   GDB.buildCheckDropdown({wrapperId:'priority-dropdown-wrap', btnLabelId:'priority-btn-label', listId:'priority-checkbox-list', values:priorities.sort(), colorMap:PRIORITY_COLOR, activeArr:_filterPriorities, toggleFn:'onIssuePriorityToggle'});
-  GDB.buildCheckDropdown({wrapperId:'severity-dropdown-wrap', btnLabelId:'severity-btn-label', listId:'severity-checkbox-list', values:severities.sort(), colorMap:SEVERITY_COLOR, activeArr:_filterSeverities, toggleFn:'onIssueSeverityToggle'});
+  GDB.buildCheckDropdown({wrapperId:'severity-dropdown-wrap', btnLabelId:'severity-btn-label', listId:'severity-checkbox-list', values:severities.sort(), colorMap:null,           activeArr:_filterSeverities, toggleFn:'onIssueSeverityToggle'});
   GDB.buildCheckDropdown({wrapperId:'group-dropdown-wrap',    btnLabelId:'group-btn-label',    listId:'group-checkbox-list',    values:groups.sort(),     colorMap:null,           activeArr:_filterGroups,     toggleFn:'onIssueGroupToggle'});
   buildIssueAssigneeFilter(data);
 }

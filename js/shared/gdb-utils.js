@@ -439,7 +439,10 @@
   GDB.buildCheckDropdown = function(opts) {
     var listEl = document.getElementById(opts.listId); if (!listEl) return;
     var isChk = opts.isChecked || function(v) { return (opts.activeArr||[]).indexOf(v) >= 0; };
-    listEl.innerHTML = (opts.values||[]).map(function(v) {
+    var closeBtn = '<div style="display:flex;justify-content:flex-end;padding:2px 8px 0">' +
+      '<button onclick="var l=document.getElementById(\''+opts.listId+'\');if(l&&l.parentElement)l.parentElement.style.display=\'none\'" ' +
+      'style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;line-height:1;padding:2px 6px" title="Close">×</button></div>';
+    listEl.innerHTML = closeBtn + (opts.values||[]).map(function(v) {
       var dot = (opts.colorMap && opts.colorMap[v])
         ? '<span style="width:8px;height:8px;border-radius:50%;background:'+opts.colorMap[v]+';display:inline-block;flex-shrink:0"></span>'
         : '';

@@ -439,10 +439,23 @@
   GDB.buildCheckDropdown = function(opts) {
     var listEl = document.getElementById(opts.listId); if (!listEl) return;
     var isChk = opts.isChecked || function(v) { return (opts.activeArr||[]).indexOf(v) >= 0; };
-    var closeBtn = '<div style="display:flex;justify-content:flex-end;padding:2px 8px 0">' +
-      '<button onclick="var l=document.getElementById(\''+opts.listId+'\');if(l&&l.parentElement)l.parentElement.style.display=\'none\'" ' +
-      'style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;line-height:1;padding:2px 6px" title="Close">×</button></div>';
-    listEl.innerHTML = closeBtn + (opts.values||[]).map(function(v) {
+    var lid = opts.listId;
+    var headerRow =
+      '<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 12px 6px;border-bottom:1px solid var(--border);margin-bottom:2px">' +
+        '<div style="display:flex;gap:10px">' +
+          '<button onclick="Array.prototype.forEach.call(document.getElementById(\''+lid+'\').querySelectorAll(\'input[type=checkbox]:not(:checked)\'),function(cb){cb.checked=true;cb.dispatchEvent(new Event(\'change\'))})" ' +
+            'style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Select all</button>' +
+          '<span style="color:var(--border)">|</span>' +
+          '<button onclick="Array.prototype.forEach.call(document.getElementById(\''+lid+'\').querySelectorAll(\'input[type=checkbox]:checked\'),function(cb){cb.checked=false;cb.dispatchEvent(new Event(\'change\'))})" ' +
+            'style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Clear all</button>' +
+        '</div>' +
+        '<button onclick="var l=document.getElementById(\''+lid+'\');if(l&&l.parentElement)l.parentElement.style.display=\'none\'" ' +
+          'style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;line-height:1;padding:2px 4px" title="Close">×</button>' +
+      '</div>';
+    /* hide old "Clear all" footer sibling if present */
+    var nextSib = listEl.nextElementSibling;
+    if (nextSib) nextSib.style.display = 'none';
+    listEl.innerHTML = headerRow + (opts.values||[]).map(function(v) {
       var dot = (opts.colorMap && opts.colorMap[v])
         ? '<span style="width:8px;height:8px;border-radius:50%;background:'+opts.colorMap[v]+';display:inline-block;flex-shrink:0"></span>'
         : '';

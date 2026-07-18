@@ -443,10 +443,10 @@
     var headerRow =
       '<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 12px 6px;border-bottom:1px solid var(--border);margin-bottom:2px">' +
         '<div style="display:flex;gap:10px">' +
-          '<button onclick="Array.prototype.forEach.call(document.getElementById(\''+lid+'\').querySelectorAll(\'input[type=checkbox]:not(:checked)\'),function(cb){cb.checked=true;cb.dispatchEvent(new Event(\'change\'))})" ' +
+          '<button onclick="event.stopPropagation();Array.prototype.forEach.call(document.getElementById(\''+lid+'\').querySelectorAll(\'input[type=checkbox]:not(:checked)\'),function(cb){cb.checked=true;cb.dispatchEvent(new Event(\'change\'))})" ' +
             'style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Select all</button>' +
           '<span style="color:var(--border)">|</span>' +
-          '<button onclick="Array.prototype.forEach.call(document.getElementById(\''+lid+'\').querySelectorAll(\'input[type=checkbox]:checked\'),function(cb){cb.checked=false;cb.dispatchEvent(new Event(\'change\'))})" ' +
+          '<button onclick="event.stopPropagation();Array.prototype.forEach.call(document.getElementById(\''+lid+'\').querySelectorAll(\'input[type=checkbox]:checked\'),function(cb){cb.checked=false;cb.dispatchEvent(new Event(\'change\'))})" ' +
             'style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Clear all</button>' +
         '</div>' +
         '<button onclick="var l=document.getElementById(\''+lid+'\');if(l&&l.parentElement)l.parentElement.style.display=\'none\'" ' +

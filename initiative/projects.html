@@ -218,23 +218,8 @@ var _projStatusFilter = [];
 /* ── Dropdown helpers ── */
 function projBuildStatusDD() {
   var statuses = ['Parking Lot','Budget Approval','Discovery','Ready for Delivery','Delivery','Done'];
-
-  var el = document.getElementById('ps-list'); if (!el) return;
-  el.innerHTML = statuses.map(function(v) {
-    var c = PROJ_STATUS_COLORS[v] || 'var(--text2)';
-    return '<label class="dd-item">' +
-      '<input type="checkbox"' + (_projStatusFilter.indexOf(v)>=0?' checked':'') +
-      ' onchange="projToggleStatus(\'' + v + '\')">' +
-      '<span class="dd-dot" style="background:' + c + '"></span>' +
-      '<span>' + v + '</span></label>';
-  }).join('');
-
-  var lbl = document.getElementById('ps-lbl');
-  var btn = document.getElementById('ps-btn');
-  if (lbl) lbl.textContent = _projStatusFilter.length === 0 ? (lbl.dataset.empty || 'All Lifecycle Status')
-    : _projStatusFilter.length === 1 ? _projStatusFilter[0]
-    : _projStatusFilter.length + ' selected';
-  if (btn) btn.style.borderColor = _projStatusFilter.length > 0 ? 'var(--accent)' : 'var(--border)';
+  GDB.buildCheckDropdown({wrapperId:'ps-wrap', btnLabelId:'ps-lbl', listId:'ps-list',
+    values:statuses, activeArr:_projStatusFilter, colorMap:PROJ_STATUS_COLORS, toggleFn:'projToggleStatus'});
 }
 
 function projToggleStatus(v) {

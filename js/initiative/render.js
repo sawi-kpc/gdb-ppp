@@ -1426,33 +1426,10 @@ function renderList(){
   GDB.buildCheckDropdown({wrapperId:'list-pm-dropdown-wrap', btnLabelId:'list-pm-btn-label', listId:'list-pm-checkbox-list', values:listPMVals, activeArr:listPMRoleFilter, colorMap:null, toggleFn:'onListPMToggle'});
 
   /* Roadmap status dropdown checkboxes */
-  var rsCheckList=document.getElementById('rs-checkbox-list');
-  if(rsCheckList){
-    var rsVals=[];
-    allData.forEach(function(d){ var v=d['Roadmap Status']||''; if(v&&rsVals.indexOf(v)<0)rsVals.push(v); });
-    rsVals.sort();
-    rsCheckList.innerHTML=rsVals.map(function(v){
-      var checked=listRoadmapFilter.indexOf(v)>=0;
-      var dot=RC[v]?'<span style="width:8px;height:8px;border-radius:50%;background:'+RC[v]+';display:inline-block;flex-shrink:0"></span>':'';
-      return '<label style="display:flex;align-items:center;gap:8px;padding:5px 12px;cursor:pointer;font-size:12px;color:var(--text);transition:background 0.1s" '+
-        'onmouseover="this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'\'">'+
-        '<input type="checkbox" '+(checked?'checked':'')+' onchange="onListRoadmapToggle(\''+v+'\')" style="accent-color:var(--accent);width:13px;height:13px;flex-shrink:0">'+
-        dot+
-        '<span>'+v+'</span>'+
-      '</label>';
-    }).join('');
-  }
-  /* Update button label */
-  var rsBtnLabel=document.getElementById('rs-btn-label');
-  if(rsBtnLabel){
-    rsBtnLabel.textContent=listRoadmapFilter.length===0
-      ?'All Roadmap Status'
-      :listRoadmapFilter.length===1
-        ?listRoadmapFilter[0]
-        :listRoadmapFilter.length+' selected';
-    var rsBtn=document.getElementById('rs-dropdown-btn');
-    if(rsBtn) rsBtn.style.borderColor=listRoadmapFilter.length>0?'var(--accent)':'var(--border)';
-  }
+  var rsVals=[];
+  allData.forEach(function(d){ var v=d['Roadmap Status']||''; if(v&&rsVals.indexOf(v)<0)rsVals.push(v); });
+  rsVals.sort();
+  GDB.buildCheckDropdown({wrapperId:'rs-dropdown-wrap', btnLabelId:'rs-btn-label', listId:'rs-checkbox-list', values:rsVals, activeArr:listRoadmapFilter, colorMap:RC, toggleFn:'onListRoadmapToggle'});
 
   /* Sync search box value */
   var searchEl=document.getElementById('list-search');

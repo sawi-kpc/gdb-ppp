@@ -240,64 +240,36 @@ function _assignGroupColor(g) {
 
 /* ── Dropdown helpers ── */
 function calBuildDropdowns() {
-  calBuildDD('cal-status-list', CAL_STATUSES, calFilterStatus, 'calOnStatusToggle', CAL_STATUS_DOT);
-  calBuildDD('cal-group-list',  _calGroups,   calFilterGroup,  'calOnGroupToggle',  _groupColorMap);
-}
-
-function calBuildDD(listId, vals, arr, fn, colorMap) {
-  var el = document.getElementById(listId); if (!el) return;
-  el.innerHTML = vals.map(function(v) {
-    var dot = (colorMap && colorMap[v])
-      ? '<span class="dd-dot" style="background:' + colorMap[v] + '"></span>' : '';
-    return '<label class="dd-item">' +
-      '<input type="checkbox"' + (arr.indexOf(v) >= 0 ? ' checked' : '') +
-      ' onchange="' + fn + '(\'' + v + '\')">' +
-      dot + '<span>' + v + '</span></label>';
-  }).join('');
-  calUpdateBtnLabel(listId.replace('cal-','').replace('-list',''), arr);
-}
-
-function calUpdateBtnLabel(prefix, arr) {
-  var lbl = document.getElementById('cal-' + prefix + '-lbl');
-  var btn = document.getElementById('cal-' + prefix + '-btn');
-  if (!lbl) return;
-  lbl.textContent = arr.length === 0 ? (lbl.dataset.empty || 'All')
-    : arr.length === 1 ? arr[0]
-    : arr.length + ' selected';
-  if (btn) btn.style.borderColor = arr.length > 0 ? 'var(--accent)' : 'var(--border)';
+  GDB.buildCheckDropdown({wrapperId:'cal-status-wrap', btnLabelId:'cal-status-lbl', listId:'cal-status-list',
+    values:CAL_STATUSES, activeArr:calFilterStatus, colorMap:CAL_STATUS_DOT, toggleFn:'calOnStatusToggle'});
+  GDB.buildCheckDropdown({wrapperId:'cal-group-wrap', btnLabelId:'cal-group-lbl', listId:'cal-group-list',
+    values:_calGroups, activeArr:calFilterGroup, colorMap:_groupColorMap, toggleFn:'calOnGroupToggle'});
 }
 
 function calOnStatusToggle(v) {
   var i = calFilterStatus.indexOf(v);
   if (i >= 0) calFilterStatus.splice(i, 1); else calFilterStatus.push(v);
   calBuildDropdowns(); calRender();
-  document.getElementById('cal-status-panel').classList.add('open');
+  var p = document.getElementById('cal-status-panel'); if (p) p.style.display = 'block';
 }
 function calOnGroupToggle(v) {
   var i = calFilterGroup.indexOf(v);
   if (i >= 0) calFilterGroup.splice(i, 1); else calFilterGroup.push(v);
   calBuildDropdowns(); calRender();
-  document.getElementById('cal-group-panel').classList.add('open');
-}
-function calClearFilter(type) {
-  if (type === 'status') {
-    calFilterStatus = [];
-    document.getElementById('cal-status-panel').classList.remove('open');
-  } else {
-    calFilterGroup = [];
-    document.getElementById('cal-group-panel').classList.remove('open');
-  }
-  calBuildDropdowns(); calRender();
+  var p = document.getElementById('cal-group-panel'); if (p) p.style.display = 'block';
 }
 function calToggleDD(panelId) {
-  document.getElementById(panelId).classList.toggle('open');
+  var p = document.getElementById(panelId); if (!p) return;
+  var isOpen = p.style.display === 'block';
+  document.querySelectorAll('.dd-panel').forEach(function(x){ x.style.display='none'; });
+  if (!isOpen) p.style.display = 'block';
 }
 document.addEventListener('click', function(e) {
   ['cal-status-wrap', 'cal-group-wrap'].forEach(function(id) {
     var wrap = document.getElementById(id);
     if (wrap && !wrap.contains(e.target)) {
       var p = wrap.querySelector('.dd-panel');
-      if (p) p.classList.remove('open');
+      if (p) p.style.display = 'none';
     }
   });
 });

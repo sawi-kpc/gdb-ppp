@@ -45,7 +45,7 @@ var _taskPageSize = 20;
 var activeGroups      =[];  /* multi-select; empty = all */
 var activePriorities  =[];  /* multi-select; empty = all */
 var activeLabels      =[];  /* multi-select; empty = all */
-var activeAssignee  ='';  /* single-select; '' = all */
+var activeAssignees =[];  /* multi-select array */
 var searchQ='', sortCol='Due', sortAsc=false, showOverdueOnly=false;
 
 /* ── Filter state persistence (localStorage) ─────────────── */
@@ -54,7 +54,7 @@ function _saveSupportFilters(){
   GDB.saveFilters('gdb_filter_support_list', {
     activeStatuses:activeStatuses, activeGroups:activeGroups,
     activePriorities:activePriorities, activeLabels:activeLabels,
-    activeAssignee:activeAssignee,
+    activeAssignees:activeAssignees,
     searchQ:searchQ, sortCol:sortCol, sortAsc:sortAsc, _taskPage:_taskPage,
     showOverdueOnly:showOverdueOnly
   });
@@ -67,7 +67,7 @@ function _loadSupportFilters(){
   if(Array.isArray(f.activeGroups))     activeGroups     = _noAll(f.activeGroups);
   if(Array.isArray(f.activePriorities)) activePriorities = _noAll(f.activePriorities);
   if(Array.isArray(f.activeLabels))     activeLabels     = _noAll(f.activeLabels);
-  if(typeof f.activeAssignee==='string') activeAssignee = f.activeAssignee;
+  if(Array.isArray(f.activeAssignees))   activeAssignees = f.activeAssignees;
   if(f.searchQ)                       searchQ=f.searchQ;
   if(f.sortCol)                       sortCol=f.sortCol;
   if(typeof f.sortAsc==='boolean')       sortAsc=f.sortAsc;
@@ -175,20 +175,9 @@ function buildLabelFilter(data){
 }
 function buildAssigneeFilter(data){
   var assignees=Array.from(new Set(data.map(function(d){return (d.Assignee||'').trim().split(' ')[0];}).filter(Boolean))).sort();
-  var listEl=document.getElementById('assignee-checkbox-list'); if(!listEl) return;
-  function _row(v, label, active){
-    return '<label style="display:flex;align-items:center;gap:8px;padding:5px 12px;cursor:pointer;font-size:12px;color:var(--text);white-space:nowrap" '+
-      'onmouseover="this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'\'" onclick="onSupportAssigneeSelect(\''+v+'\')">'+
-      '<span style="width:8px;height:8px;border-radius:50%;background:'+(active?'var(--accent)':'var(--border)')+';display:inline-block;flex-shrink:0"></span>'+
-      '<span style="'+(active?'color:var(--accent);font-weight:600':'')+'">' +label+'</span></label>';
-  }
-  listEl.innerHTML=_row('','All Assignees',!activeAssignee)+
-    assignees.map(function(v){return _row(v,v,activeAssignee===v);}).join('');
-  var lbl=document.getElementById('assignee-btn-label');
-  if(lbl) lbl.textContent=activeAssignee||lbl.dataset.empty||'All Assignees';
-  var wrap=document.getElementById('assignee-dropdown-wrap');
-  var btn=wrap&&wrap.querySelector('button');
-  if(btn) btn.style.borderColor=activeAssignee?'var(--accent)':'var(--border)';
+  GDB.buildCheckDropdown({wrapperId:'assignee-dropdown-wrap', btnLabelId:'assignee-btn-label',
+    listId:'assignee-checkbox-list', values:assignees, activeArr:activeAssignees, colorMap:null,
+    toggleFn:'onSupportAssigneeToggle'});
 }
 
 function _supportToggle(arr, val, buildFn) {
@@ -208,13 +197,13 @@ function onSupportGroupToggle(v){ _supportToggle(activeGroups, v, buildGroupFilt
 function clearSupportGroup(){ _supportClear(activeGroups, buildGroupFilter, 'group-dropdown-panel'); }
 function onSupportLabelToggle(v){ _supportToggle(activeLabels, v, buildLabelFilter); var p=document.getElementById('label-dropdown-panel'); if(p)p.style.display='block'; }
 function clearSupportLabel(){ _supportClear(activeLabels, buildLabelFilter, 'label-dropdown-panel'); }
-function onSupportAssigneeSelect(v){
-  activeAssignee = activeAssignee===v ? '' : v;
-  var p=document.getElementById('assignee-dropdown-panel'); if(p)p.style.display='none';
+function onSupportAssigneeToggle(v){
+  var i=activeAssignees.indexOf(v); if(i>=0)activeAssignees.splice(i,1); else activeAssignees.push(v);
   buildAssigneeFilter(supportData);
+  var p=document.getElementById('assignee-dropdown-panel'); if(p) p.style.display='block';
   applyFilters();
 }
-function clearSupportAssignee(){ activeAssignee=''; buildAssigneeFilter(supportData); applyFilters(); }
+function clearSupportAssignee(){ activeAssignees=[]; buildAssigneeFilter(supportData); applyFilters(); }
 function onSupportPriorityToggle(v){ _supportToggle(activePriorities, v, buildPriorityDropdown); var p=document.getElementById('priority-dropdown-panel'); if(p)p.style.display='block'; }
 function clearSupportPriority(){ _supportClear(activePriorities, buildPriorityDropdown, 'priority-dropdown-panel'); }
 
@@ -343,7 +332,7 @@ function getFiltered(){
     var okLabels  = activeLabels.length===0   || activeLabels.some(function(l){
                       return (d.Labels||'').split(';').map(function(x){return x.trim();}).indexOf(l)!==-1;
                     });
-    var okAssignee= !activeAssignee || (d.Assignee||'').trim().split(' ')[0]===activeAssignee;
+    var okAssignee= activeAssignees.length===0 || activeAssignees.indexOf((d.Assignee||'').trim().split(' ')[0])>=0;
     var q=searchQ.toLowerCase();
     var okSearch = !q||d.Key.toLowerCase().includes(q)||d.Summary.toLowerCase().includes(q)||
                    (d.Assignee||'').toLowerCase().includes(q);

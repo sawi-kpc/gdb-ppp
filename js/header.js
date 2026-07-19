@@ -172,32 +172,6 @@ function buildGdbHeader(opts) {
   /* ── NAV ── */
   var nav = '<nav class="gdb-nav">';
 
-  /* Performance section */
-  nav += '<span class="gdb-nav-section">Performance</span>';
-
-  /* Summary */
-  var sumActive = (p.endsWith('/channel/') || p.endsWith('/channel/index.html')) ? ' active' : '';
-  nav += '<a class="gdb-nav-item' + sumActive + '" href="/gdb-ppp/channel/">Summary</a>';
-
-  /* Channel links */
-  var channels = [
-    { key:'KP1',   label:'KP.com',  color:'#3b82f6', href:'/gdb-ppp/channel/kp.html' },
-    { key:'F1',    label:'Firster', color:'#a855f7', href:'/gdb-ppp/channel/firster.html' },
-    { key:'KPCN',  label:'KP.CN',   color:'#f0900d', href:'/gdb-ppp/channel/kpcn.html' },
-    { key:'THT',   label:'THT',     color:'#10b981', href:'/gdb-ppp/channel/tht.html' },
-    { key:'DMALL', label:'Dmall',   color:'#f59e0b', href:'/gdb-ppp/channel/dmall.html' },
-    { key:'JD',    label:'JD',      color:'#f43f5e', href:'/gdb-ppp/channel/jd.html' },
-  ];
-  channels.forEach(function(ch) {
-    var isActive = p.endsWith(ch.href.split('/gdb-ppp')[1]) ? ' active' : '';
-    nav += '<a class="gdb-nav-item' + isActive + '" href="' + ch.href + '">' +
-           '<span class="gdb-nav-channel-dot" style="background:' + ch.color + '"></span>' +
-           ch.label + '</a>';
-  });
-
-  /* Divider */
-  nav += '<div class="gdb-nav-divider"></div>';
-
   /* PPP section */
   nav += '<span class="gdb-nav-section">Products &amp; Projects Portfolio</span>';
 

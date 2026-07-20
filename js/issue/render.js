@@ -17,8 +17,9 @@ var _activeView     = 'board';
 var _tablePage      = 1;
 var _tablePageSize  = 20;
 var _chartGroupBy   = 'month'; /* 'week' | 'month' */
-var _hideArchived   = true;   /* hide Closed+FixVersion issues by default */
-var _dashYearFilter = [String(new Date().getFullYear())]; /* default = current year */
+var _hideArchived     = true;   /* hide Closed+FixVersion issues by default (board/list) */
+var _dashHideArchived = false;  /* dashboard-specific: show archived by default */
+var _dashYearFilter   = [String(new Date().getFullYear())]; /* default = current year */
 
 /* ── Filter state persistence (localStorage) ─────────────── */
 var _issueFiltersLoaded = false;
@@ -29,7 +30,7 @@ function _saveIssueFilters(){
     _filterGroups:_filterGroups, _filterAssignees:_filterAssignees, _searchQ:_searchQ,
     _sortCol:_sortCol, _sortAsc:_sortAsc,
     _activeView:_activeView, _chartGroupBy:_chartGroupBy, _tablePage:_tablePage,
-    _hideArchived:_hideArchived, _dashYearFilter:_dashYearFilter
+    _hideArchived:_hideArchived, _dashHideArchived:_dashHideArchived, _dashYearFilter:_dashYearFilter
   });
 }
 function _loadIssueFilters(){
@@ -47,8 +48,9 @@ function _loadIssueFilters(){
   if(f._activeView)     _activeView=f._activeView;
   if(f._chartGroupBy)   _chartGroupBy=f._chartGroupBy;
   if(f._tablePage>0)    _tablePage=f._tablePage;
-  if(typeof f._hideArchived==='boolean') _hideArchived=f._hideArchived;
-  if(Array.isArray(f._dashYearFilter))   _dashYearFilter=f._dashYearFilter;
+  if(typeof f._hideArchived==='boolean')     _hideArchived=f._hideArchived;
+  if(typeof f._dashHideArchived==='boolean') _dashHideArchived=f._dashHideArchived;
+  if(Array.isArray(f._dashYearFilter))       _dashYearFilter=f._dashYearFilter;
 }
 
 /* ── Status board columns ────────────────────────────────── */
@@ -791,7 +793,9 @@ function applyFilters() {
     }
     if (_filterGroups.length > 0 && _filterGroups.indexOf(_getGroupSafe(d)) < 0) return false;
     if (_filterAssignees.length>0 && _filterAssignees.indexOf((d.Assignee||'').trim().split(' ')[0])<0) return false;
-    if (_hideArchived && d.Status === 'Closed' && d.FixVersion && d.FixVersion.trim() !== '') return false;
+    var _onDash = !!document.getElementById('dash-year-filter');
+    var _ha = _onDash ? _dashHideArchived : _hideArchived;
+    if (_ha && d.Status === 'Closed' && d.FixVersion && d.FixVersion.trim() !== '') return false;
     if (_dashYearFilter.length > 0) {
       var fo = _parseDate(d.FailureOccurs);
       if (!fo || _dashYearFilter.indexOf(String(fo.getFullYear())) < 0) return false;
@@ -836,15 +840,29 @@ function buildDashYearFilter(data) {
     }
   });
   years.sort();
-  el.innerHTML = years.map(function(y) {
+  var allActive = _dashYearFilter.length === 0;
+  var html = '<button class="fb-btn' + (allActive ? ' active' : '') + '" onclick="onDashYearToggle(\'all\')">All years</button>';
+  html += years.map(function(y) {
     var active = _dashYearFilter.indexOf(y) >= 0;
     return '<button class="fb-btn' + (active ? ' active' : '') + '" onclick="onDashYearToggle(\'' + y + '\')">' + y + '</button>';
   }).join('');
+  el.innerHTML = html;
 }
 
 function onDashYearToggle(year) {
-  var i = _dashYearFilter.indexOf(year);
-  if (i >= 0) _dashYearFilter.splice(i, 1); else _dashYearFilter.push(year);
+  if (year === 'all') { _dashYearFilter = []; }
+  else {
+    var i = _dashYearFilter.indexOf(year);
+    if (i >= 0) _dashYearFilter.splice(i, 1); else _dashYearFilter.push(year);
+  }
+  _saveIssueFilters();
+  applyFilters();
+}
+
+function toggleDashHideArchived() {
+  _dashHideArchived = !_dashHideArchived;
+  var btn = document.getElementById('btn-hide-archived');
+  if (btn) btn.classList.toggle('active', _dashHideArchived);
   _saveIssueFilters();
   applyFilters();
 }
@@ -1143,7 +1161,11 @@ function _renderIssues() {
   if (!hasTableEl && hasBoardEl) _activeView = 'board';
   /* restore DOM state from loaded filters */
   var se=document.getElementById('issue-search'); if(se&&_searchQ)se.value=_searchQ;
-  var btnHA=document.getElementById('btn-hide-archived'); if(btnHA) btnHA.classList.toggle('active',_hideArchived);
+  var btnHA=document.getElementById('btn-hide-archived');
+  if(btnHA) {
+    var _onDashPage = !!document.getElementById('dash-year-filter');
+    btnHA.classList.toggle('active', _onDashPage ? _dashHideArchived : _hideArchived);
+  }
   var data = window.issueData || [];
   data.forEach(function(d){ d.Status = _normaliseStatus(d.Status); });
   populateFilters(data);

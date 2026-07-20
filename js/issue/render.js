@@ -18,6 +18,7 @@ var _tablePage      = 1;
 var _tablePageSize  = 20;
 var _chartGroupBy   = 'month'; /* 'week' | 'month' */
 var _hideArchived   = true;   /* hide Closed+FixVersion issues by default */
+var _dashYearFilter = [];     /* [] = all years; ['2025','2026'] = selected years */
 
 /* ── Filter state persistence (localStorage) ─────────────── */
 var _issueFiltersLoaded = false;
@@ -28,7 +29,7 @@ function _saveIssueFilters(){
     _filterGroups:_filterGroups, _filterAssignees:_filterAssignees, _searchQ:_searchQ,
     _sortCol:_sortCol, _sortAsc:_sortAsc,
     _activeView:_activeView, _chartGroupBy:_chartGroupBy, _tablePage:_tablePage,
-    _hideArchived:_hideArchived
+    _hideArchived:_hideArchived, _dashYearFilter:_dashYearFilter
   });
 }
 function _loadIssueFilters(){
@@ -47,6 +48,7 @@ function _loadIssueFilters(){
   if(f._chartGroupBy)   _chartGroupBy=f._chartGroupBy;
   if(f._tablePage>0)    _tablePage=f._tablePage;
   if(typeof f._hideArchived==='boolean') _hideArchived=f._hideArchived;
+  if(Array.isArray(f._dashYearFilter))   _dashYearFilter=f._dashYearFilter;
 }
 
 /* ── Status board columns ────────────────────────────────── */
@@ -790,6 +792,10 @@ function applyFilters() {
     if (_filterGroups.length > 0 && _filterGroups.indexOf(_getGroupSafe(d)) < 0) return false;
     if (_filterAssignees.length>0 && _filterAssignees.indexOf((d.Assignee||'').trim().split(' ')[0])<0) return false;
     if (_hideArchived && d.Status === 'Closed' && d.FixVersion && d.FixVersion.trim() !== '') return false;
+    if (_dashYearFilter.length > 0) {
+      var fo = _parseDate(d.FailureOccurs);
+      if (!fo || _dashYearFilter.indexOf(String(fo.getFullYear())) < 0) return false;
+    }
     if (_searchQ) {
       var q = _searchQ.toLowerCase();
       var hay = ((d.Key||'')+' '+(d.Summary||'')+' '+(d.Assignee||'')+' '+(d.Components||'')).toLowerCase();
@@ -805,6 +811,7 @@ function applyFilters() {
     return _sortAsc ? cmp : -cmp;
   });
 
+  buildDashYearFilter(window.issueData || []);
   buildKPI(out);
   buildCharts(out);
   if (_activeView === 'board') buildBoard(out);
@@ -815,6 +822,30 @@ function toggleHideArchived() {
   _hideArchived = !_hideArchived;
   var btn = document.getElementById('btn-hide-archived');
   if (btn) btn.classList.toggle('active', _hideArchived);
+  applyFilters();
+}
+
+function buildDashYearFilter(data) {
+  var el = document.getElementById('dash-year-filter');
+  if (!el) return;
+  var years = [];
+  data.forEach(function(d) {
+    if (d.FailureOccurs) {
+      var dt = _parseDate(d.FailureOccurs);
+      if (dt) { var y = String(dt.getFullYear()); if (years.indexOf(y) < 0) years.push(y); }
+    }
+  });
+  years.sort();
+  el.innerHTML = years.map(function(y) {
+    var active = _dashYearFilter.indexOf(y) >= 0;
+    return '<button class="fb-btn' + (active ? ' active' : '') + '" onclick="onDashYearToggle(\'' + y + '\')">' + y + '</button>';
+  }).join('');
+}
+
+function onDashYearToggle(year) {
+  var i = _dashYearFilter.indexOf(year);
+  if (i >= 0) _dashYearFilter.splice(i, 1); else _dashYearFilter.push(year);
+  _saveIssueFilters();
   applyFilters();
 }
 

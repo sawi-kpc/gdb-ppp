@@ -16,7 +16,7 @@ var _sortAsc        = false;   /* desc — newest first */
 var _activeView     = 'board';
 var _tablePage      = 1;
 var _tablePageSize  = 20;
-var _chartGroupBy   = 'week'; /* 'week' | 'month' */
+var _chartGroupBy   = 'month'; /* 'week' | 'month' */
 var _hideArchived   = true;   /* hide Closed+FixVersion issues by default */
 
 /* ── Filter state persistence (localStorage) ─────────────── */
@@ -324,6 +324,7 @@ function buildCharts(data) {
 
 function toggleChartGroup(mode) {
   _chartGroupBy = mode;
+  _saveIssueFilters();
   buildWeekChart(_lastFilteredData || []);
   var w = document.getElementById('toggle-week');
   var m = document.getElementById('toggle-month');
@@ -1115,8 +1116,6 @@ function _renderIssues() {
   var data = window.issueData || [];
   data.forEach(function(d){ d.Status = _normaliseStatus(d.Status); });
   populateFilters(data);
-  buildKPI(data);
-  buildCharts(data);
   applyFilters();
   /* restore active view */
   if(_activeView==='table') switchView('table');

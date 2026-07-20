@@ -18,7 +18,7 @@ var _tablePage      = 1;
 var _tablePageSize  = 20;
 var _chartGroupBy   = 'month'; /* 'week' | 'month' */
 var _hideArchived   = true;   /* hide Closed+FixVersion issues by default */
-var _dashYearFilter = [];     /* [] = all years; ['2025','2026'] = selected years */
+var _dashYearFilter = [String(new Date().getFullYear())]; /* default = current year */
 
 /* ── Filter state persistence (localStorage) ─────────────── */
 var _issueFiltersLoaded = false;

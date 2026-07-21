@@ -105,7 +105,7 @@ function _loadInitFilters(){
 
 var STAGES=['Parking Lot','Budget Approval','Discovery','Ready for Delivery','Delivery','Done'];
 var SC={'Parking Lot':'#9E9890','Budget Approval':'#E07878','Discovery':'#D4A850','Ready for Delivery':'#9B8FE0','Delivery':'#6BAED4','Done':'#6DBF9A'};
-var RC={'New':'#6BAED4','Next':'#D4A850','Now':'#82B8D8','Completed':'#88C470','Completed With':'#6DBF9A'};
+var RC={'New':'#6BAED4','Next':'#D4A850','Now':'#82B8D8','Later':'#C8A84A',"Won't do":'#9E9E9E','Completed':'#88C470','Completed With':'#6DBF9A'};
 var GC={'Increase Revenue':'#88C470','Improve Internal Operation':'#6BAED4','Improve Customer Experience':'#9B8FE0','Improve Customer Engagement':'#D97890','Strategic Direction':'#D4A850'};
 var TC={'Strategic':'#9B8FE0','BAU':'#6BAED4'};
 var AC=['#6BAED4','#6DBF9A','#D4A850','#9B8FE0','#E07878','#88C470','#D97890','#D4B85A','#9E9890'];

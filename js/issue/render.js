@@ -802,7 +802,7 @@ function applyFilters() {
     if (_filterGroups.length > 0 && _filterGroups.indexOf(_getGroupSafe(d)) < 0) return false;
     if (_filterAssignees.length>0 && _filterAssignees.indexOf((d.Assignee||'').trim().split(' ')[0])<0) return false;
     if (_hideArchived && d.Status === 'Closed' && d.FixVersion && d.FixVersion.trim() !== '') return false;
-    if (_dashYearFilter.length > 0) {
+    if (document.getElementById('dash-year-filter') && _dashYearFilter.length > 0) {
       var fo = _parseDate(d.FailureOccurs);
       if (!fo || _dashYearFilter.indexOf(String(fo.getFullYear())) < 0) return false;
     }

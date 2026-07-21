@@ -61,6 +61,15 @@ function _loadIssueFilters(){
   if(Array.isArray(f._dashYearFilter))   _dashYearFilter=f._dashYearFilter;
 }
 
+function resetIssueFilters(){
+  _filterStatuses={}; _filterPriorities=[]; _filterSeverities=[];
+  _filterComp=[]; _filterGroups=[]; _filterAssignees=[]; _searchQ=''; _tablePage=1;
+  var si=document.getElementById('issue-search')||document.getElementById('list-search-input');
+  if(si)si.value='';
+  GDB.saveFilters(_getFilterKey(),{});
+  populateFilters(window.issueData||[]);
+  applyFilters();
+}
 /* ── Status board columns ────────────────────────────────── */
 var STATUSES = [
   { key:'Open',          label:'Open',          color:'var(--down)'   },

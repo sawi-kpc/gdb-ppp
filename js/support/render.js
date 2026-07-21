@@ -74,6 +74,13 @@ function _loadSupportFilters(){
   if(f._taskPage>0)                      _taskPage=f._taskPage;
   if(typeof f.showOverdueOnly==='boolean') showOverdueOnly=f.showOverdueOnly;
 }
+function resetSupportFilters(){
+  activeStatuses=[]; activeGroups=[]; activePriorities=[]; activeLabels=[];
+  activeAssignees=[]; searchQ=''; showOverdueOnly=false; _taskPage=1;
+  var si=document.getElementById('support-search'); if(si)si.value='';
+  GDB.saveFilters('gdb_filter_support_list',{});
+  applyFilters();
+}
 
 /* ── Build summary strip ─────────────────────────────────── */
 function _ssc(label,cls,num,sub){

@@ -103,6 +103,26 @@ function _loadInitFilters(){
   if(Array.isArray(f.initYearFilter)&&f.initYearFilter.length) initYearFilter=f.initYearFilter;
 }
 
+function resetSumFilters(){
+  sumYearFilter=['ROADMAP_2026']; sumStageFilter=[]; sumRoadmapFilter=[];
+  sumComponentFilter=[]; sumDepFilter=[]; sumPMRoleFilter=[]; sumSearchQuery='';
+  var si=document.getElementById('sum-search'); if(si)si.value='';
+  GDB.saveFilters('gdb_filter_initiative_timeline',{});
+  renderSummary();
+}
+function resetListFilters(){
+  listYearFilter=['ROADMAP_2026']; listStatusFilter=[]; listRoadmapFilter=[];
+  listComponentFilter=[]; listDepFilter=[]; listPMRoleFilter=[];
+  listAssigneeFilter=[]; listSearchQuery=''; listHideWontDo=false;
+  var li=document.getElementById('list-search'); if(li)li.value='';
+  GDB.saveFilters('gdb_filter_initiative_list',{});
+  renderList();
+}
+function resetInitFilters(){
+  initYearFilter=['ROADMAP_2026'];
+  GDB.saveFilters('gdb_filter_initiative_dash',{});
+  renderInitiatives();
+}
 var STAGES=['Parking Lot','Budget Approval','Discovery','Ready for Delivery','Delivery','Done'];
 var SC={'Parking Lot':'#9E9890','Budget Approval':'#E07878','Discovery':'#D4A850','Ready for Delivery':'#9B8FE0','Delivery':'#6BAED4','Done':'#6DBF9A'};
 var RC={'New':'#6BAED4','Next':'#D4A850','Now':'#82B8D8','Later':'#C8A84A',"Won't do":'#9E9E9E','Completed':'#88C470','Completed With':'#6DBF9A'};

@@ -162,6 +162,7 @@
             <input type="search" id="proj-search" placeholder="Search project…" oninput="projRender()">
           </div>
 
+          <button onclick="projResetFilters()" style="height:26px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:none;color:var(--text3);font-size:11px;cursor:pointer;white-space:nowrap" title="Reset all filters to default">↺ Reset Filter</button>
           <span class="count-lbl" id="proj-showing-lbl"></span>
         </div>
 
@@ -231,6 +232,11 @@ function projToggleStatus(v) {
 function projClearStatus() {
   _projStatusFilter = [];
   document.getElementById('ps-panel').style.display = 'none';
+  projBuildStatusDD(); projRender();
+}
+function projResetFilters() {
+  _projStatusFilter = [];
+  var si = document.getElementById('proj-search'); if (si) si.value = '';
   projBuildStatusDD(); projRender();
 }
 function projToggleDD(id) {

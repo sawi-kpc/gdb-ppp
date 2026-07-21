@@ -1922,3 +1922,15 @@ function onRmStatusToggle(v){var i=rmStatusFilter.indexOf(v);if(i>=0)rmStatusFil
 function clearRmStatusFilter(){rmStatusFilter=[];var p=document.getElementById('rm-status-panel');if(p)p.style.display='none';renderRoadmap();}
 function onRmSearchChange(v){rmSearchQuery=v||'';renderRoadmap();}
 function onRmHideNoDate(){rmHideNoDate=!rmHideNoDate;renderRoadmap();}
+function resetRoadmapFilters(){
+  rmYearFilter=new Date().getFullYear(); rmComponentFilter=[]; rmDepFilter=[];
+  rmPMRoleFilter=[]; rmStatusFilter=[]; rmSearchQuery=''; rmHideNoDate=false;
+  var si=document.querySelector('.rm-search'); if(si)si.value='';
+  GDB.saveFilters('gdb_filter_initiative_roadmap',{});
+  renderRoadmap();
+}
+function resetCompletedFilters(){
+  doneYearFilter=['all']; doneComponentFilter=[]; donePMRoleFilter=[]; doneSearchQuery='';
+  var si=document.getElementById('done-search'); if(si)si.value='';
+  renderCompleted();
+}

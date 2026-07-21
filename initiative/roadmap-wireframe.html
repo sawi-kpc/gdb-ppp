@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Roadmap Wireframe</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:      #0d1117;
+  --surface: #161b22;
+  --s2:      #1c2128;
+  --border:  #30363d;
+  --text:    #c9d1d9;
+  --text2:   #8b949e;
+  --text3:   #484f58;
+  --accent:  #58a6ff;
+}
+body { background: var(--bg); color: var(--text); font-family: system-ui,-apple-system,sans-serif; font-size: 12px; min-height: 100vh; display:flex; flex-direction:column; }
+
+/* filter bar */
+.fbar { display:flex; align-items:center; gap:8px; padding:10px 16px; background:var(--surface); border-bottom:1px solid var(--border); flex-wrap:wrap; position:sticky; top:0; z-index:50; flex-shrink:0; }
+.fbar-title { font-size:13px; font-weight:700; margin-right:4px; }
+.yr-btn { padding:3px 11px; border-radius:20px; border:1px solid var(--border); background:var(--s2); color:var(--text2); font-size:11px; font-weight:600; cursor:pointer; }
+.yr-btn.on { background:var(--accent); border-color:var(--accent); color:#fff; }
+.sep { width:1px; height:18px; background:var(--border); }
+.dd { display:flex; align-items:center; gap:4px; padding:3px 10px; height:26px; border:1px solid var(--border); border-radius:4px; background:var(--s2); color:var(--text); font-size:11px; cursor:pointer; white-space:nowrap; }
+.arr { font-size:9px; color:var(--text3); }
+.srch { position:relative; }
+.srch input { background:var(--s2); border:1px solid var(--border); color:var(--text); border-radius:4px; padding:4px 8px 4px 24px; font-size:11px; width:160px; outline:none; height:26px; }
+.srch::before { content:'⌕'; position:absolute; left:7px; top:50%; transform:translateY(-50%); color:var(--text3); font-size:13px; pointer-events:none; }
+.ml { margin-left:auto; font-size:11px; color:var(--text3); }
+
+/* table layout */
+table { width:100%; border-collapse:collapse; table-layout:fixed; }
+
+/* header */
+thead th { background:var(--surface); border-bottom:2px solid var(--border); padding:7px 12px; font-size:11px; font-weight:700; text-align:center; position:sticky; top:0; z-index:30; }
+thead th.goal-hd { width:140px; text-align:left; font-size:10px; color:var(--text3); font-weight:600; text-transform:uppercase; letter-spacing:.05em; position:sticky; left:0; z-index:40; border-right:1px solid var(--border); }
+thead th.q1 { color:#58a6ff; border-right:1px solid var(--border); }
+thead th.q2 { color:#d29922; border-right:1px solid var(--border); background:rgba(210,153,34,.04); }
+thead th.q3 { color:#3fb950; border-right:1px solid var(--border); }
+thead th.q4 { color:#bc8cff; }
+thead th .sub { font-size:9px; font-weight:400; opacity:.6; margin-left:4px; }
+
+/* rows */
+tbody tr:hover td { background:rgba(255,255,255,.015); }
+
+/* goal label cell */
+td.goal-lbl {
+  position:sticky; left:0; z-index:20;
+  background:var(--s2);
+  border-right:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  padding:10px 10px 10px 12px;
+  vertical-align:top;
+  font-size:10px; font-weight:700; color:var(--text2); line-height:1.5;
+  white-space:nowrap;
+}
+td.goal-lbl .dot { display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:5px; vertical-align:middle; }
+
+/* quarter cells */
+td.qcell {
+  border-right:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  padding:6px;
+  vertical-align:top;
+}
+td.qcell.q2 { background:rgba(210,153,34,.02); }
+td.qcell.today { background:rgba(88,166,255,.025); }
+td.qcell:last-child { border-right:none; }
+
+/* chips */
+.chip {
+  border-radius:4px; padding:5px 8px; margin-bottom:4px;
+  font-size:10px; line-height:1.4; cursor:pointer;
+  transition:filter .15s;
+}
+.chip:last-child { margin-bottom:0; }
+.chip:hover { filter:brightness(1.15); }
+.chip-name { font-weight:600; color:#fff; }
+.chip-sub  { font-size:9px; color:rgba(255,255,255,.6); margin-top:1px; }
+
+/* span bar (initiative spanning multiple Q) */
+.bar {
+  display:flex; align-items:center; justify-content:space-between; gap:6px;
+  border-radius:4px; padding:5px 10px; margin-bottom:4px;
+  font-size:10px; font-weight:600; color:#fff;
+}
+.bar .range { font-size:9px; opacity:.6; white-space:nowrap; flex-shrink:0; }
+
+/* colors */
+.delivery  { background:rgba(88,166,255,.6);  border:1px solid rgba(88,166,255,.8); }
+.rfd       { background:rgba(188,140,255,.55); border:1px solid rgba(188,140,255,.8); }
+.discovery { background:rgba(210,153,34,.55);  border:1px solid rgba(210,153,34,.8); }
+.done      { background:rgba(63,185,80,.5);    border:1px solid rgba(63,185,80,.8); }
+.parking   { background:rgba(72,79,88,.45);    border:1px solid rgba(72,79,88,.7); }
+
+/* legend */
+.legend { display:flex; align-items:center; gap:14px; padding:8px 16px; background:var(--surface); border-top:1px solid var(--border); flex-wrap:wrap; flex-shrink:0; }
+.li { display:flex; align-items:center; gap:5px; font-size:10px; color:var(--text3); }
+.ld { width:10px; height:10px; border-radius:2px; }
+</style>
+</head>
+<body>
+
+<!-- Filter bar -->
+<div class="fbar">
+  <span class="fbar-title">◈ Roadmap</span>
+  <button class="yr-btn">2025</button>
+  <button class="yr-btn on">2026</button>
+  <button class="yr-btn">2027</button>
+  <div class="sep"></div>
+  <button class="dd">All Components <span class="arr">▾</span></button>
+  <button class="dd">All PM Roles <span class="arr">▾</span></button>
+  <button class="dd">All Statuses <span class="arr">▾</span></button>
+  <div class="sep"></div>
+  <div class="srch"><input placeholder="Search…"></div>
+  <span class="ml">10 initiatives · 2026</span>
+</div>
+
+<div style="overflow:auto;flex:1">
+<table>
+  <thead>
+    <tr>
+      <th class="goal-hd">Project Goal</th>
+      <th class="q1">Q1 <span class="sub">Jan – Mar</span></th>
+      <th class="q2">Q2 <span class="sub">Apr – Jun</span> ◂ now</th>
+      <th class="q3">Q3 <span class="sub">Jul – Sep</span></th>
+      <th class="q4">Q4 <span class="sub">Oct – Dec</span></th>
+    </tr>
+  </thead>
+  <tbody>
+
+    <!-- ── Increase Revenue ── -->
+    <tr>
+      <td class="goal-lbl" style="border-left:3px solid #88C470">
+        <span class="dot" style="background:#88C470"></span>Increase Revenue
+      </td>
+      <td class="qcell">
+        <!-- empty -->
+      </td>
+      <td class="qcell q2 today">
+        <div class="chip rfd">
+          <div class="chip-name">Tiktok Integration</div>
+          <div class="chip-sub">Pornpan · RFD</div>
+        </div>
+        <div class="chip rfd">
+          <div class="chip-name">Shopee Integration</div>
+          <div class="chip-sub">Pornpan · RFD</div>
+        </div>
+        <div class="chip delivery">
+          <div class="chip-name">Lazada Integration</div>
+          <div class="chip-sub">Waree · Delivery</div>
+        </div>
+        <div class="chip delivery">
+          <div class="chip-name">Drop Ship / Seller Center (1)</div>
+          <div class="chip-sub">Waree · Delivery</div>
+        </div>
+      </td>
+      <td class="qcell">
+        <!-- empty -->
+      </td>
+      <td class="qcell">
+        <div class="chip delivery">
+          <div class="chip-name">Drop Ship / Seller Center (2)</div>
+          <div class="chip-sub">Waree · Delivery</div>
+        </div>
+        <div class="chip discovery">
+          <div class="chip-name">Phase 2 - Affiliate</div>
+          <div class="chip-sub">ETA Mar 2026 · Discovery</div>
+        </div>
+      </td>
+    </tr>
+
+    <!-- ── Improve Customer Experience ── -->
+    <tr>
+      <td class="goal-lbl" style="border-left:3px solid #9B8FE0">
+        <span class="dot" style="background:#9B8FE0"></span>Improve Customer<br><span style="padding-left:12px">Experience</span>
+      </td>
+      <td class="qcell">
+        <!-- empty -->
+      </td>
+      <td class="qcell q2 today">
+        <div class="chip delivery">
+          <div class="chip-name">Enhance UX/UI</div>
+          <div class="chip-sub">incl. product photos &amp; desc</div>
+        </div>
+        <div class="chip delivery">
+          <div class="chip-name">Revise Checkout Journey</div>
+          <div class="chip-sub">+ Offer/Discount by payment</div>
+        </div>
+      </td>
+      <td class="qcell">
+        <div class="chip delivery">
+          <div class="chip-name">Next Purchase Offers</div>
+          <div class="chip-sub">Sawitree · Delivery</div>
+        </div>
+        <div class="chip discovery">
+          <div class="chip-name">O2O Brand Directory Mgmt</div>
+          <div class="chip-sub">Sawitree · Discovery</div>
+        </div>
+      </td>
+      <td class="qcell">
+        <div class="chip rfd">
+          <div class="chip-name">WEB &amp; APP Revamp</div>
+          <div class="chip-sub">ETA Mar 2026 · RFD</div>
+        </div>
+        <div class="chip rfd">
+          <div class="chip-name">Language &amp; Localization</div>
+          <div class="chip-sub">Pornpan · RFD</div>
+        </div>
+        <div class="chip discovery">
+          <div class="chip-name">Personalised Recommendation</div>
+          <div class="chip-sub">Waree · Discovery</div>
+        </div>
+        <div class="chip discovery">
+          <div class="chip-name">Product Finder Quiz</div>
+          <div class="chip-sub">Nattapol · Discovery</div>
+        </div>
+      </td>
+    </tr>
+
+    <!-- ── Improve Customer Engagement ── -->
+    <tr>
+      <td class="goal-lbl" style="border-left:3px solid #D97890">
+        <span class="dot" style="background:#D97890"></span>Improve Customer<br><span style="padding-left:12px">Engagement</span>
+      </td>
+      <td class="qcell">
+        <!-- empty -->
+      </td>
+      <td class="qcell q2 today">
+        <div class="chip delivery">
+          <div class="chip-name">Implement CMS</div>
+          <div class="chip-sub">Nattapol · Delivery</div>
+        </div>
+        <div class="chip discovery">
+          <div class="chip-name">Bulk Campaign Config</div>
+          <div class="chip-sub">Sawitree · Discovery</div>
+        </div>
+        <div class="chip delivery">
+          <div class="chip-name">Live Commerce (1)</div>
+          <div class="chip-sub">Waree · Delivery</div>
+        </div>
+        <div class="chip delivery">
+          <div class="chip-name">Digital Product (Ticket/Voucher)</div>
+          <div class="chip-sub">Waree · Delivery</div>
+        </div>
+        <div class="chip delivery">
+          <div class="chip-name">Push Notif / Next Purchase</div>
+          <div class="chip-sub">Waree · Delivery</div>
+        </div>
+        <div class="chip delivery">
+          <div class="chip-name">Full-funnel Perf. Tracking</div>
+          <div class="chip-sub">Sawitree · Delivery</div>
+        </div>
+      </td>
+      <td class="qcell">
+        <div class="chip delivery">
+          <div class="chip-name">Message Box Integration</div>
+          <div class="chip-sub">Nattapol</div>
+        </div>
+        <div class="chip delivery">
+          <div class="chip-name">Categories &amp; Attribute Filter</div>
+          <div class="chip-sub">Nattapol</div>
+        </div>
+        <div class="chip delivery">
+          <div class="chip-name">Accurate Media Tracking</div>
+          <div class="chip-sub">Sawitree</div>
+        </div>
+      </td>
+      <td class="qcell">
+        <div class="chip delivery">
+          <div class="chip-name">Live Commerce (2)</div>
+          <div class="chip-sub">Waree</div>
+        </div>
+        <div class="chip delivery">
+          <div class="chip-name">Hotel Delivery</div>
+          <div class="chip-sub">Waree</div>
+        </div>
+        <div class="chip discovery">
+          <div class="chip-name">Customer Engagement In-app</div>
+          <div class="chip-sub">Pornpan</div>
+        </div>
+        <div class="chip discovery">
+          <div class="chip-name">Personalised Recommendation (2)</div>
+          <div class="chip-sub">Waree</div>
+        </div>
+      </td>
+    </tr>
+
+    <!-- ── Improve Internal Operation ── -->
+    <tr>
+      <td class="goal-lbl" style="border-left:3px solid #6BAED4">
+        <span class="dot" style="background:#6BAED4"></span>Improve Internal<br><span style="padding-left:12px">Operation</span>
+      </td>
+      <td class="qcell">
+        <div class="bar delivery">
+          <span>GWL + KP1Pass Phase 1</span>
+          <span class="range">Q1 → Q2</span>
+        </div>
+        <div class="chip delivery">
+          <div class="chip-name">Smooth Integration / Stock Sync</div>
+          <div class="chip-sub">Pornpan · Delivery</div>
+        </div>
+        <div class="chip delivery">
+          <div class="chip-name">Taihaitao OS &amp; Data Integration</div>
+          <div class="chip-sub">Pornpan</div>
+        </div>
+      </td>
+      <td class="qcell q2 today">
+        <div class="chip delivery">
+          <div class="chip-name">GWL + KP1Pass Phase 1 (cont.)</div>
+          <div class="chip-sub">→ Jun</div>
+        </div>
+        <div class="chip done">
+          <div class="chip-name">E-Tax (Manual)</div>
+          <div class="chip-sub">Sawitree · Done ✅</div>
+        </div>
+        <div class="chip done">
+          <div class="chip-name">Bulk Create Promo Code</div>
+          <div class="chip-sub">Sawitree · Done ✅</div>
+        </div>
+        <div class="chip done">
+          <div class="chip-name">Google Product Feed</div>
+          <div class="chip-sub">Nattapol · Done ✅</div>
+        </div>
+      </td>
+      <td class="qcell">
+        <div class="bar delivery">
+          <span>GWL + KP1Pass Phase 2</span>
+          <span class="range">Q3 → Q4</span>
+        </div>
+      </td>
+      <td class="qcell">
+        <div class="chip delivery">
+          <div class="chip-name">GWL + KP1Pass Phase 2 (cont.)</div>
+          <div class="chip-sub">→ Dec</div>
+        </div>
+        <div class="chip delivery">
+          <div class="chip-name">E-Tax</div>
+          <div class="chip-sub">Sawitree</div>
+        </div>
+        <div class="chip discovery">
+          <div class="chip-name">Multi Parcel / Tracking No.</div>
+          <div class="chip-sub">Nattapol</div>
+        </div>
+        <div class="chip discovery">
+          <div class="chip-name">Free Shipping Campaign Scheduler</div>
+          <div class="chip-sub">Nattapol</div>
+        </div>
+      </td>
+    </tr>
+
+    <!-- ── Strategic Direction ── -->
+    <tr>
+      <td class="goal-lbl" style="border-left:3px solid #D4A850">
+        <span class="dot" style="background:#D4A850"></span>Strategic Direction
+      </td>
+      <td class="qcell">
+        <div class="chip done">
+          <div class="chip-name">Transfer F1 CRM to KPC</div>
+          <div class="chip-sub">Sawitree · Done ✅</div>
+        </div>
+        <div class="chip done">
+          <div class="chip-name">Pilot Phase (KP, KP-CN)</div>
+          <div class="chip-sub">Pornpan · Done</div>
+        </div>
+      </td>
+      <td class="qcell q2 today">
+        <div class="chip delivery">
+          <div class="chip-name">Integrate MA data set</div>
+          <div class="chip-sub">Sawitree</div>
+        </div>
+        <div class="chip delivery">
+          <div class="chip-name">F1 CRM MVP 2</div>
+          <div class="chip-sub">Sawitree</div>
+        </div>
+        <div class="chip delivery">
+          <div class="chip-name">Implement MA Event Tracking</div>
+          <div class="chip-sub">Sawitree</div>
+        </div>
+        <div class="chip rfd">
+          <div class="chip-name">Discovery &amp; Pilot (CDP)</div>
+          <div class="chip-sub">Pornpan · RFD</div>
+        </div>
+        <div class="chip rfd">
+          <div class="chip-name">Phase 1.2 - Affiliate</div>
+          <div class="chip-sub">Pornpan · RFD</div>
+        </div>
+      </td>
+      <td class="qcell">
+        <div class="chip delivery">
+          <div class="chip-name">CDP Discovery &amp; Pilot</div>
+          <div class="chip-sub">Pornpan</div>
+        </div>
+        <div class="chip delivery">
+          <div class="chip-name">F1 CRM MVP 3</div>
+          <div class="chip-sub">Sawitree</div>
+        </div>
+        <div class="chip delivery">
+          <div class="chip-name">Appsflyer</div>
+          <div class="chip-sub">Nattapol</div>
+        </div>
+        <div class="chip rfd">
+          <div class="chip-name">Phase 1 (Affiliate)</div>
+          <div class="chip-sub">Pornpan</div>
+        </div>
+      </td>
+      <td class="qcell">
+        <div class="chip rfd">
+          <div class="chip-name">CDP Phase 1</div>
+          <div class="chip-sub">Pornpan · RFD</div>
+        </div>
+        <div class="chip rfd">
+          <div class="chip-name">Phase 2 (Affiliate)</div>
+          <div class="chip-sub">Pornpan</div>
+        </div>
+      </td>
+    </tr>
+
+  </tbody>
+</table>
+</div>
+
+<!-- Legend -->
+<div class="legend">
+  <span style="font-size:10px;color:var(--text3);font-weight:600;margin-right:2px">Status:</span>
+  <span class="li"><span class="ld delivery"></span>Delivery</span>
+  <span class="li"><span class="ld rfd"></span>Ready for Delivery</span>
+  <span class="li"><span class="ld discovery"></span>Discovery</span>
+  <span class="li"><span class="ld done"></span>Done</span>
+  <span class="li"><span class="ld parking"></span>Parking Lot</span>
+  <span style="margin-left:auto;font-size:10px;color:rgba(88,166,255,.5)">◂ now = Q2 2026</span>
+</div>
+
+</body>
+</html>

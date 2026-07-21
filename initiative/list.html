@@ -39,15 +39,14 @@
     <div id="yf-list" style="display:flex;gap:6px;flex-wrap:wrap"></div>
     <button class="fb-btn" id="btn-no-year-list" onclick="toggleNoYearList(this)">No roadmap year</button>
     <div style="flex:1"></div>
-    <button onclick="resetListFilters()" style="height:26px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:none;color:var(--text3);font-size:11px;cursor:pointer;white-space:nowrap" title="Reset all filters to default">↺ Reset Filter</button>
     <button id="btn-list-hide-wontdo" onclick="toggleListHideWontDo()" style="display:inline-flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;padding:0;flex-shrink:0">
       <span class="list-tog-track"><span class="list-tog-thumb"></span></span>
       <span class="list-tog-label">Hide Won't do</span>
     </button>
-    <span class="fb-label">Search:</span>
     <input type="search" id="list-search" placeholder="Search summary…"
       oninput="onListSearchChange(this.value)"
       style="height:26px;padding:0 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);font-size:11.5px;width:200px;outline:none">
+    <button onclick="resetListFilters()" style="height:26px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:none;color:var(--text3);font-size:11px;cursor:pointer;white-space:nowrap" title="Reset all filters to default">↺ Reset Filter</button>
   </div>
   <!-- Row 2: All dropdowns -->
   <div class="filter-bar" style="margin-top:8px">

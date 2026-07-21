@@ -164,6 +164,7 @@
           </div>
         </div>
         <div style="flex:1"></div>
+        <span class="count-label" id="count-label"></span>
         <button id="btn-hide-archived" class="active" onclick="toggleHideArchived()">
           <span class="tog-track"><span class="tog-thumb"></span></span>
           <span class="tog-label">Hide Archived</span>
@@ -172,7 +173,6 @@
           <input type="text" id="issue-search" placeholder="Search…" oninput="applyFilters()">
         </div>
         <button onclick="resetIssueFilters()" style="height:26px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:none;color:var(--text3);font-size:11px;cursor:pointer;white-space:nowrap" title="Reset all filters to default">↺ Reset Filter</button>
-        <span class="count-label" id="count-label"></span>
       </div>
 
       <!-- Table view -->

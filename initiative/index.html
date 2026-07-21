@@ -18,8 +18,6 @@
     <span class="fb-label">Roadmap year:</span>
     <div id="yf-sum" style="display:flex;gap:6px;flex-wrap:wrap"></div>
     <button class="fb-btn" id="btn-no-year-tl" onclick="toggleNoYearTl(this)">No roadmap year</button>
-    <div style="flex:1"></div>
-    <button onclick="resetSumFilters()" style="height:26px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:none;color:var(--text3);font-size:11px;cursor:pointer;white-space:nowrap" title="Reset all filters to default">↺ Reset Filter</button>
   </div>
   <div class="metrics-strip" id="sum-metrics"></div>
   <div class="section">
@@ -87,10 +85,10 @@
         </div>
       </div>
       <div style="flex:1"></div>
-      <span class="tl-ctrl-label">Search:</span>
       <input type="search" id="sum-search" placeholder="Search summary…"
         oninput="onSumSearchChange(this.value)"
         style="height:26px;padding:0 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);font-size:11.5px;width:180px;outline:none">
+      <button onclick="resetSumFilters()" style="height:26px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:none;color:var(--text3);font-size:11px;cursor:pointer;white-space:nowrap" title="Reset all filters to default">↺ Reset Filter</button>
     </div>
     <div class="tl-head-wrap" id="tl-head-wrap"><div class="tl-inner" id="tl-head-inner"></div></div>
     </div><!-- /tl-sticky-top -->

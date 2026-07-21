@@ -177,6 +177,7 @@
           <input type="search" id="cal-search-input"
             placeholder="Search key or summary…" oninput="calRender()">
         </div>
+        <button onclick="calResetFilters()" style="height:26px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:none;color:var(--text3);font-size:11px;cursor:pointer;white-space:nowrap" title="Reset all filters to default">↺ Reset Filter</button>
       </div>
 
       <!-- Calendar -->
@@ -246,6 +247,16 @@ function calBuildDropdowns() {
     values:_calGroups, activeArr:calFilterGroup, colorMap:_groupColorMap, toggleFn:'calOnGroupToggle'});
 }
 
+function calClearFilter(type) {
+  if (type === 'status') { calFilterStatus = []; }
+  else if (type === 'group') { calFilterGroup = []; }
+  calBuildDropdowns(); calRender();
+}
+function calResetFilters() {
+  calFilterStatus = []; calFilterGroup = [];
+  var si = document.getElementById('cal-search-input'); if (si) si.value = '';
+  calBuildDropdowns(); calRender();
+}
 function calOnStatusToggle(v) {
   var i = calFilterStatus.indexOf(v);
   if (i >= 0) calFilterStatus.splice(i, 1); else calFilterStatus.push(v);

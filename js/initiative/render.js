@@ -5,7 +5,7 @@
 
 var charts={};
 var sumYearFilter=['ROADMAP_2026'],initYearFilter=['ROADMAP_2026'],sumStageFilter=[],hideNoDate=false,sumSearchQuery='';
-var sumRoadmapFilter=[];
+var sumRoadmapFilter=[], sumAssigneeFilter=[];
 var listYearFilter=['ROADMAP_2026'];
 var listAssigneeFilter=[];
 var listSearchQuery='';
@@ -73,7 +73,7 @@ function _loadListFilters(){
 function _saveSumFilters(){
   GDB.saveFilters('gdb_filter_initiative_timeline',{
     sumYearFilter:sumYearFilter, sumStageFilter:sumStageFilter,
-    sumRoadmapFilter:sumRoadmapFilter, sumComponentFilter:sumComponentFilter,
+    sumRoadmapFilter:sumRoadmapFilter, sumAssigneeFilter:sumAssigneeFilter, sumComponentFilter:sumComponentFilter,
     sumDepFilter:sumDepFilter, sumPMRoleFilter:sumPMRoleFilter,
     sumSearchQuery:sumSearchQuery, hideNoDate:hideNoDate,
     _tlStart:_tlStart, _tlEnd:_tlEnd
@@ -84,7 +84,8 @@ function _loadSumFilters(){
   var f=GDB.loadFilters('gdb_filter_initiative_timeline'); if(!f)return;
   if(Array.isArray(f.sumYearFilter)&&f.sumYearFilter.length) sumYearFilter=f.sumYearFilter;
   if(Array.isArray(f.sumStageFilter))     sumStageFilter=f.sumStageFilter;
-  if(Array.isArray(f.sumRoadmapFilter))   sumRoadmapFilter=f.sumRoadmapFilter;
+  if(Array.isArray(f.sumRoadmapFilter))    sumRoadmapFilter=f.sumRoadmapFilter;
+  if(Array.isArray(f.sumAssigneeFilter))   sumAssigneeFilter=f.sumAssigneeFilter;
   if(Array.isArray(f.sumComponentFilter)) sumComponentFilter=f.sumComponentFilter;
   if(Array.isArray(f.sumDepFilter))       sumDepFilter=f.sumDepFilter;
   if(Array.isArray(f.sumPMRoleFilter))    sumPMRoleFilter=f.sumPMRoleFilter;
@@ -105,7 +106,7 @@ function _loadInitFilters(){
 
 function resetSumFilters(){
   sumYearFilter=['ROADMAP_2026']; sumStageFilter=[]; sumRoadmapFilter=[];
-  sumComponentFilter=[]; sumDepFilter=[]; sumPMRoleFilter=[]; sumSearchQuery='';
+  sumComponentFilter=[]; sumDepFilter=[]; sumPMRoleFilter=[]; sumAssigneeFilter=[]; sumSearchQuery='';
   var si=document.getElementById('sum-search'); if(si)si.value='';
   GDB.saveFilters('gdb_filter_initiative_timeline',{});
   renderSummary();
@@ -467,6 +468,19 @@ function renderSummary(){
   sumPMVals.sort();
   GDB.buildCheckDropdown({wrapperId:'sum-pm-dropdown-wrap', btnLabelId:'sum-pm-btn-label', listId:'sum-pm-checkbox-list', values:sumPMVals, activeArr:sumPMRoleFilter, colorMap:null, toggleFn:'onSumPMToggle'});
 
+  /* Assignee dropdown */
+  var sumAssignees=new Set();
+  allData.forEach(function(d){
+    var a1=(d['Assignee.displayName']||'').trim().split(' ')[0];
+    if(a1&&a1.length>1&&a1!=='[no') sumAssignees.add(a1);
+    (d['Assignee (2nd).displayName']||'').split(';').forEach(function(n){
+      var fn=n.trim().split(' ')[0]; if(fn&&fn.length>1&&fn!=='[no') sumAssignees.add(fn);
+    });
+  });
+  GDB.buildCheckDropdown({wrapperId:'sum-assignee-dropdown-wrap', btnLabelId:'sum-assignee-btn-label',
+    listId:'sum-assignee-checkbox-list', values:Array.from(sumAssignees).sort(),
+    activeArr:sumAssigneeFilter, colorMap:null, toggleFn:'onSumAssigneeToggle'});
+
   /* Sync search box */
   var sumSearchEl=document.getElementById('sum-search');
   if(sumSearchEl&&sumSearchEl.value!==sumSearchQuery)sumSearchEl.value=sumSearchQuery;
@@ -490,6 +504,13 @@ function renderSummary(){
   }
   if(sumPMRoleFilter.length>0){
     filtered=filtered.filter(function(d){ return sumPMRoleFilter.indexOf((d['PM Role']||'').trim())>=0; });
+  }
+  if(sumAssigneeFilter.length>0){
+    filtered=filtered.filter(function(d){
+      var a1=(d['Assignee.displayName']||'').trim().split(' ')[0];
+      var a2s=(d['Assignee (2nd).displayName']||'').split(';').map(function(n){return n.trim().split(' ')[0];});
+      return sumAssigneeFilter.some(function(f){ return f===a1||a2s.indexOf(f)>=0; });
+    });
   }
   if(sumSearchQuery.trim()){
     var q=sumSearchQuery.trim().toLowerCase();
@@ -541,6 +562,11 @@ function onSumPMToggle(val){
   var panel=document.getElementById('sum-pm-dropdown-panel'); if(panel)panel.style.display='block';
 }
 function clearSumPMFilter(){ sumPMRoleFilter=[]; document.getElementById('sum-pm-dropdown-panel').style.display='none'; renderSummary(); }
+function onSumAssigneeToggle(val){
+  var i=sumAssigneeFilter.indexOf(val); if(i>=0)sumAssigneeFilter.splice(i,1); else sumAssigneeFilter.push(val);
+  renderSummary();
+  var p=document.getElementById('sum-assignee-dropdown-panel'); if(p) p.style.display='block';
+}
 
 /* ── Done initiatives list ────────────────── */
 var doneYearFilter=['all'];

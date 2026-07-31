@@ -84,6 +84,15 @@
           </div>
         </div>
       </div>
+      <div style="position:relative" id="sum-assignee-dropdown-wrap">
+        <button onclick="toggleDropdown('sum-assignee-dropdown-panel')"
+          style="height:26px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);font-size:11.5px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap">
+          <span id="sum-assignee-btn-label" data-empty="All Assignees">All Assignees</span><span style="font-size:9px;color:var(--text3)">▾</span>
+        </button>
+        <div id="sum-assignee-dropdown-panel" style="display:none;position:absolute;top:30px;left:0;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.18);padding:8px 0;min-width:180px">
+          <div id="sum-assignee-checkbox-list"></div>
+        </div>
+      </div>
       <div style="flex:1"></div>
       <input type="search" id="sum-search" placeholder="Search summary…"
         oninput="onSumSearchChange(this.value)"
@@ -149,7 +158,7 @@ function toggleDropdown(panelId) {
   panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
 }
 document.addEventListener('click', function(e) {
-  ['stage-dropdown-wrap','rs-tl-dropdown-wrap','comp-dropdown-wrap','dep-dropdown-wrap','sum-pm-dropdown-wrap'].forEach(function(id) {
+  ['stage-dropdown-wrap','rs-tl-dropdown-wrap','comp-dropdown-wrap','dep-dropdown-wrap','sum-pm-dropdown-wrap','sum-assignee-dropdown-wrap'].forEach(function(id) {
     var wrap = document.getElementById(id);
     if (wrap && !wrap.contains(e.target)) {
       var panel = wrap.querySelector('[id$="-dropdown-panel"]');

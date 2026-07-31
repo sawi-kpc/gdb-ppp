@@ -371,6 +371,7 @@ function toggleOverdueOnly(){
 }
 function applyFilters(){
   _taskPage = 1; /* reset to page 1 on filter change */
+  searchQ = (document.getElementById('search')||{}).value || '';
   _saveSupportFilters();
   /* sync overdue button state (e.g. after filter restore) */
   var btn=document.getElementById('btn-overdue-only');

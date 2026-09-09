@@ -366,7 +366,7 @@ function gdbAuthGuard(onUser) {
     _unsub();
     setGdbUser(user);
     /* Show Performance nav link only for allowed emails */
-    var _perfAllowed=['sawitree.jakkrawannit@kingpower.com','chawanop.witthayaphirak@kingpower.com'];
+    var _perfAllowed=['sawitree.jakkrawannit@kingpower.com','chawanop.witthayaphirak@kingpower.com','petchpailin.tocharoen@kingpower.com'];
     var _perfEl=document.getElementById('gdb-nav-perf');
     if(_perfEl && _perfAllowed.indexOf((user.email||'').toLowerCase())>=0){
       _perfEl.style.display='';

@@ -440,10 +440,12 @@ function _buildOverallTable(id, data){
     if(!qtrs[q])qtrs[q]={onTime:0,delayed:0,total:0};
     qtrs[q].total++;
 
-    /* On Time: Done + actual ≤ target */
-    if(d.Status==='Done'){
-      var actualDt=_parseDateRange(d['Actual Project End'])||_parseDateRange(d['Go-live Date']);
-      if(actualDt && actualDt<=tgtDt) qtrs[q].onTime++;
+    /* On Time: actual end (Actual Project End.end strictly) ≤ target end */
+    var actualEnd='';
+    try{ var ao=JSON.parse(d['Actual Project End']||''); actualEnd=ao.end||''; }catch(e){}
+    if(actualEnd){
+      var actualDt=new Date(actualEnd);
+      if(!isNaN(actualDt) && actualDt<=tgtDt) qtrs[q].onTime++;
     }
 
     /* Delayed: monitoring status field = "Delayed" */

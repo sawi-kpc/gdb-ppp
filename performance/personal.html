@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Personal Performance — GDB</title>
+<link rel="stylesheet" href="../css/shared.css">
+<link rel="stylesheet" href="../css/gdb-shared.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+/* ── Person selector bar ─────────────────────────────── */
+.perf-selector{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 20px;background:var(--surface);border-bottom:1px solid var(--border)}
+.perf-selector-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
+#perf-person-select{height:28px;padding:0 10px;border:1px solid var(--border);border-radius:5px;background:var(--surface2);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;min-width:130px}
+.fb-btn{padding:3px 12px;font-size:11px;font-weight:600;border-radius:20px;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text2);transition:all .15s;white-space:nowrap}
+.fb-btn.active,.fb-btn:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* ── Profile card ──────────────────────────────────────── */
+.perf-profile{display:flex;align-items:center;gap:14px;padding:10px 20px;background:var(--surface);border-bottom:1px solid var(--border);flex-wrap:wrap}
+.perf-avatar{width:40px;height:40px;border-radius:50%;background:var(--accent);color:#fff;font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.perf-person-name{font-size:15px;font-weight:700;color:var(--text)}
+.perf-person-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.perf-kpi-strip{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+.perf-kpi{display:flex;flex-direction:column;align-items:flex-start;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 11px;min-width:100px}
+.perf-kpi-num{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+.perf-kpi-frac{font-size:10px;color:var(--text3);margin-top:1px;font-variant-numeric:tabular-nums}
+.perf-kpi-bar{width:100%;height:3px;background:var(--border);border-radius:2px;margin-top:5px}
+.perf-kpi-fill{height:3px;border-radius:2px}
+.perf-kpi-lab{font-size:10px;color:var(--text2);font-weight:600;margin-top:3px;white-space:nowrap}
+
+/* ── 4-column grid ────────────────────────────────────── */
+.perf-main{padding:12px 20px}
+.perf-cols{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:start}
+@media(max-width:900px){.perf-cols{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:540px){.perf-cols{grid-template-columns:1fr}}
+
+/* ── Column panel ──────────────────────────────────────── */
+.perf-col{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column}
+.perf-col-head{display:flex;align-items:center;gap:6px;padding:9px 12px;border-bottom:1px solid var(--border)}
+.perf-col-icon{font-size:14px;flex-shrink:0}
+.perf-col-title{font-size:12px;font-weight:700;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.perf-col-badge{font-size:10px;font-weight:700;color:var(--text3);background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:1px 5px;flex-shrink:0;font-variant-numeric:tabular-nums}
+
+/* ── Metrics inside column ─────────────────────────────── */
+.perf-col-body{padding:10px 12px;display:flex;flex-direction:column;gap:10px}
+.perf-metric-block{}
+.perf-metric-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.perf-metric-row{display:flex;align-items:baseline;gap:6px;margin-bottom:4px}
+.perf-big{font-size:22px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums;line-height:1}
+.perf-of{font-size:11px;color:var(--text3);font-variant-numeric:tabular-nums}
+.perf-pbar{height:4px;background:var(--surface2);border-radius:2px;border:1px solid var(--border);overflow:hidden}
+.perf-pbar-fill{height:4px;border-radius:2px;transition:width .4s}
+.perf-dots{display:flex;flex-direction:column;gap:4px;margin-top:4px}
+.pd-item{font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px;font-variant-numeric:tabular-nums}
+.pd-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.perf-divider{height:1px;background:var(--border);margin:2px -12px}
+.perf-empty{padding:20px 12px;text-align:center;font-size:11px;color:var(--text3)}
+
+/* ── Collapsible list ──────────────────────────────────── */
+.perf-list-toggle{display:flex;align-items:center;gap:6px;padding:7px 12px;cursor:pointer;font-size:11px;font-weight:600;color:var(--text2);background:none;border:none;border-top:1px solid var(--border);width:100%;text-align:left;transition:color .15s}
+.perf-list-toggle:hover{color:var(--text);background:var(--surface2)}
+.perf-toggle-icon{display:inline-block;transition:transform .2s;font-size:9px;color:var(--text3)}
+.perf-list-items{display:none;border-top:1px solid var(--border);max-height:320px;overflow-y:auto}
+.perf-list-items.open{display:block}
+.perf-lrow{display:flex;align-items:center;gap:6px;padding:6px 10px;border-bottom:1px solid rgba(48,54,61,.25);font-size:11px}
+.perf-lrow:last-child{border-bottom:none}
+.perf-lrow:hover{background:var(--surface2)}
+.perf-lkey{font-weight:700;color:var(--accent);flex-shrink:0;min-width:54px;font-size:10.5px}
+.perf-lsum{flex:1;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
+.perf-row-meta{font-size:10px;color:var(--text3);flex-shrink:0;font-variant-numeric:tabular-nums}
+.perf-tag{font-size:10px;font-weight:600;padding:1px 5px;border-radius:3px;flex-shrink:0;white-space:nowrap}
+.perf-tag-done{background:rgba(63,185,80,.1);color:var(--up);border:1px solid rgba(63,185,80,.2)}
+.perf-tag-prog{background:rgba(88,166,255,.12);color:var(--accent);border:1px solid rgba(88,166,255,.25)}
+.perf-tag-del{background:rgba(248,81,73,.1);color:var(--down);border:1px solid rgba(248,81,73,.2)}
+.perf-tag-risk{background:rgba(245,158,11,.1);color:var(--amber);border:1px solid rgba(245,158,11,.25)}
+.perf-tag-todo{background:var(--surface2);color:var(--text3);border:1px solid var(--border)}
+</style>
+</head>
+
+<body class="has-init-subnav">
+<div id="gdb-loading" class="gdb-loading-state"><div class="gdb-spinner-wrap"></div>Loading data…</div>
+
+<div id="perf-content" style="display:none">
+
+  <!-- Person + year selector -->
+  <div class="perf-selector">
+    <span class="perf-selector-label">Person</span>
+    <select id="perf-person-select" onchange="window._perf.curPerson=this.value;_perfRender()"></select>
+    <span class="perf-selector-label" style="margin-left:10px">Year</span>
+    <div id="perf-year-chips" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+  </div>
+
+  <!-- Profile card + KPI strip -->
+  <div class="perf-profile">
+    <div class="perf-avatar" id="perf-avatar">?</div>
+    <div>
+      <div class="perf-person-name" id="perf-name">—</div>
+      <div class="perf-person-sub">Personal Performance Report</div>
+    </div>
+    <div class="perf-kpi-strip" id="perf-kpi-strip"></div>
+  </div>
+
+  <!-- 4 columns -->
+  <div class="perf-main">
+    <div class="perf-cols">
+
+      <!-- Col 1: Lead Initiative -->
+      <div class="perf-col">
+        <div class="perf-col-head">
+          <span class="perf-col-icon">🎯</span>
+          <span class="perf-col-title">Lead Initiative</span>
+          <span class="perf-col-badge" id="s1-badge">0</span>
+        </div>
+        <div class="perf-col-body" id="s1-perf"></div>
+        <button class="perf-list-toggle" onclick="perfToggleList('s1-list',this)">
+          <span class="perf-toggle-icon">▶</span>&ensp;Show items
+        </button>
+        <div class="perf-list-items" id="s1-list"></div>
+      </div>
+
+      <!-- Col 2: Support Initiative -->
+      <div class="perf-col">
+        <div class="perf-col-head">
+          <span class="perf-col-icon">🤝</span>
+          <span class="perf-col-title">Support Initiative</span>
+          <span class="perf-col-badge" id="s2-badge">0</span>
+        </div>
+        <div class="perf-col-body" id="s2-perf"></div>
+        <button class="perf-list-toggle" onclick="perfToggleList('s2-list',this)">
+          <span class="perf-toggle-icon">▶</span>&ensp;Show items
+        </button>
+        <div class="perf-list-items" id="s2-list"></div>
+      </div>
+
+      <!-- Col 3: Issues -->
+      <div class="perf-col">
+        <div class="perf-col-head">
+          <span class="perf-col-icon">🐛</span>
+          <span class="perf-col-title">Issues</span>
+          <span class="perf-col-badge" id="s3-badge">0</span>
+        </div>
+        <div class="perf-col-body" id="s3-perf"></div>
+        <button class="perf-list-toggle" onclick="perfToggleList('s3-list',this)">
+          <span class="perf-toggle-icon">▶</span>&ensp;Show items
+        </button>
+        <div class="perf-list-items" id="s3-list"></div>
+      </div>
+
+      <!-- Col 4: Support Tasks -->
+      <div class="perf-col">
+        <div class="perf-col-head">
+          <span class="perf-col-icon">🔧</span>
+          <span class="perf-col-title">Support Tasks</span>
+          <span class="perf-col-badge" id="s4-badge">0</span>
+        </div>
+        <div class="perf-col-body" id="s4-perf"></div>
+        <button class="perf-list-toggle" onclick="perfToggleList('s4-list',this)">
+          <span class="perf-toggle-icon">▶</span>&ensp;Show items
+        </button>
+        <div class="perf-list-items" id="s4-list"></div>
+      </div>
+
+    </div><!-- /perf-cols -->
+  </div><!-- /perf-main -->
+</div><!-- /perf-content -->
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="../js/initiative/config.js"></script>
+<script src="../js/header.js"></script>
+<script src="../js/initiative/data.js"></script>
+<script src="../js/issue/config.js"></script>
+<script src="../js/issue/data.js"></script>
+<script src="../js/support/config.js"></script>
+<script src="../js/support/data.js"></script>
+<script src="../js/shared/gdb-utils.js"></script>
+<script src="../js/performance/render.js"></script>
+
+<script>
+var _perfLoadCount = 0;
+function _perfMarkReady(src) {
+  _perf.ready[src] = true;
+  _perfCheckReady();
+}
+
+/* Initiative: set onDataReady BEFORE loadData() is called */
+window.onDataReady = function(data) {
+  _perf.initData = data || [];
+  _perfMarkReady('init');
+};
+
+window.addEventListener('DOMContentLoaded', function() {
+  buildGdbHeader({ showRefresh: false });
+  buildGdbPerformanceSubNav();
+
+  var PERF_ALLOWED=['sawitree.jakkrawannit@kingpower.com','chawanop.witthayaphirak@kingpower.com'];
+  gdbAuthGuard(function(user) {
+    if(PERF_ALLOWED.indexOf((user.email||'').toLowerCase())<0){
+      window.location.href='/gdb-ppp/';
+      return;
+    }
+    /* 1. Initiative */
+    loadData();
+
+    /* 2. Issues */
+    loadIssueData(
+      function(data) { _perf.issueData = data || []; _perfMarkReady('issue'); },
+      function(err)  { console.warn('[Perf] Issue:', err); _perf.issueData = []; _perfMarkReady('issue'); }
+    );
+
+    /* 3. Support */
+    loadSupportData(
+      function(data) { _perf.supData = data || []; _perfMarkReady('sup'); },
+      function(err)  { console.warn('[Perf] Support:', err); _perf.supData = []; _perfMarkReady('sup'); }
+    );
+  });
+});
+</script>
+</body>
+</html>

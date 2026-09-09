@@ -119,6 +119,31 @@ function buildGdbSupportSubNav() {
 }
 
 
+/* ── Performance sub-tab bar ─────────────────────────────────── */
+function buildGdbPerformanceSubNav() {
+  var p = window.location.pathname;
+  var summaryActive = (p.endsWith('/performance/') || p.endsWith('/performance/index.html')) ? ' active' : '';
+  var personalActive = p.endsWith('/performance/personal.html') ? ' active' : '';
+
+  var subNav = '<div class="gdb-init-subnav" id="gdb-performance-subnav">' +
+    '<a class="gdb-init-tab' + summaryActive + '" href="/gdb-ppp/performance/">Summary</a>' +
+    '<a class="gdb-init-tab' + personalActive + '" href="/gdb-ppp/performance/personal.html">Personal</a>' +
+  '</div>';
+
+  document.body.insertAdjacentHTML('afterbegin', subNav);
+
+  requestAnimationFrame(function() {
+    var subNavEl = document.getElementById('gdb-performance-subnav');
+    if (!subNavEl) return;
+    var divider = document.querySelector('.gdb-nav-divider');
+    if (divider) {
+      var rect = divider.getBoundingClientRect();
+      subNavEl.style.left = rect.right + 'px';
+    }
+  });
+}
+
+
 /* ── Cache status badge helpers (used by channel + initiative) ── */
 function gdbSetCacheBadge(state, label) {
   /* state: 'live' | 'cached' | 'loading' | 'hide' */
@@ -194,6 +219,11 @@ function buildGdbHeader(opts) {
   var suppActive = p.includes('/support/') ? ' active' : '';
   nav += '<a class="gdb-nav-item' + suppActive + '" href="/gdb-ppp/support/">' +
          'Support Tasks</a>';
+
+  /* Performance — hidden until auth confirms access */
+  var perfActive = p.includes('/performance/') ? ' active' : '';
+  nav += '<a id="gdb-nav-perf" class="gdb-nav-item' + perfActive + '" href="/gdb-ppp/performance/" style="display:none">Performance</a>';
+
 
   nav += '</nav>';
 
@@ -335,6 +365,12 @@ function gdbAuthGuard(onUser) {
     clearTimeout(_redirectTimer);
     _unsub();
     setGdbUser(user);
+    /* Show Performance nav link only for allowed emails */
+    var _perfAllowed=['sawitree.jakkrawannit@kingpower.com','chawanop.witthayaphirak@kingpower.com'];
+    var _perfEl=document.getElementById('gdb-nav-perf');
+    if(_perfEl && _perfAllowed.indexOf((user.email||'').toLowerCase())>=0){
+      _perfEl.style.display='';
+    }
     if (typeof onUser === 'function') onUser(user, _auth);
   });
 }

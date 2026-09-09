@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Performance Summary — GDB</title>
+<link rel="stylesheet" href="../css/shared.css">
+<link rel="stylesheet" href="../css/gdb-shared.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+/* Filter bar */
+.sum-filter{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 20px;background:var(--surface);border-bottom:1px solid var(--border)}
+.sum-filter-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
+.fb-btn{padding:3px 12px;font-size:11px;font-weight:600;border-radius:20px;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text2);transition:all .15s;white-space:nowrap}
+.fb-btn.active,.fb-btn:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+/* Page layout */
+.sum-main{padding:14px 20px;display:flex;flex-direction:column;gap:20px}
+/* Section */
+.sum-section-title{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;padding:0 2px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.sum-section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+/* Panels */
+.sum-panel{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.sum-panel-head{padding:9px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.sum-panel-title{font-size:12px;font-weight:700;color:var(--text)}
+.sum-panel-sub{font-size:11px;color:var(--text3);margin-left:auto}
+.sum-panel-body{padding:12px 14px}
+/* 2-col grid */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:700px){.grid-2{grid-template-columns:1fr}}
+/* Chart canvases */
+.chart-wrap{position:relative;height:210px}
+/* ── TABLES (shared) ─────────────────────────────────── */
+.stbl-wrap{overflow-x:auto}
+.stbl{width:100%;border-collapse:collapse;font-size:11.5px;min-width:420px}
+/* Column group headers */
+.stbl .cg-head{font-size:10px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.05em;padding:5px 8px;text-align:center;border-bottom:1px solid var(--border)}
+.stbl .cg-lead{background:rgba(88,166,255,.07);border-right:2px solid var(--border)}
+.stbl .cg-sup{background:rgba(34,211,164,.07);border-right:2px solid var(--border)}
+.stbl .cg-issue{background:rgba(248,81,73,.07);border-right:2px solid var(--border)}
+.stbl .cg-bug{background:rgba(245,158,11,.07)}
+/* Column sub-headers */
+.stbl th{padding:5px 8px;font-size:10px;font-weight:600;color:var(--text2);text-align:center;border-bottom:1px solid var(--border);white-space:nowrap}
+.stbl th.col-person{text-align:left;width:110px;background:var(--surface);position:sticky;left:0;z-index:1}
+.stbl th.sep{border-right:2px solid var(--border)}
+/* Rows */
+.stbl td{padding:6px 8px;border-bottom:1px solid rgba(48,54,61,.25);text-align:center;vertical-align:middle;font-variant-numeric:tabular-nums}
+.stbl tr:last-child td{border-bottom:none}
+.stbl tr:hover td{background:var(--surface2)}
+.stbl td.col-person{text-align:left;font-weight:600;color:var(--text);font-size:12px;white-space:nowrap;position:sticky;left:0;background:var(--surface);z-index:1;padding-left:10px}
+.stbl tr:hover td.col-person{background:var(--surface2)}
+.stbl td.sep{border-right:2px solid var(--border)}
+/* Heatmap cells */
+.hm{display:inline-block;min-width:28px;height:24px;border-radius:4px;line-height:24px;padding:0 5px;font-size:11px;font-weight:700}
+.hm-0{color:var(--text3)}
+/* Status tags in tables */
+.tag-done{background:rgba(63,185,80,.12);color:var(--up);border:1px solid rgba(63,185,80,.2);border-radius:3px;padding:1px 5px;font-size:10px;font-weight:600}
+.tag-open{background:rgba(88,166,255,.1);color:var(--accent);border:1px solid rgba(88,166,255,.2);border-radius:3px;padding:1px 5px;font-size:10px;font-weight:600}
+/* Person dot */
+.p-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;flex-shrink:0}
+/* Total col */
+.col-total{font-weight:700;color:var(--text);background:var(--surface2)!important}
+/* Support month table */
+.mon-tbl{min-width:600px}
+/* Overall quarter table */
+.ovr-logic-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;padding:0 2px}
+.ovr-tbl{min-width:360px}
+.ovr-rate-bar{display:flex;align-items:center;gap:6px;min-width:90px}
+.ovr-rate-track{flex:1;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;border:1px solid var(--border)}
+.ovr-rate-fill{height:5px;background:var(--up);border-radius:3px}
+.ovr-rate-pct{font-size:11px;font-weight:700;color:var(--text);min-width:30px;text-align:right;font-variant-numeric:tabular-nums}
+.mon-cell{background:var(--surface2);border-radius:3px;font-size:11px;font-weight:600;padding:2px 6px;display:inline-block;min-width:26px;text-align:center}
+</style>
+</head>
+
+<body class="has-init-subnav">
+<div id="gdb-loading" class="gdb-loading-state"><div class="gdb-spinner-wrap"></div>Loading performance data…</div>
+
+<div id="sum-content" style="display:none">
+
+  <div class="sum-filter">
+    <span class="sum-filter-label">Year</span>
+    <div id="sum-year-chips" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+  </div>
+
+  <div class="sum-main">
+
+    <!-- ═══ SECTION 1: INITIATIVE ═══ -->
+    <div>
+      <div class="sum-section-title">🎯 Initiative</div>
+
+      <!-- Overall by Quarter -->
+      <div class="sum-panel" style="margin-bottom:12px">
+        <div class="sum-panel-head">
+          <span class="sum-panel-title">Team Overview by Quarter</span>
+          <span class="sum-panel-sub">completion rate × monitoring status</span>
+        </div>
+        <div class="sum-panel-body">
+          <div class="grid-2" style="align-items:start;gap:18px">
+            <div>
+              <div class="ovr-logic-label">📋 Full Roadmap Scope <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3)">— ยกเว้นเฉพาะ Won't Do</span></div>
+              <div class="stbl-wrap"><table class="stbl ovr-tbl" id="init-overall-a"></table></div>
+            </div>
+            <div>
+              <div class="ovr-logic-label">🎯 Active Commitment <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3)">— ยกเว้น Won't Do · Later · Observer role</span></div>
+              <div class="stbl-wrap"><table class="stbl ovr-tbl" id="init-overall-b"></table></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart 1: Heatmap (Lead + Support + Grand Total) -->
+      <div class="sum-panel" style="margin-bottom:12px">
+        <div class="sum-panel-head">
+          <span class="sum-panel-title">Completion Heatmap</span>
+          <span class="sum-panel-sub">count per role × status — with grand total</span>
+        </div>
+        <div class="sum-panel-body">
+          <div class="stbl-wrap">
+            <table class="stbl" id="init-hm-tbl"></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart 2 + 3: Bar charts -->
+      <div class="grid-2">
+        <div class="sum-panel">
+          <div class="sum-panel-head">
+            <span class="sum-panel-title">Completed Items</span>
+            <span class="sum-panel-sub">lead + support done</span>
+          </div>
+          <div class="sum-panel-body">
+            <div class="chart-wrap"><canvas id="init-bar-done"></canvas></div>
+          </div>
+        </div>
+        <div class="sum-panel">
+          <div class="sum-panel-head">
+            <span class="sum-panel-title">Completion Rate</span>
+            <span class="sum-panel-sub">% of assigned completed</span>
+          </div>
+          <div class="sum-panel-body">
+            <div class="chart-wrap"><canvas id="init-bar-rate"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ SECTION 2: SUPPORT ═══ -->
+    <div>
+      <div class="sum-section-title">🔧 Support Tasks</div>
+      <div class="sum-panel">
+        <div class="sum-panel-head">
+          <span class="sum-panel-title">Tasks by Month</span>
+          <span class="sum-panel-sub">count by due date month per assignee</span>
+        </div>
+        <div class="sum-panel-body">
+          <div class="stbl-wrap">
+            <table class="stbl mon-tbl" id="sup-mon-tbl"></table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ SECTION 3: ISSUES ═══ -->
+    <div>
+      <div class="sum-section-title">🐛 Issues</div>
+      <div class="grid-2">
+        <div class="sum-panel">
+          <div class="sum-panel-head">
+            <span class="sum-panel-title">Issue Breakdown</span>
+            <span class="sum-panel-sub">type × status per assignee</span>
+          </div>
+          <div class="sum-panel-body">
+            <div class="stbl-wrap">
+              <table class="stbl" id="issue-tbl"></table>
+            </div>
+          </div>
+        </div>
+        <div class="sum-panel">
+          <div class="sum-panel-head">
+            <span class="sum-panel-title">Completion Rate</span>
+            <span class="sum-panel-sub">% closed per assignee</span>
+          </div>
+          <div class="sum-panel-body">
+            <div class="chart-wrap"><canvas id="issue-bar-rate"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /sum-main -->
+</div><!-- /sum-content -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="../js/initiative/config.js"></script>
+<script src="../js/header.js"></script>
+<script src="../js/initiative/data.js"></script>
+<script src="../js/issue/config.js"></script>
+<script src="../js/issue/data.js"></script>
+<script src="../js/support/config.js"></script>
+<script src="../js/support/data.js"></script>
+<script src="../js/shared/gdb-utils.js"></script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   Performance Summary v3
+══════════════════════════════════════════════════ */
+var SUM_PEOPLE = ['Chalotorn','Chawanop','Natpapat','Petchpailin','Sawitree','Sodsaran','Somrythi'];
+
+/* Exact status lists */
+var INIT_STS      = ['Parking Lot','Budget Approval','Discovery','Ready for Delivery','Delivery','Done'];
+var INIT_STS_ABBR = ['Parking Lot','Budget Appr.','Discovery','Ready','Delivery','Done'];
+var ISSUE_STS     = ['Open','Investigating','In Progress','Resolved','Closed'];
+
+var _sum = {
+  initData:[], issueData:[], supData:[],
+  ready:{init:false,issue:false,sup:false},
+  curYear: String(new Date().getFullYear()),
+  charts:{},
+};
+
+/* ── CSS variable reader ── */
+function _css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+/* ── Per-person colors (7 slots, all from --chart-* vars) ── */
+var _PVARS = ['--chart-blue','--chart-green','--chart-amber','--chart-teal','--chart-purple','--chart-orange','--chart-red'];
+function _pc()  { return _PVARS.map(function(v){return _css(v);}); }
+
+/* ── Hex → rgba ── */
+function _rgba(hex,a){
+  hex=hex.replace('#','');
+  if(hex.length===3)hex=hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+  var r=parseInt(hex.substr(0,2),16),g=parseInt(hex.substr(2,2),16),b=parseInt(hex.substr(4,2),16);
+  return 'rgba('+r+','+g+','+b+','+Math.min(1,a).toFixed(2)+')';
+}
+
+/* ── Chart theme (reads CSS vars) ── */
+function _th(){
+  return {
+    text:_css('--text2'),
+    grid:_rgba(_css('--border'),0.5),
+    border:_css('--border'),
+    surface:_css('--surface'),
+  };
+}
+
+/* ── Data helpers ── */
+function _fn(raw){ return (raw||'').trim().split(' ')[0]; }
+function _iyrI(d){ var m=(d['Roadmap Year Plan']||'').match(/(\d{4})/); return m?m[1]:''; }
+function _iyrIs(d){ var m=d.FailureOccurs?String(d.FailureOccurs).match(/(\d{4})/):null; return m?m[1]:''; }
+function _iyrS(d){
+  var lm=(d.Labels||'').match(/(\d{4})/); if(lm)return lm[1];
+  var dm=d.Due?String(d.Due).match(/(\d{4})/):null; return dm?dm[1]:'';
+}
+function _ym(y,cy){ return cy==='All'||y===cy; }
+function _pct(a,b){ return b===0?0:Math.round(a/b*100); }
+
+/* Initiative exact status (normalise to known list, else 'Parking Lot') */
+function _initStExact(d){
+  var s=d.Status||'';
+  return INIT_STS.indexOf(s)>=0 ? s : 'Parking Lot';
+}
+
+/* Issue: resolved/closed? */
+function _issueClosed(d){
+  var s=d.Status||''; return s==='Closed'||s==='Resolved';
+}
+
+/* Issue exact status (normalise to known list, else 'Open') */
+function _issueStExact(d){
+  var s=d.Status||'';
+  return ISSUE_STS.indexOf(s)>=0 ? s : 'Open';
+}
+
+/* Support: month key from Due date */
+function _supMonth(d){
+  var raw=d.Due||d.due||'';
+  if(!raw) return null;
+  var dt=new Date(raw); if(isNaN(dt)) return null;
+  var m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return m[dt.getMonth()]+' '+dt.getFullYear();
+}
+/* Sort month keys chronologically */
+function _sortMonths(keys){
+  var M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return keys.slice().sort(function(a,b){
+    var pa=a.split(' '), pb=b.split(' ');
+    var yd=parseInt(pa[1])-parseInt(pb[1]);
+    if(yd!==0)return yd;
+    return M.indexOf(pa[0])-M.indexOf(pb[0]);
+  });
+}
+
+/* ══════════════════════════════════════════════════
+   READY
+══════════════════════════════════════════════════ */
+function _sumMarkReady(src){
+  _sum.ready[src]=true;
+  if(!_sum.ready.init||!_sum.ready.issue||!_sum.ready.sup)return;
+  document.getElementById('gdb-loading').style.display='none';
+  document.getElementById('sum-content').style.display='block';
+  _buildYearChips();
+  _render();
+}
+
+function _buildYearChips(){
+  var yrs=new Set();
+  _sum.initData.forEach(function(d){var y=_iyrI(d);if(y)yrs.add(y);});
+  _sum.issueData.forEach(function(d){var y=_iyrIs(d);if(y)yrs.add(y);});
+  _sum.supData.forEach(function(d){var y=_iyrS(d);if(y)yrs.add(y);});
+  var sorted=Array.from(yrs).sort().reverse();
+  var el=document.getElementById('sum-year-chips'); el.innerHTML='';
+  ['All'].concat(sorted).forEach(function(y){
+    var val=y==='All'?'All':y;
+    var b=document.createElement('button');
+    b.className='fb-btn'+(_sum.curYear===val?' active':'');
+    b.textContent=y==='All'?'All years':y;
+    b.onclick=function(){_sum.curYear=val;_render();};
+    el.appendChild(b);
+  });
+}
+
+/* ══════════════════════════════════════════════════
+   MAIN RENDER
+══════════════════════════════════════════════════ */
+function _render(){
+  /* Update year chip active state */
+  document.querySelectorAll('#sum-year-chips .fb-btn').forEach(function(b){
+    var val=b.textContent==='All years'?'All':b.textContent;
+    b.className='fb-btn'+(_sum.curYear===val?' active':'');
+  });
+  var cy=_sum.curYear;
+
+  /* Filter initiative data for this year */
+  var initY = _sum.initData.filter(function(d){return _ym(_iyrI(d),cy);});
+  /* Issues: NOT filtered by year — FailureOccurs is occurrence date, not assignment/resolution date.
+     Issues spanning multiple years (still In Progress, or resolved in a different year) would be
+     incorrectly excluded. Show all issues per person regardless of year selection. */
+  var issY  = _sum.issueData;
+  var supY  = _sum.supData.filter(function(d){return _ym(_iyrS(d),cy);});
+
+  _renderInitOverall(initY);
+  _renderInitHeatmap(initY);
+  _renderInitBars(initY);
+  _renderSupMonthTable(supY);
+  _renderIssueTable(issY);
+  _renderIssueBar(issY);
+}
+
+/* ══════════════════════════════════════════════════
+   SECTION 1 — INITIATIVE
+══════════════════════════════════════════════════ */
+
+/* ── Quarter from Target Project End (JSON end date) ── */
+function _initQuarter(d){
+  var raw=d['Target Project End']||d['Target Project Start']||'';
+  if(!raw)return 'No Date';
+  try{
+    var obj=JSON.parse(raw);
+    var end=obj.end||obj.start||'';
+    if(!end)return 'No Date';
+    var dt=new Date(end); if(isNaN(dt))return 'No Date';
+    var q=Math.floor(dt.getMonth()/3)+1;
+    return 'Q'+q+' '+dt.getFullYear();
+  }catch(e){return 'No Date';}
+}
+/* Sort quarter keys chronologically */
+function _sortQuarters(keys){
+  return keys.slice().sort(function(a,b){
+    if(a==='No Date')return 1; if(b==='No Date')return -1;
+    var pa=a.match(/Q(\d)\s+(\d{4})/), pb=b.match(/Q(\d)\s+(\d{4})/);
+    if(!pa||!pb)return 0;
+    var yd=parseInt(pa[2])-parseInt(pb[2]); if(yd)return yd;
+    return parseInt(pa[1])-parseInt(pb[1]);
+  });
+}
+/* Normalise Project Monitoring Status */
+function _monSt(d){
+  var s=(d['Project Monitoring Status']||'').trim().toLowerCase();
+  if(!s)return 'No Status';
+  if(s==='on track')return 'On Track';
+  if(s==='at risk') return 'At Risk';
+  if(s==='delayed') return 'Delayed';
+  return s.charAt(0).toUpperCase()+s.slice(1); /* title-case catch-all */
+}
+
+/* ── Parse JSON date range field → Date object (prefer 'end', fallback 'start') ── */
+function _parseDateRange(raw){
+  if(!raw)return null;
+  try{
+    var obj=JSON.parse(raw);
+    var s=obj.end||obj.start||'';
+    if(!s)return null;
+    var dt=new Date(s); return isNaN(dt)?null:dt;
+  }catch(e){return null;}
+}
+
+/* ── 1-Overview: % Delivery On Time (Done items only) ── */
+function _renderInitOverall(data){
+  /* Logic A: exclude Won't do */
+  var dataA=data.filter(function(d){
+    return (d['Roadmap Status']||'')==="Won't do"?false:true;
+  });
+  /* Logic B: exclude Won't do + Later (Roadmap Status) + Observer (PM Role) + lead must be in SUM_PEOPLE */
+  var dataB=data.filter(function(d){
+    var rs=(d['Roadmap Status']||'').trim();
+    var pmRole=(d['PM Role']||'').trim();
+    var lead=_fn(d['Assignee.displayName']);
+    return rs!=="Won't do" && rs.toLowerCase()!=='later' && pmRole!=='Observer' && SUM_PEOPLE.indexOf(lead)>=0;
+  });
+  _buildOverallTable('init-overall-a', dataA);
+  _buildOverallTable('init-overall-b', dataB);
+}
+
+function _buildOverallTable(id, data){
+  /* Quarter from Target Project End.end only — skip items with no end date.
+     On Time  : Done + actual ≤ target
+     Delayed  : Project Monitoring Status = "Delayed"
+     % On Time: onTime / (onTime + delayed)
+     Always show Q1–Q4 for the selected year (or all years if "All")         */
+  var qtrs={};
+  /* Pre-seed Q1–Q4 for selected year so all 4 rows always appear */
+  var cy=_sum.curYear;
+  if(cy && cy!=='All'){
+    ['Q1','Q2','Q3','Q4'].forEach(function(q){
+      qtrs[q+' '+cy]={onTime:0,delayed:0,total:0};
+    });
+  }
+  data.forEach(function(d){
+    /* Quarter from Target Project End.end strictly — no fallback */
+    var rawTgt=d['Target Project End']||'';
+    if(!rawTgt)return;
+    var tgtEnd='';
+    try{ var obj=JSON.parse(rawTgt); tgtEnd=obj.end||''; }catch(e){}
+    if(!tgtEnd)return;
+    var tgtDt=new Date(tgtEnd); if(isNaN(tgtDt))return;
+    var q='Q'+(Math.floor(tgtDt.getMonth()/3)+1)+' '+tgtDt.getFullYear();
+
+    if(!qtrs[q])qtrs[q]={onTime:0,delayed:0,total:0};
+    qtrs[q].total++;
+
+    /* On Time: Done + actual ≤ target */
+    if(d.Status==='Done'){
+      var actualDt=_parseDateRange(d['Actual Project End'])||_parseDateRange(d['Go-live Date']);
+      if(actualDt && actualDt<=tgtDt) qtrs[q].onTime++;
+    }
+
+    /* Delayed: monitoring status field = "Delayed" */
+    if(_monSt(d)==='Delayed') qtrs[q].delayed++;
+  });
+
+  var sorted=_sortQuarters(Object.keys(qtrs));
+  var tbl=document.getElementById(id);
+  if(!tbl)return;
+
+  function cell(v,color){
+    if(!v)return '<span style="color:var(--text3)">—</span>';
+    return '<span style="color:'+(color||'var(--text)')+';font-variant-numeric:tabular-nums;font-weight:600">'+v+'</span>';
+  }
+  function rateCell(onTime,judged){
+    if(!judged)return '<span style="color:var(--text3)">—</span>';
+    var pct=_pct(onTime,judged);
+    var color=pct>=80?'var(--up)':pct>=50?'var(--amber)':'var(--down)';
+    return '<div class="ovr-rate-bar">'+
+      '<div class="ovr-rate-track"><div class="ovr-rate-fill" style="width:'+pct+'%;background:'+color+'"></div></div>'+
+      '<span class="ovr-rate-pct" style="color:'+color+'">'+pct+'%</span>'+
+    '</div>';
+  }
+
+  var html='<thead><tr>'+
+    '<th class="col-person">Target Quarter</th>'+
+    '<th class="col-total">Total</th>'+
+    '<th style="color:var(--up)">On Time</th>'+
+    '<th style="color:var(--down)">Delayed</th>'+
+    '<th style="min-width:110px">% On Time</th>'+
+    '</tr></thead><tbody>';
+
+  var totOn=0,totDel=0,totAll=0;
+  sorted.forEach(function(q){
+    var r=qtrs[q];
+    totOn+=r.onTime; totDel+=r.delayed; totAll+=r.total;
+    html+='<tr>'+
+      '<td class="col-person" style="font-weight:700">'+q+'</td>'+
+      '<td class="col-total">'+r.total+'</td>'+
+      '<td>'+cell(r.onTime,'var(--up)')+'</td>'+
+      '<td>'+cell(r.delayed,'var(--down)')+'</td>'+
+      '<td>'+rateCell(r.onTime,r.total)+'</td>'+
+    '</tr>';
+  });
+
+  var ftd='style="border-top:2px solid var(--border);font-weight:700;background:var(--surface2)"';
+  html+='</tbody><tfoot><tr>'+
+    '<td class="col-person" '+ftd+'>Total</td>'+
+    '<td class="col-total" '+ftd+'>'+totAll+'</td>'+
+    '<td '+ftd+'>'+cell(totOn,'var(--up)')+'</td>'+
+    '<td '+ftd+'>'+cell(totDel,'var(--down)')+'</td>'+
+    '<td '+ftd+'>'+rateCell(totOn,totAll)+'</td>'+
+  '</tr></tfoot>';
+
+  tbl.innerHTML=html;
+}
+
+/* ── 1a: Initiative Heatmap — exact statuses × Lead / Support ── */
+function _renderInitHeatmap(data){
+  /* counts[person][role][status] */
+  var counts={};
+  SUM_PEOPLE.forEach(function(p){
+    counts[p]={lead:{},sup:{}};
+    INIT_STS.forEach(function(s){counts[p].lead[s]=0;counts[p].sup[s]=0;});
+  });
+
+  /* Skip "Won't Do" — count everything else */
+  data.forEach(function(d){
+    if((d['Roadmap Status']||"")==="Won't do") return;
+    var st=_initStExact(d);
+    var lead=_fn(d['Assignee.displayName']);
+    if(counts[lead]) counts[lead].lead[st]++;
+    var a2=(d['Assignee (2nd).displayName']||'');
+    a2.split(';').forEach(function(n){
+      var fn=_fn(n);
+      if(counts[fn]) counts[fn].sup[st]++;
+    });
+  });
+
+  /* Max value across all cells for intensity scaling */
+  var allVals=[];
+  SUM_PEOPLE.forEach(function(p){
+    INIT_STS.forEach(function(s){allVals.push(counts[p].lead[s],counts[p].sup[s]);});
+  });
+  var maxV=Math.max.apply(null,allVals)||1;
+
+  /* Cell color helpers */
+  function hmBg(val,status,role){
+    if(!val)return null;
+    var a=0.15+0.72*(val/maxV);
+    if(status==='Done')                return _rgba(_css('--chart-green'),a);
+    if(status==='Delivery'||status==='Ready for Delivery') return _rgba(_css(role==='lead'?'--chart-blue':'--chart-teal'),a);
+    if(status==='Parking Lot')         return _rgba(_css('--chart-dim'),Math.min(a,0.55));
+    return _rgba(_css('--chart-amber'),a);
+  }
+  function hmCell(val,status,role){
+    var bg=hmBg(val,status,role);
+    if(!bg)return '<span class="hm hm-0">—</span>';
+    return '<span class="hm" style="background:'+bg+';color:#fff">'+val+'</span>';
+  }
+
+  var N=INIT_STS.length; /* 6 */
+  var colors=_pc();
+  var tbl=document.getElementById('init-hm-tbl');
+
+  /* Column totals for all groups */
+  var colL={}, colS={}, colC={};
+  INIT_STS.forEach(function(s){colL[s]=0;colS[s]=0;colC[s]=0;});
+  SUM_PEOPLE.forEach(function(p){
+    INIT_STS.forEach(function(s){
+      colL[s]+=counts[p].lead[s];
+      colS[s]+=counts[p].sup[s];
+      colC[s]+=counts[p].lead[s]+counts[p].sup[s];
+    });
+  });
+  var totL=INIT_STS.reduce(function(s,k){return s+colL[k];},0);
+  var totS=INIT_STS.reduce(function(s,k){return s+colS[k];},0);
+  var totG=totL+totS;
+
+  /* Combined max for Grand Total group */
+  var maxC=Math.max.apply(null,INIT_STS.map(function(s){return colC[s];}))||1;
+  function hmCellComb(val,status){
+    if(!val)return '<span class="hm hm-0">—</span>';
+    var a=0.15+0.72*(val/maxC);
+    var bg;
+    if(status==='Done')                                  bg=_rgba(_css('--chart-green'),a);
+    else if(status==='Delivery'||status==='Ready for Delivery') bg=_rgba(_css('--chart-blue'),a);
+    else if(status==='Parking Lot')                      bg=_rgba(_css('--chart-dim'),Math.min(a,0.55));
+    else                                                 bg=_rgba(_css('--chart-amber'),a);
+    return '<span class="hm" style="background:'+bg+';color:#fff">'+val+'</span>';
+  }
+
+  /* Header */
+  var html='<thead>'+
+    '<tr>'+
+      '<th class="col-person" rowspan="2" style="border-bottom:2px solid var(--border)">Assignee</th>'+
+      '<th colspan="'+(N+1)+'" class="cg-head cg-lead sep">Lead Initiative</th>'+
+      '<th colspan="'+(N+1)+'" class="cg-head cg-sup sep">Support Initiative</th>'+
+      '<th colspan="'+(N+1)+'" class="cg-head" style="background:rgba(100,100,100,.07);border-left:2px solid var(--border)">Grand Total (Lead + Support)</th>'+
+    '</tr><tr>';
+  INIT_STS_ABBR.forEach(function(s){html+='<th>'+s+'</th>';});
+  html+='<th class="sep" style="color:var(--text)">Total</th>';
+  INIT_STS_ABBR.forEach(function(s){html+='<th>'+s+'</th>';});
+  html+='<th class="sep" style="color:var(--text)">Total</th>';
+  INIT_STS_ABBR.forEach(function(s,j){html+='<th style="border-left:'+(j===0?'2px':'0')+'solid var(--border)">'+s+'</th>';});
+  html+='<th style="color:var(--text)">Total</th>';
+  html+='</tr></thead><tbody>';
+
+  /* Person rows */
+  SUM_PEOPLE.forEach(function(p,i){
+    var c=counts[p];
+    var lt=INIT_STS.reduce(function(s,k){return s+c.lead[k];},0);
+    var st=INIT_STS.reduce(function(s,k){return s+c.sup[k];},0);
+    var gt=lt+st;
+    html+='<tr>'+
+      '<td class="col-person"><span class="p-dot" style="background:'+colors[i]+'"></span>'+p+'</td>';
+    INIT_STS.forEach(function(s){html+='<td>'+hmCell(c.lead[s],s,'lead')+'</td>';});
+    html+='<td class="sep col-total">'+lt+'</td>';
+    INIT_STS.forEach(function(s){html+='<td>'+hmCell(c.sup[s],s,'sup')+'</td>';});
+    html+='<td class="sep col-total">'+st+'</td>';
+    INIT_STS.forEach(function(s,j){
+      html+='<td style="border-left:'+(j===0?'2px':'0')+'solid var(--border)">'+hmCellComb(c.lead[s]+c.sup[s],s)+'</td>';
+    });
+    html+='<td class="col-total">'+gt+'</td></tr>';
+  });
+
+  /* Footer: column totals */
+  var ftd='style="font-weight:700;font-size:11px;color:var(--text);background:var(--surface2);border-top:2px solid var(--border);text-align:center;padding:5px 8px"';
+  html+='</tbody><tfoot><tr>'+
+    '<td class="col-person" style="border-top:2px solid var(--border);font-weight:700;font-size:11px;color:var(--text3)">Total</td>';
+  INIT_STS.forEach(function(s){html+='<td '+ftd+'>'+colL[s]+'</td>';});
+  html+='<td '+ftd+' style="font-weight:700;font-size:11px;color:var(--text);background:var(--surface2);border-top:2px solid var(--border);text-align:center;padding:5px 8px;border-right:2px solid var(--border)">'+totL+'</td>';
+  INIT_STS.forEach(function(s){html+='<td '+ftd+'>'+colS[s]+'</td>';});
+  html+='<td '+ftd+' style="font-weight:700;font-size:11px;color:var(--text);background:var(--surface2);border-top:2px solid var(--border);text-align:center;padding:5px 8px;border-right:2px solid var(--border)">'+totS+'</td>';
+  INIT_STS.forEach(function(s,j){html+='<td '+ftd+' style="font-weight:700;font-size:11px;color:var(--text);background:var(--surface2);border-top:2px solid var(--border);text-align:center;padding:5px 8px;border-left:'+(j===0?'2px':'0')+'solid var(--border)">'+colC[s]+'</td>';});
+  html+='<td '+ftd+'>'+totG+'</td></tr></tfoot>';
+
+  tbl.innerHTML=html;
+}
+
+/* ── 1c: Initiative Bar Charts ── */
+function _renderInitBars(data){
+  var pData=SUM_PEOPLE.map(function(p){
+    var ld=0,lt=0,sd=0,st=0;
+    data.forEach(function(d){
+      if((d['Roadmap Status']||"")==="Won't do") return; /* exclude Won't Do */
+      var s=_initStExact(d), isDone=(s==='Done');
+      if(_fn(d['Assignee.displayName'])===p){lt++;if(isDone)ld++;}
+      var a2=(d['Assignee (2nd).displayName']||'');
+      a2.split(';').forEach(function(n){
+        if(_fn(n)===p){st++;if(isDone)sd++;}
+      });
+    });
+    return{p:p,ldone:ld,sdone:sd,ltot:lt,stot:st};
+  });
+
+  var th=_th();
+  var baseOpts={
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:true,position:'top',labels:{color:th.text,font:{size:10},boxWidth:10,padding:8}}},
+    scales:{
+      x:{grid:{display:false},ticks:{color:th.text,font:{size:10,weight:'600'},maxRotation:0},border:{color:th.border}},
+      y:{grid:{color:th.grid},ticks:{color:th.text,font:{size:10}},border:{color:th.border},beginAtZero:true},
+    }
+  };
+
+  /* Chart 2: Completed items — Lead Done (blue) + Support Done (teal) */
+  _destroyC('init-bar-done');
+  _sum.charts['init-bar-done']=new Chart(document.getElementById('init-bar-done'),{
+    type:'bar',
+    data:{labels:SUM_PEOPLE,datasets:[
+      {label:'Lead Done',   data:pData.map(function(d){return d.ldone;}),backgroundColor:_rgba(_css('--chart-blue'),0.82),borderRadius:3,borderSkipped:false},
+      {label:'Support Done',data:pData.map(function(d){return d.sdone;}),backgroundColor:_rgba(_css('--chart-teal'),0.82),borderRadius:3,borderSkipped:false},
+    ]},
+    options:baseOpts,
+  });
+
+  /* Chart 3: Completion Rate — horizontal, single blue tone; Lead dark / Support light */
+  var blueD=_rgba(_css('--chart-blue'),0.85);
+  var blueL=_rgba(_css('--chart-blue'),0.40);
+  _destroyC('init-bar-rate');
+  _sum.charts['init-bar-rate']=new Chart(document.getElementById('init-bar-rate'),{
+    type:'bar',
+    data:{labels:SUM_PEOPLE,datasets:[
+      {label:'Lead %',   data:pData.map(function(d){return _pct(d.ldone,d.ltot);}),backgroundColor:blueD,borderRadius:3,borderSkipped:false},
+      {label:'Support %',data:pData.map(function(d){return _pct(d.sdone,d.stot);}),backgroundColor:blueL,borderRadius:3,borderSkipped:false},
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{display:true,position:'top',labels:{color:th.text,font:{size:10},boxWidth:10,padding:8}},
+        tooltip:{callbacks:{label:function(ctx){return ' '+ctx.dataset.label+': '+ctx.parsed.x+'%';}}}},
+      scales:{
+        x:{max:100,grid:{color:th.grid},ticks:{color:th.text,font:{size:10},callback:function(v){return v+'%';}},border:{color:th.border}},
+        y:{grid:{display:false},ticks:{color:th.text,font:{size:11,weight:'600'}},border:{color:th.border}},
+      }
+    },
+  });
+}
+
+/* ══════════════════════════════════════════════════
+   SECTION 2 — ISSUES
+══════════════════════════════════════════════════ */
+
+/* ── 2a: Issue Table — exact statuses: Open|Investigating|In Progress|Resolved|Closed + Total ── */
+function _renderIssueTable(data){
+  var counts={};
+  SUM_PEOPLE.forEach(function(p){
+    counts[p]={};
+    ISSUE_STS.forEach(function(s){counts[p][s]=0;});
+  });
+
+  data.forEach(function(d){
+    var p=_fn(d.Assignee);
+    if(!counts[p])return;
+    var s=_issueStExact(d);
+    counts[p][s]++;
+  });
+
+  /* Status tag color per status */
+  function stTag(v,s){
+    if(!v)return '<span style="color:var(--text3)">—</span>';
+    var cl=s==='Resolved'||s==='Closed'?'tag-done':
+            s==='Open'?'perf-tag perf-tag-todo':
+            s==='Investigating'?'perf-tag perf-tag-risk':'tag-open';
+    return '<span class="'+cl+'">'+v+'</span>';
+  }
+
+  var colors=_pc();
+  var tbl=document.getElementById('issue-tbl');
+  var html='<thead><tr>'+
+    '<th class="col-person">Assignee</th>'+
+    ISSUE_STS.map(function(s,i){
+      var c=s==='Resolved'||s==='Closed'?'color:var(--up)':s==='Open'?'color:var(--text2)':'color:var(--accent)';
+      return '<th style="'+c+'">'+s+'</th>';
+    }).join('')+
+    '<th style="color:var(--text)">Total</th>'+
+    '</tr></thead><tbody>';
+
+  SUM_PEOPLE.forEach(function(p,i){
+    var c=counts[p];
+    var total=ISSUE_STS.reduce(function(s,k){return s+c[k];},0);
+    html+='<tr>'+
+      '<td class="col-person"><span class="p-dot" style="background:'+colors[i]+'"></span>'+p+'</td>'+
+      ISSUE_STS.map(function(s){return '<td>'+stTag(c[s],s)+'</td>';}).join('')+
+      '<td class="col-total">'+total+'</td>'+
+    '</tr>';
+  });
+  tbl.innerHTML=html+'</tbody>';
+}
+
+/* ── 2b: Issue Completion Rate — single teal tone ── */
+function _renderIssueBar(data){
+  var pData=SUM_PEOPLE.map(function(p){
+    var closed=0,total=0;
+    data.forEach(function(d){if(_fn(d.Assignee)===p){total++;if(_issueClosed(d))closed++;}});
+    return{p:p,pct:_pct(closed,total),closed:closed,total:total};
+  });
+  var tealC=_rgba(_css('--chart-teal'),0.80);
+  var th=_th();
+  _destroyC('issue-bar-rate');
+  _sum.charts['issue-bar-rate']=new Chart(document.getElementById('issue-bar-rate'),{
+    type:'bar',
+    data:{
+      labels:SUM_PEOPLE,
+      datasets:[{
+        label:'Closed %',
+        data:pData.map(function(d){return d.pct;}),
+        backgroundColor:tealC,
+        borderRadius:4,borderSkipped:false,
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){
+        var d=pData[ctx.dataIndex];
+        return ' '+d.closed+'/'+d.total+' ('+ctx.parsed.x+'%)';
+      }}}},
+      scales:{
+        x:{max:100,grid:{color:th.grid},ticks:{color:th.text,font:{size:10},callback:function(v){return v+'%';}},border:{color:th.border}},
+        y:{grid:{display:false},ticks:{color:th.text,font:{size:11,weight:'600'}},border:{color:th.border}},
+      }
+    }
+  });
+}
+
+/* ══════════════════════════════════════════════════
+   SECTION 3 — SUPPORT TASKS (month table)
+══════════════════════════════════════════════════ */
+
+function _renderSupMonthTable(data){
+  /* Build: {person: {monthKey: count}} */
+  var months=new Set();
+  var counts={};
+  SUM_PEOPLE.forEach(function(p){counts[p]={};});
+
+  data.forEach(function(d){
+    var p=_fn(d.Assignee);
+    if(!counts[p])return;
+    var mk=_supMonth(d);
+    if(!mk)return;
+    months.add(mk);
+    counts[p][mk]=(counts[p][mk]||0)+1;
+  });
+
+  var sortedMonths=_sortMonths(Array.from(months));
+  if(!sortedMonths.length){
+    document.getElementById('sup-mon-tbl').innerHTML='<tr><td style="padding:20px;color:var(--text3);text-align:center">No data</td></tr>';
+    return;
+  }
+
+  /* Max for color intensity */
+  var allVals=[];
+  SUM_PEOPLE.forEach(function(p){ sortedMonths.forEach(function(m){ allVals.push(counts[p][m]||0); }); });
+  var maxV=Math.max.apply(null,allVals)||1;
+
+  var colors=_pc();
+  var tbl=document.getElementById('sup-mon-tbl');
+  var html='<thead><tr>'+
+    '<th class="col-person">Assignee</th>'+
+    sortedMonths.map(function(m){return '<th>'+m+'</th>';}).join('')+
+    '<th style="color:var(--text)">Total</th>'+
+    '</tr></thead><tbody>';
+
+  SUM_PEOPLE.forEach(function(p,i){
+    var rowTotal=0;
+    sortedMonths.forEach(function(m){rowTotal+=(counts[p][m]||0);});
+    html+='<tr>'+
+      '<td class="col-person"><span class="p-dot" style="background:'+colors[i]+'"></span>'+p+'</td>'+
+      sortedMonths.map(function(m){
+        var v=counts[p][m]||0;
+        if(!v)return '<td><span style="color:var(--text3)">—</span></td>';
+        var a=0.15+0.75*(v/maxV);
+        var bg=_rgba(colors[i],a);
+        return '<td><span class="mon-cell" style="background:'+bg+';color:#fff">'+v+'</span></td>';
+      }).join('')+
+      '<td class="col-total" style="font-weight:700">'+rowTotal+'</td>'+
+    '</tr>';
+  });
+  tbl.innerHTML=html+'</tbody>';
+}
+
+/* ── Destroy chart helper ── */
+function _destroyC(id){
+  if(_sum.charts[id]){try{_sum.charts[id].destroy();}catch(e){}  _sum.charts[id]=null;}
+}
+
+/* ══════════════════════════════════════════════════
+   DATA COORDINATION
+══════════════════════════════════════════════════ */
+window.onDataReady=function(data){
+  _sum.initData=data||[];
+  _sumMarkReady('init');
+};
+
+window.addEventListener('DOMContentLoaded',function(){
+  buildGdbHeader({showRefresh:false});
+  buildGdbPerformanceSubNav();
+
+  var PERF_ALLOWED=['sawitree.jakkrawannit@kingpower.com','chawanop.witthayaphirak@kingpower.com'];
+  gdbAuthGuard(function(user){
+    if(PERF_ALLOWED.indexOf((user.email||'').toLowerCase())<0){
+      window.location.href='/gdb-ppp/';
+      return;
+    }
+    loadData();
+    loadIssueData(
+      function(data){_sum.issueData=data||[];_sumMarkReady('issue');},
+      function(err){console.warn('[Sum]Issue:',err);_sum.issueData=[];_sumMarkReady('issue');}
+    );
+    loadSupportData(
+      function(data){_sum.supData=data||[];_sumMarkReady('sup');},
+      function(err){console.warn('[Sum]Support:',err);_sum.supData=[];_sumMarkReady('sup');}
+    );
+  });
+});
+</script>
+</body>
+</html>

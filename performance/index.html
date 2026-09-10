@@ -437,6 +437,8 @@ function _buildOverallTable(id, data){
     if(!tgtEnd)return;
     var tgtDt=new Date(tgtEnd); if(isNaN(tgtDt))return;
     var q='Q'+(Math.floor(tgtDt.getMonth()/3)+1)+' '+tgtDt.getFullYear();
+    /* Skip if target quarter's year doesn't match selected year */
+    if(cy!=='All' && String(tgtDt.getFullYear())!==cy)return;
 
     if(!qtrs[q])qtrs[q]={onTime:0,delayed:0,total:0};
     qtrs[q].total++;

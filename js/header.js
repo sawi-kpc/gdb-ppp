@@ -360,15 +360,21 @@ function setGdbUpdateTime(ts) {
 
 /* ── FAVORITES (localStorage per uid) ──────────────────────── */
 var _GDB_PAGE_META=[
-  {test:'/performance/personal', emoji:'👤', title:'Performance > Personal'},
-  {test:'/performance/',         emoji:'📈', title:'Performance > Summary'},
-  {test:'/initiative/dashboard', emoji:'📊', title:'Initiative > Dashboard'},
-  {test:'/initiative/list',      emoji:'📋', title:'Initiative > List'},
-  {test:'/initiative/completed', emoji:'✅', title:'Initiative > Completed'},
-  {test:'/initiative/',          emoji:'🚀', title:'Initiatives'},
-  {test:'/issue/',               emoji:'🐛', title:'Issues'},
-  {test:'/support/',             emoji:'🎫', title:'Support Tasks'},
-  {test:'/channel/',             emoji:'📡', title:'Channels'},
+  {test:'/performance/personal',  emoji:'👤', title:'Performance > Personal'},
+  {test:'/performance/',          emoji:'📈', title:'Performance > Summary'},
+  {test:'/initiative/roadmap',    emoji:'🗺️', title:'Initiative > Roadmap'},
+  {test:'/initiative/dashboard',  emoji:'📊', title:'Initiative > Dashboard'},
+  {test:'/initiative/list',       emoji:'📋', title:'Initiative > List'},
+  {test:'/initiative/completed',  emoji:'✅', title:'Initiative > Completed'},
+  {test:'/initiative/projects',   emoji:'📁', title:'Initiative > Projects'},
+  {test:'/initiative/',           emoji:'🚀', title:'Initiative > Timeline'},
+  {test:'/issue/dashboard',       emoji:'📊', title:'Issues > Dashboard'},
+  {test:'/issue/list',            emoji:'📋', title:'Issues > List'},
+  {test:'/issue/',                emoji:'🐛', title:'Issues > Board'},
+  {test:'/support/list',          emoji:'📋', title:'Support > List'},
+  {test:'/support/calendar',      emoji:'📅', title:'Support > Calendar'},
+  {test:'/support/',              emoji:'🎫', title:'Support > Dashboard'},
+  {test:'/channel/',              emoji:'📡', title:'Channels'},
 ];
 
 function _gdbFavKey(uid){ return 'gdb_fav_'+uid.replace(/[^a-zA-Z0-9]/g,'_'); }

@@ -22,6 +22,29 @@ var _headerStyle = document.createElement('style');
 _headerStyle.textContent = '.gdb-nav{position:fixed;top:var(--header-h);left:0;right:0;z-index:99;height:var(--nav-h);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:stretch;padding:0 20px;gap:2px;overflow:visible;}.gdb-nav::-webkit-scrollbar{height:0;}.gdb-nav-item{display:flex;align-items:center;padding:0 12px;font-size:12px;font-weight:500;color:var(--text2);text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;transition:all .15s;cursor:pointer;background:none;border-top:none;border-left:none;border-right:none;}.gdb-nav-item:hover{color:var(--text);text-decoration:none;}.gdb-nav-item.active{color:var(--accent);border-bottom-color:var(--accent);}.gdb-nav-divider{width:1px;background:var(--border);margin:10px 8px;}.gdb-nav-section{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;display:flex;align-items:center;padding:0 8px 0 4px;}.gdb-nav-channel-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;flex-shrink:0;}.gdb-nav-badge{font-size:9px;font-weight:700;color:var(--text3);background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:1px 5px;margin-left:5px;}.gdb-clear-cache-btn{display:flex;align-items:center;gap:5px;padding:0 11px;height:28px;font-size:11px;font-weight:600;color:var(--text2);background:var(--surface2);border:1px solid var(--border);border-radius:5px;cursor:pointer;transition:all .15s;white-space:nowrap;}.gdb-clear-cache-btn:hover{color:var(--text);border-color:var(--text2);}.gdb-clear-cache-btn:active{opacity:.7;}.gdb-cache-badge{display:none;align-items:center;gap:5px;font-size:10px;font-weight:600;border-radius:4px;padding:2px 8px;white-space:nowrap;transition:all .3s;}.gdb-cache-badge.is-cached{color:#58a6ff;background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.25);}.gdb-cache-badge.is-live{color:#3fb950;background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.25);}.gdb-cache-badge.is-loading{color:var(--text3);background:var(--surface2);border:1px solid var(--border);}@keyframes gdb-pulse{0%,100%{opacity:1}50%{opacity:.35}}.gdb-cache-dot{width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0;}.is-live .gdb-cache-dot{background:#3fb950;animation:gdb-pulse 1.8s ease-in-out infinite;}.is-cached .gdb-cache-dot{background:#58a6ff;}.is-loading .gdb-cache-dot{background:var(--text3);}.gdb-init-subnav{position:fixed;top:calc(var(--header-h) + var(--nav-h));left:0;right:0;z-index:98;height:36px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:stretch;padding:0 20px;gap:2px;}.gdb-init-tab{display:flex;align-items:center;padding:0 14px;font-size:12px;font-weight:500;color:var(--text2);text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;transition:all .15s;}.gdb-init-tab:hover{color:var(--text);text-decoration:none;}.gdb-init-tab.active{color:var(--accent);border-bottom-color:var(--accent);}.has-init-subnav{padding-top:calc(var(--header-h) + var(--nav-h) + 36px) !important;}.gdb-theme-btn{display:flex;align-items:center;justify-content:center;width:28px;height:28px;font-size:15px;color:var(--text2);background:var(--surface2);border:1px solid var(--border);border-radius:5px;cursor:pointer;transition:all .15s;flex-shrink:0;}.gdb-theme-btn:hover{color:var(--text);border-color:var(--text2);}[data-theme=light] body{background:var(--bg) !important;color:var(--text) !important;}[data-theme=light] .gdb-header{background:var(--surface);border-bottom-color:var(--border);}[data-theme=light] .gdb-nav{background:var(--surface);border-bottom-color:var(--border);}[data-theme=light] .gdb-nav-item{color:var(--text2);}[data-theme=light] .gdb-nav-item.active{color:var(--accent);}[data-theme=light] .gdb-nav-section{color:var(--text3);}[data-theme=light] .gdb-nav-badge{color:var(--text3);background:var(--surface2);border-color:var(--border);}[data-theme=light] .gdb-nav-divider{background:var(--border);}[data-theme=light] .gdb-init-subnav{background:var(--surface2);border-bottom-color:var(--border);}[data-theme=light] .gdb-refresh-btn{color:var(--text2);background:var(--surface2);border-color:var(--border);}[data-theme=light] .gdb-clear-cache-btn{color:var(--text2);background:var(--surface2);border-color:var(--border);}[data-theme=dark-warm] body{background:var(--bg) !important;color:var(--text) !important;}[data-theme=dark-warm] .gdb-header{background:var(--surface);border-bottom-color:var(--border);}[data-theme=dark-warm] .gdb-nav{background:var(--surface);border-bottom-color:var(--border);}[data-theme=dark-warm] .gdb-nav-item{color:var(--text2);}[data-theme=dark-warm] .gdb-nav-item.active{color:var(--accent);}[data-theme=dark-warm] .gdb-nav-section{color:var(--text3);}[data-theme=dark-warm] .gdb-nav-badge{color:var(--text3);background:var(--surface2);border-color:var(--border);}[data-theme=dark-warm] .gdb-nav-divider{background:var(--border);}[data-theme=dark-warm] .gdb-init-subnav{background:var(--surface2);border-bottom-color:var(--border);}[data-theme=dark-warm] .gdb-refresh-btn{color:var(--text2);background:var(--surface2);border-color:var(--border);}[data-theme=dark-warm] .gdb-clear-cache-btn{color:var(--text2);background:var(--surface2);border-color:var(--border);}';
 document.head.appendChild(_headerStyle);
 
+/* ── Favorites CSS ───────────────────────── */
+var _favStyle=document.createElement('style');
+_favStyle.textContent=
+  '.gdb-fav-wrap{position:relative;flex-shrink:0;}'+
+  '.gdb-fav-btn{display:flex;align-items:center;justify-content:center;width:28px;height:28px;font-size:16px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;cursor:pointer;transition:all .15s;color:var(--text2);}'+
+  '.gdb-fav-btn:hover{border-color:var(--text2);color:var(--amber);}'+
+  '.gdb-fav-btn.is-saved{color:var(--amber);border-color:var(--amber);}'+
+  '.gdb-fav-panel{display:none;position:absolute;top:calc(100% + 6px);right:0;width:240px;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.18);z-index:200;overflow:hidden;}'+
+  '.gdb-fav-header{padding:8px 12px 6px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border);}'+
+  '.gdb-fav-item{display:flex;align-items:center;gap:8px;padding:7px 10px;cursor:pointer;transition:background .12s;}'+
+  '.gdb-fav-item:hover{background:var(--surface2);}'+
+  '.gdb-fav-item.gdb-fav-current{background:var(--surface2);}'+
+  '.gdb-fav-emoji{font-size:14px;flex-shrink:0;width:20px;text-align:center;}'+
+  '.gdb-fav-title{font-size:12px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}'+
+  '.gdb-fav-item.gdb-fav-current .gdb-fav-title{color:var(--accent);font-weight:600;}'+
+  '.gdb-fav-remove{display:none;align-items:center;justify-content:center;width:18px;height:18px;font-size:14px;line-height:1;color:var(--text3);background:none;border:none;cursor:pointer;border-radius:3px;padding:0;flex-shrink:0;}'+
+  '.gdb-fav-item:hover .gdb-fav-remove{display:flex;}'+
+  '.gdb-fav-remove:hover{color:var(--down);}'+
+  '.gdb-fav-empty{padding:16px 14px;color:var(--text3);font-size:12px;text-align:center;line-height:1.6;}'+
+  '[data-theme=light] .gdb-fav-panel{box-shadow:0 8px 24px rgba(0,0,0,.1);}';
+document.head.appendChild(_favStyle);
+
+
 
 /* ── Initiative sub-tab bar ──────────────────────────────
    Call this on initiative pages to render a tab bar
@@ -182,6 +205,10 @@ function buildGdbHeader(opts) {
       '<div class="gdb-update-time" id="gdb-update-time"></div>' +
       (opts.showRefresh ? '<button class="gdb-refresh-btn" id="gdb-refresh-btn">\u21bb Refresh</button>' : '') +
       '<button class="gdb-clear-cache-btn" id="gdb-clear-cache-btn" title="Clear cached data and reload">\u2715 Clear cache</button>' +
+      '<div class="gdb-fav-wrap">'+
+      '<button class="gdb-fav-btn" id="gdb-fav-btn" title="Save this page">&#9734;</button>'+
+      '<div class="gdb-fav-panel" id="gdb-fav-panel"></div>'+
+      '</div>'+
       '<button class="gdb-theme-btn" id="gdb-theme-btn">&#9680;</button>' +
       '<div class="gdb-user">' +
         '<div class="gdb-user-avatar" id="gdb-user-avatar">' +
@@ -330,6 +357,113 @@ function setGdbUpdateTime(ts) {
   });
 }
 
+
+/* ── FAVORITES (localStorage per uid) ──────────────────────── */
+var _GDB_PAGE_META=[
+  {test:'/performance/personal', emoji:'👤', title:'My Performance'},
+  {test:'/performance/',         emoji:'📈', title:'Performance Summary'},
+  {test:'/initiative/dashboard', emoji:'📊', title:'Initiative Dashboard'},
+  {test:'/initiative/list',      emoji:'📋', title:'Initiative List'},
+  {test:'/initiative/completed', emoji:'✅', title:'Completed Initiatives'},
+  {test:'/initiative/',          emoji:'🚀', title:'Initiatives'},
+  {test:'/issue/',               emoji:'🐛', title:'Issues'},
+  {test:'/support/',             emoji:'🎫', title:'Support Tasks'},
+  {test:'/channel/',             emoji:'📡', title:'Channels'},
+];
+
+function _gdbFavKey(uid){ return 'gdb_fav_'+uid.replace(/[^a-zA-Z0-9]/g,'_'); }
+
+function _gdbFavLoad(uid){
+  try{ var r=localStorage.getItem(_gdbFavKey(uid)); return r?JSON.parse(r):[]; }catch(e){ return []; }
+}
+function _gdbFavSave(uid,favs){
+  try{ localStorage.setItem(_gdbFavKey(uid),JSON.stringify(favs)); }catch(e){}
+}
+function _gdbPageMeta(){
+  var p=window.location.pathname;
+  for(var i=0;i<_GDB_PAGE_META.length;i++){
+    if(p.indexOf(_GDB_PAGE_META[i].test)>=0) return _GDB_PAGE_META[i];
+  }
+  return {emoji:'📄',title:document.title||'This page'};
+}
+function _gdbFavRender(uid){
+  var favs=_gdbFavLoad(uid);
+  var curUrl=window.location.pathname;
+  var isSaved=favs.some(function(f){return f.url===curUrl;});
+  /* Star button state */
+  var btn=document.getElementById('gdb-fav-btn');
+  if(btn){
+    btn.innerHTML=isSaved?'&#9733;':'&#9734;';
+    btn.title=isSaved?'Saved — click to see all':'Save this page';
+    if(isSaved) btn.classList.add('is-saved'); else btn.classList.remove('is-saved');
+  }
+  /* Panel content */
+  var panel=document.getElementById('gdb-fav-panel');
+  if(!panel)return;
+  var inner='<div class="gdb-fav-header">Saved Pages</div>';
+  if(!favs.length){
+    inner+='<div class="gdb-fav-empty">No saved pages yet<br><span style="font-size:10px">Click ☆ to save this page</span></div>';
+  } else {
+    favs.forEach(function(f,i){
+      var isCur=f.url===curUrl;
+      inner+='<div class="gdb-fav-item'+(isCur?' gdb-fav-current':'')+'" data-url="'+f.url+'">'+
+        '<span class="gdb-fav-emoji">'+f.emoji+'</span>'+
+        '<span class="gdb-fav-title">'+f.title+'</span>'+
+        '<button class="gdb-fav-remove" data-idx="'+i+'" title="Remove">&#215;</button>'+
+      '</div>';
+    });
+  }
+  panel.innerHTML=inner;
+  panel.querySelectorAll('.gdb-fav-item').forEach(function(el){
+    el.addEventListener('click',function(e){
+      if(e.target.classList.contains('gdb-fav-remove'))return;
+      var url=el.getAttribute('data-url');
+      if(url) window.location.href=url;
+    });
+  });
+  panel.querySelectorAll('.gdb-fav-remove').forEach(function(rb){
+    rb.addEventListener('click',function(e){
+      e.stopPropagation();
+      var idx=parseInt(rb.getAttribute('data-idx'));
+      favs.splice(idx,1);
+      _gdbFavSave(uid,favs);
+      _gdbFavRender(uid);
+    });
+  });
+}
+function _gdbFavInit(uid){
+  var btn=document.getElementById('gdb-fav-btn');
+  var panel=document.getElementById('gdb-fav-panel');
+  if(!btn||!panel)return;
+  var _open=false;
+  btn.addEventListener('click',function(e){
+    e.stopPropagation();
+    var favs=_gdbFavLoad(uid);
+    var curUrl=window.location.pathname;
+    var isSaved=favs.some(function(f){return f.url===curUrl;});
+    if(!isSaved){
+      /* Save current page */
+      var meta=_gdbPageMeta();
+      favs.unshift({url:curUrl,emoji:meta.emoji,title:meta.title,addedAt:Date.now()});
+      _gdbFavSave(uid,favs);
+      _gdbFavRender(uid);
+      /* Brief flash open to confirm */
+      _open=true; panel.style.display='block';
+      setTimeout(function(){ _open=false; panel.style.display='none'; },1800);
+    } else {
+      /* Toggle panel */
+      _open=!_open;
+      panel.style.display=_open?'block':'none';
+      if(_open) _gdbFavRender(uid);
+    }
+  });
+  document.addEventListener('click',function(){
+    if(_open){ _open=false; panel.style.display='none'; }
+  });
+  panel.addEventListener('click',function(e){ e.stopPropagation(); });
+  _gdbFavRender(uid);
+}
+
 /* ── AUTH GUARD ──────────────────────────── */
 function gdbAuthGuard(onUser) {
   if (!firebase.apps.length) {
@@ -365,6 +499,7 @@ function gdbAuthGuard(onUser) {
     clearTimeout(_redirectTimer);
     _unsub();
     setGdbUser(user);
+    _gdbFavInit(user.uid);
     /* Show Performance nav link only for allowed emails */
     var _perfAllowed=['sawitree.jakkrawannit@kingpower.com','chawanop.witthayaphirak@kingpower.com','petchpailin.tocharoen@kingpower.com'];
     var _perfEl=document.getElementById('gdb-nav-perf');

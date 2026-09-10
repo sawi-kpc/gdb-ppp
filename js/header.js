@@ -360,11 +360,11 @@ function setGdbUpdateTime(ts) {
 
 /* ── FAVORITES (localStorage per uid) ──────────────────────── */
 var _GDB_PAGE_META=[
-  {test:'/performance/personal', emoji:'👤', title:'My Performance'},
-  {test:'/performance/',         emoji:'📈', title:'Performance Summary'},
-  {test:'/initiative/dashboard', emoji:'📊', title:'Initiative Dashboard'},
-  {test:'/initiative/list',      emoji:'📋', title:'Initiative List'},
-  {test:'/initiative/completed', emoji:'✅', title:'Completed Initiatives'},
+  {test:'/performance/personal', emoji:'👤', title:'Performance > Personal'},
+  {test:'/performance/',         emoji:'📈', title:'Performance > Summary'},
+  {test:'/initiative/dashboard', emoji:'📊', title:'Initiative > Dashboard'},
+  {test:'/initiative/list',      emoji:'📋', title:'Initiative > List'},
+  {test:'/initiative/completed', emoji:'✅', title:'Initiative > Completed'},
   {test:'/initiative/',          emoji:'🚀', title:'Initiatives'},
   {test:'/issue/',               emoji:'🐛', title:'Issues'},
   {test:'/support/',             emoji:'🎫', title:'Support Tasks'},
@@ -442,7 +442,8 @@ function _gdbFavInit(uid){
     var curUrl=window.location.pathname;
     var isSaved=favs.some(function(f){return f.url===curUrl;});
     if(!isSaved){
-      /* Save current page */
+      /* Save current page — max 5 */
+      if(favs.length>=5){ return; }
       var meta=_gdbPageMeta();
       favs.unshift({url:curUrl,emoji:meta.emoji,title:meta.title,addedAt:Date.now()});
       _gdbFavSave(uid,favs);

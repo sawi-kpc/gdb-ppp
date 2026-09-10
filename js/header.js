@@ -26,9 +26,11 @@ document.head.appendChild(_headerStyle);
 var _favStyle=document.createElement('style');
 _favStyle.textContent=
   '.gdb-fav-wrap{position:relative;flex-shrink:0;}'+
-  '.gdb-fav-btn{display:flex;align-items:center;justify-content:center;width:28px;height:28px;font-size:16px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;cursor:pointer;transition:all .15s;color:var(--text2);}'+
-  '.gdb-fav-btn:hover{border-color:var(--text2);color:var(--amber);}'+
-  '.gdb-fav-btn.is-saved{color:var(--amber);border-color:var(--amber);}'+
+  '.gdb-fav-btn,.gdb-fav-chev{display:flex;align-items:center;justify-content:center;height:28px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;transition:all .15s;color:var(--text2);}'+
+  '.gdb-fav-btn{width:28px;font-size:16px;border-radius:5px 0 0 5px;border-right:none;}'+
+  '.gdb-fav-chev{width:18px;font-size:10px;border-radius:0 5px 5px 0;padding:0;}'+
+  '.gdb-fav-btn:hover,.gdb-fav-chev:hover{border-color:var(--text2);color:var(--text);}'+
+  '.gdb-fav-btn.is-saved{color:var(--amber);}'+
   '.gdb-fav-panel{display:none;position:absolute;top:calc(100% + 6px);right:0;width:240px;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.18);z-index:200;overflow:hidden;}'+
   '.gdb-fav-header{padding:8px 12px 6px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border);}'+
   '.gdb-fav-item{display:flex;align-items:center;gap:8px;padding:7px 10px;cursor:pointer;transition:background .12s;}'+
@@ -207,6 +209,7 @@ function buildGdbHeader(opts) {
       '<button class="gdb-clear-cache-btn" id="gdb-clear-cache-btn" title="Clear cached data and reload">\u2715 Clear cache</button>' +
       '<div class="gdb-fav-wrap">'+
       '<button class="gdb-fav-btn" id="gdb-fav-btn" title="Save this page">&#9734;</button>'+
+      '<button class="gdb-fav-chev" id="gdb-fav-chev" title="Saved pages">&#9660;</button>'+
       '<div class="gdb-fav-panel" id="gdb-fav-panel"></div>'+
       '</div>'+
       '<button class="gdb-theme-btn" id="gdb-theme-btn">&#9680;</button>' +
@@ -439,31 +442,38 @@ function _gdbFavRender(uid){
 }
 function _gdbFavInit(uid){
   var btn=document.getElementById('gdb-fav-btn');
+  var chev=document.getElementById('gdb-fav-chev');
   var panel=document.getElementById('gdb-fav-panel');
   if(!btn||!panel)return;
   var _open=false;
+
+  /* Star: toggle save/unsave current page only */
   btn.addEventListener('click',function(e){
     e.stopPropagation();
     var favs=_gdbFavLoad(uid);
     var curUrl=window.location.pathname;
-    var isSaved=favs.some(function(f){return f.url===curUrl;});
-    if(!isSaved){
-      /* Save current page — max 5 */
-      if(favs.length>=5){ return; }
+    var idx=favs.findIndex(function(f){return f.url===curUrl;});
+    if(idx>=0){
+      favs.splice(idx,1); /* unsave */
+    } else {
+      if(favs.length>=5){ return; } /* max 5 */
       var meta=_gdbPageMeta();
       favs.unshift({url:curUrl,emoji:meta.emoji,title:meta.title,addedAt:Date.now()});
-      _gdbFavSave(uid,favs);
-      _gdbFavRender(uid);
-      /* Brief flash open to confirm */
-      _open=true; panel.style.display='block';
-      setTimeout(function(){ _open=false; panel.style.display='none'; },1800);
-    } else {
-      /* Toggle panel */
+    }
+    _gdbFavSave(uid,favs);
+    _gdbFavRender(uid);
+  });
+
+  /* Chevron: open/close list only */
+  if(chev){
+    chev.addEventListener('click',function(e){
+      e.stopPropagation();
       _open=!_open;
       panel.style.display=_open?'block':'none';
       if(_open) _gdbFavRender(uid);
-    }
-  });
+    });
+  }
+
   document.addEventListener('click',function(){
     if(_open){ _open=false; panel.style.display='none'; }
   });

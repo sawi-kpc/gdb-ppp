@@ -25,7 +25,7 @@ document.head.appendChild(_headerStyle);
 /* ── Favorites CSS ───────────────────────── */
 var _favStyle=document.createElement('style');
 _favStyle.textContent=
-  '.gdb-fav-wrap{position:relative;flex-shrink:0;}'+
+  '.gdb-fav-wrap{position:relative;flex-shrink:0;display:flex;align-items:center;}'+
   '.gdb-fav-btn,.gdb-fav-chev{display:flex;align-items:center;justify-content:center;height:28px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;transition:all .15s;color:var(--text2);}'+
   '.gdb-fav-btn{width:28px;font-size:16px;border-radius:5px 0 0 5px;border-right:none;}'+
   '.gdb-fav-chev{width:18px;font-size:10px;border-radius:0 5px 5px 0;padding:0;}'+

@@ -247,7 +247,8 @@ function _th(){
 
 /* ── Data helpers ── */
 function _fn(raw){ return (raw||'').trim().split(' ')[0]; }
-function _iyrI(d){ var m=(d['Roadmap Year Plan']||'').match(/(\d{4})/); return m?m[1]:''; }
+function _iyrI(d){ var ms=(d['Roadmap Year Plan']||'').match(/\d{4}/g); return ms?ms[0]:''; }
+function _iyrIAll(d){ return (d['Roadmap Year Plan']||'').match(/\d{4}/g)||[]; }
 function _iyrIs(d){ var m=d.FailureOccurs?String(d.FailureOccurs).match(/(\d{4})/):null; return m?m[1]:''; }
 function _iyrS(d){
   var lm=(d.Labels||'').match(/(\d{4})/); if(lm)return lm[1];
@@ -306,7 +307,7 @@ function _sumMarkReady(src){
 
 function _buildYearChips(){
   var yrs=new Set();
-  _sum.initData.forEach(function(d){var y=_iyrI(d);if(y)yrs.add(y);});
+  _sum.initData.forEach(function(d){_iyrIAll(d).forEach(function(y){yrs.add(y);});});
   _sum.issueData.forEach(function(d){var y=_iyrIs(d);if(y)yrs.add(y);});
   _sum.supData.forEach(function(d){var y=_iyrS(d);if(y)yrs.add(y);});
   var sorted=Array.from(yrs).sort().reverse();
@@ -333,7 +334,7 @@ function _render(){
   var cy=_sum.curYear;
 
   /* Filter initiative data for this year */
-  var initY = _sum.initData.filter(function(d){return _ym(_iyrI(d),cy);});
+  var initY = _sum.initData.filter(function(d){ if(cy==='All')return true; return _iyrIAll(d).indexOf(cy)>=0; });
   /* Issues: NOT filtered by year — FailureOccurs is occurrence date, not assignment/resolution date.
      Issues spanning multiple years (still In Progress, or resolved in a different year) would be
      incorrectly excluded. Show all issues per person regardless of year selection. */

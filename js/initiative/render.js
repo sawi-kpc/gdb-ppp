@@ -245,7 +245,7 @@ function renderTimeline(data){
     if(!as&&!bs)return 0;if(!as)return 1;if(!bs)return-1;
     var sd=new Date(as)-new Date(bs); if(sd!==0)return sd;
     /* tiebreak: earlier target end first */
-    var ae=getStart(a['Target Project End']||''),be=getStart(b['Target Project End']||'');
+    var ae=getEnd(a['Target Project End']||''),be=getEnd(b['Target Project End']||'');
     if(!ae&&!be)return 0;if(!ae)return 1;if(!be)return-1;
     return new Date(ae)-new Date(be);
   });

@@ -463,12 +463,12 @@ function renderSummary(){
   var RS_ORDER=['New','Next','Now','Later',"Won't do",'Completed'];
   GDB.buildCheckDropdown({wrapperId:'rs-tl-dropdown-wrap', btnLabelId:'rs-tl-btn-label', listId:'rs-tl-checkbox-list', values:RS_ORDER, activeArr:sumRoadmapFilter, colorMap:RS_COLORS, toggleFn:'onSumRoadmapToggle'});
 
-  /* Component dropdown */
+  /* Component dropdown — grouped */
   var compVals=[];
   allData.forEach(function(d){
     (d['Components']||'').split(';').forEach(function(c){ var t=c.trim(); if(t&&compVals.indexOf(t)<0)compVals.push(t); });
   });
-  GDB.buildCheckDropdown({wrapperId:'comp-dropdown-wrap', btnLabelId:'comp-btn-label', listId:'comp-checkbox-list', values:_sortCompVals(compVals), activeArr:sumComponentFilter, colorMap:null, toggleFn:'onSumCompToggle'});
+  _buildGroupedCompDropdown(compVals, sumComponentFilter);
 
   /* Dependency System dropdown */
   var sumDepVals=[];
@@ -565,6 +565,92 @@ function onSumCompToggle(val){
   var panel=document.getElementById('comp-dropdown-panel'); if(panel)panel.style.display='block';
 }
 function clearSumCompFilter(){ sumComponentFilter=[]; document.getElementById('comp-dropdown-panel').style.display='none'; renderSummary(); }
+function onSumCompGroupToggle(groupId){
+  var groups=typeof GDB_COMPONENT_GROUPS!=='undefined'?GDB_COMPONENT_GROUPS:[];
+  var grp=null; for(var i=0;i<groups.length;i++){if(groups[i].id===groupId){grp=groups[i];break;}}
+  if(!grp||!grp.children.length)return;
+  var availComps=[];
+  allData.forEach(function(d){(d['Components']||'').split(';').forEach(function(c){var t=c.trim();if(t&&availComps.indexOf(t)<0)availComps.push(t);});});
+  var availChildren=grp.children.filter(function(c){return availComps.indexOf(c)>=0;});
+  var allChecked=availChildren.length>0&&availChildren.every(function(c){return sumComponentFilter.indexOf(c)>=0;});
+  if(allChecked){
+    availChildren.forEach(function(c){var i=sumComponentFilter.indexOf(c);if(i>=0)sumComponentFilter.splice(i,1);});
+  } else {
+    availChildren.forEach(function(c){if(sumComponentFilter.indexOf(c)<0)sumComponentFilter.push(c);});
+  }
+  renderSummary();
+  var panel=document.getElementById('comp-dropdown-panel'); if(panel)panel.style.display='block';
+}
+
+/* ── Grouped component dropdown builder ─────────────────── */
+function _buildGroupedCompDropdown(availComps, activeArr){
+  var listEl=document.getElementById('comp-checkbox-list');
+  var btnEl=document.getElementById('comp-btn-label');
+  if(!listEl)return;
+  var groups=typeof GDB_COMPONENT_GROUPS!=='undefined'?GDB_COMPONENT_GROUPS:[];
+  var grouped=new Set();
+  var html='';
+
+  function _esc(s){return s.replace(/'/g,"\\'");}
+  function _checkBox(checked,partial){
+    var bg=checked?'var(--accent)':partial?'var(--surface2)':'var(--surface2)';
+    var bdr=checked||partial?'var(--accent)':'var(--border)';
+    var ico=checked?'✓':partial?'<span style="display:block;width:8px;height:2px;background:var(--accent);border-radius:1px;margin:auto"></span>':'';
+    return '<span style="width:13px;height:13px;border:1px solid '+bdr+';border-radius:3px;display:inline-flex;align-items:center;justify-content:center;font-size:8px;background:'+bg+';color:#fff;flex-shrink:0">'+ico+'</span>';
+  }
+
+  groups.forEach(function(grp){
+    var children=grp.children||[];
+    if(children.length===0){
+      /* Standalone item */
+      var cid=grp.id;
+      var isSpecial=cid==='(missing component)';
+      if(!isSpecial&&availComps.indexOf(cid)<0)return;
+      grouped.add(cid);
+      var checked=activeArr.indexOf(cid)>=0;
+      html+='<div onclick="onSumCompToggle(''+_esc(cid)+'')" style="padding:5px 10px;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--text)">'+
+        _checkBox(checked,false)+'<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+grp.label+'</span></div>';
+    } else {
+      /* Group with children */
+      var avail=children.filter(function(c){return availComps.indexOf(c)>=0;});
+      if(avail.length===0)return;
+      avail.forEach(function(c){grouped.add(c);});
+      var allChk=avail.every(function(c){return activeArr.indexOf(c)>=0;});
+      var someChk=avail.some(function(c){return activeArr.indexOf(c)>=0;});
+      html+='<div onclick="onSumCompGroupToggle(''+_esc(grp.id)+'')" style="padding:5px 10px 4px;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.04em;text-transform:uppercase;border-top:1px solid var(--border);margin-top:2px">'+
+        _checkBox(allChk,someChk&&!allChk)+
+        '<span>'+grp.label+'</span>'+
+        '<span style="font-size:10px;color:var(--text3);font-weight:400;margin-left:auto">'+avail.length+'</span></div>';
+      avail.forEach(function(c){
+        var checked=activeArr.indexOf(c)>=0;
+        html+='<div onclick="onSumCompToggle(''+_esc(c)+'')" style="padding:4px 10px 4px 28px;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:11px;color:var(--text2)">'+
+          _checkBox(checked,false)+'<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+c+'</span></div>';
+      });
+    }
+  });
+
+  /* Ungrouped (in data but not in any group config) */
+  var ungrouped=availComps.filter(function(c){return!grouped.has(c);}).sort();
+  if(ungrouped.length){
+    html+='<div style="border-top:1px solid var(--border);margin-top:2px;padding:4px 10px 2px;font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.04em">Other</div>';
+    ungrouped.forEach(function(c){
+      var checked=activeArr.indexOf(c)>=0;
+      html+='<div onclick="onSumCompToggle(''+_esc(c)+'')" style="padding:4px 10px;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--text)">'+
+        _checkBox(checked,false)+'<span>'+c+'</span></div>';
+    });
+  }
+
+  html+='<div style="border-top:1px solid var(--border);padding:6px 10px;margin-top:2px">'+
+    '<button onclick="clearSumCompFilter()" style="font-size:11px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Clear all</button></div>';
+
+  listEl.innerHTML=html;
+
+  /* Update button label */
+  if(btnEl){
+    var cnt=activeArr.length;
+    btnEl.textContent=cnt>0?cnt+' selected':(btnEl.getAttribute('data-empty')||'All Components');
+  }
+}
 
 function onSumDepToggle(val){
   var idx=sumDepFilter.indexOf(val);

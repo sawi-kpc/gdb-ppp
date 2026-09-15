@@ -612,6 +612,7 @@ function _buildGroupedCompDropdown(availComps, activeArr){
     '<button class="gdb-grp-clear" style="font-size:11px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Clear all</button>'+
     '</div>');
 
+  var _firstRow=true;
   groups.forEach(function(grp){
     var children=grp.children||[];
     if(children.length===0){
@@ -620,7 +621,9 @@ function _buildGroupedCompDropdown(availComps, activeArr){
       if(!isSpecial&&availComps.indexOf(cid)<0)return;
       grouped.add(cid);
       var checked=(activeArr.indexOf(cid)>=0);
-      rows.push('<div class="gdb-grp-item" data-comp="'+cid+'" data-type="comp" style="padding:5px 10px;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--text)">'+
+      var topBdr=_firstRow?'':'border-top:1px solid var(--border);margin-top:2px;';
+      _firstRow=false;
+      rows.push('<div class="gdb-grp-item" data-comp="'+cid+'" data-type="comp" style="'+topBdr+'padding:5px 10px;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--text)">'+
         _chk(checked,false)+'<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+grp.label+'</span></div>');
     } else {
       var avail=children.filter(function(c){return availComps.indexOf(c)>=0;});
@@ -628,7 +631,9 @@ function _buildGroupedCompDropdown(availComps, activeArr){
       avail.forEach(function(c){grouped.add(c);});
       var allChk=avail.every(function(c){return activeArr.indexOf(c)>=0;});
       var someChk=avail.some(function(c){return activeArr.indexOf(c)>=0;});
-      rows.push('<div class="gdb-grp-item" data-group="'+grp.id+'" data-type="group" style="padding:5px 10px 4px;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.04em;text-transform:uppercase;border-top:1px solid var(--border);margin-top:2px">'+
+      var topBdr=_firstRow?'':'border-top:1px solid var(--border);margin-top:2px;';
+      _firstRow=false;
+      rows.push('<div class="gdb-grp-item" data-group="'+grp.id+'" data-type="group" style="'+topBdr+'padding:5px 10px 4px;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.04em;text-transform:uppercase;">'+
         _chk(allChk,someChk&&!allChk)+'<span>'+grp.label+'</span>'+
         '<span style="font-size:10px;color:var(--text3);font-weight:400;margin-left:auto">'+avail.length+'</span></div>');
       avail.forEach(function(c){

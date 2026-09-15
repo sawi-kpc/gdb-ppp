@@ -927,7 +927,9 @@ function renderCompleted(){
     var emoji=mon?(isD?'🆘 ':isR?'⚠️ ':isT?'✅ ':''):'';
 
     /* Go-live label after key (like timeline) */
-    var glLabel=goLive?'<span style="font-size:9px;color:var(--purple);font-weight:600;margin-left:6px">◆ Go-live: '+fmtFullDate(goLive)+'</span>':'';
+    var glLabel=goLive
+      ?'<span style="font-size:9px;color:var(--purple);font-weight:600;margin-left:6px">◆ Go-live: '+fmtFullDate(goLive)+'</span>'
+      :'<span style="font-size:9px;color:var(--down);font-weight:600;margin-left:6px">⚠ Missing Go-live Date</span>';
 
     /* Monitoring badge */
     var monHtml=mon?monBadge(mon):'';
@@ -944,7 +946,7 @@ function renderCompleted(){
     /* meta: goal · fallback date · bu owner (go-live moved to key-line) */
     var metaParts=[];
     if(goal)metaParts.push(goal);
-    if(!goLive){var fb=aE?fmtDate(aE):tE?fmtDate(tE):'';if(fb)metaParts.push('Completed: '+fb);}
+    /* go-live moved to key-line; no date fallback shown here */
     if(buOwner)metaParts.push('BU: '+buOwner);
     if(metaParts.length)html+='<div class="done-meta">'+metaParts.join(' &middot; ')+'</div>';
 

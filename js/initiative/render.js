@@ -162,12 +162,12 @@ function fmtDate(d){
   if(isNaN(dt.getTime())){var p=d.split('-');return p.length>=3?parseInt(p[2])+' '+GDB.FULL_MONTHS[+p[1]-1]+' '+p[0]:'—';}
   return dt.getDate()+' '+GDB.FULL_MONTHS[dt.getMonth()]+' '+dt.getFullYear();
 }
-/* fmtFullDate: "22 June 2026" — for go-live label */
+/* fmtFullDate: "22 Feb 2026" — for go-live label */
 function fmtFullDate(d){
   if(!d)return'—';
   var dt=new Date(d);
   if(isNaN(dt.getTime()))return'—';
-  return dt.getDate()+' '+GDB.FULL_MONTHS[dt.getMonth()]+' '+dt.getFullYear();
+  return dt.getDate()+' '+GDB.MONTHS[dt.getMonth()]+' '+dt.getFullYear();
 }
 
 /* fmtMonYear: short format "Oct 2025" — for timeline target/actual dates */

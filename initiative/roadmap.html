@@ -15,6 +15,9 @@
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
   padding: 9px 16px; border-bottom: 1px solid var(--border);
   background: var(--surface2);
+  position: sticky;
+  top: calc(var(--header-h) + var(--nav-h) + 36px); /* below header + nav + init-subnav */
+  z-index: 90; /* creates stacking context below init-subnav(98), above table headers(40) */
 }
 .rm-ctrl-lbl { font-size: 11px; color: var(--text3); white-space: nowrap; font-weight: 500; }
 .rm-sep { width: 1px; height: 16px; background: var(--border); flex-shrink: 0; }

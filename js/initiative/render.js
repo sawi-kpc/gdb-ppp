@@ -565,6 +565,14 @@ function onSumCompToggle(val){
   var panel=document.getElementById('comp-dropdown-panel'); if(panel)panel.style.display='block';
 }
 function clearSumCompFilter(){ sumComponentFilter=[]; document.getElementById('comp-dropdown-panel').style.display='none'; renderSummary(); }
+function selectAllSumComp(availComps){
+  availComps.forEach(function(c){ if(sumComponentFilter.indexOf(c)<0) sumComponentFilter.push(c); });
+  /* also add (missing component) if any item lacks component */
+  var hasMissing=allData.some(function(d){ return !(d['Components']||'').trim(); });
+  if(hasMissing && sumComponentFilter.indexOf('(missing component)')<0) sumComponentFilter.push('(missing component)');
+  renderSummary();
+  var panel=document.getElementById('comp-dropdown-panel'); if(panel)panel.style.display='block';
+}
 function onSumCompGroupToggle(groupId){
   var groups=typeof GDB_COMPONENT_GROUPS!=='undefined'?GDB_COMPONENT_GROUPS:[];
   var grp=null; for(var i=0;i<groups.length;i++){if(groups[i].id===groupId){grp=groups[i];break;}}
@@ -597,6 +605,12 @@ function _buildGroupedCompDropdown(availComps, activeArr){
     var ico=checked?'&#10003;':partial?'<span style="display:block;width:8px;height:2px;background:var(--accent);border-radius:1px;margin:auto"></span>':'';
     return '<span style="width:13px;height:13px;border:1px solid '+bdr+';border-radius:3px;display:inline-flex;align-items:center;justify-content:center;font-size:8px;background:'+bg+';color:#fff;flex-shrink:0">'+ico+'</span>';
   }
+
+  /* ── Select all / Clear all at TOP ── */
+  rows.push('<div style="padding:5px 10px 5px;border-bottom:1px solid var(--border);display:flex;gap:10px">'+
+    '<button class="gdb-grp-selall" style="font-size:11px;color:var(--accent);background:none;border:none;cursor:pointer;padding:0;font-weight:600">Select all</button>'+
+    '<button class="gdb-grp-clear" style="font-size:11px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Clear all</button>'+
+    '</div>');
 
   groups.forEach(function(grp){
     var children=grp.children||[];
@@ -635,13 +649,11 @@ function _buildGroupedCompDropdown(availComps, activeArr){
     });
   }
 
-  rows.push('<div style="border-top:1px solid var(--border);padding:6px 10px;margin-top:2px">'+
-    '<button class="gdb-grp-clear" style="font-size:11px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Clear all</button></div>');
-
   listEl.innerHTML=rows.join('');
 
-  /* Attach click handlers via event delegation (avoids all quoting issues) */
+  /* Attach click handlers — stopPropagation keeps dropdown open */
   listEl.onclick=function(e){
+    e.stopPropagation();
     var item=e.target.closest('.gdb-grp-item');
     if(item){
       var type=item.getAttribute('data-type');
@@ -649,8 +661,8 @@ function _buildGroupedCompDropdown(availComps, activeArr){
       else onSumCompToggle(item.getAttribute('data-comp'));
       return;
     }
-    var clr=e.target.closest('.gdb-grp-clear');
-    if(clr) clearSumCompFilter();
+    if(e.target.closest('.gdb-grp-clear')){ clearSumCompFilter(); return; }
+    if(e.target.closest('.gdb-grp-selall')){ selectAllSumComp(availComps); return; }
   };
 
   if(btnEl){

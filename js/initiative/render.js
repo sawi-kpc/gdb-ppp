@@ -18,6 +18,8 @@ var listComponentFilter=[];
 var listDepFilter=[];
 var listPMRoleFilter=[];
 var _listPage=1, _listPageSize=20, _lastListFiltered=[], listHideWontDo=false;
+var sumAssigneeRoleMode='any';  /* 'lead' | 'any' | 'support' */
+var listAssigneeRoleMode='any';
 var _listSortCol='Start', _listSortAsc=true;
 var doneComponentFilter=[];
 var donePMRoleFilter=[];
@@ -49,7 +51,8 @@ function _saveListFilters(){
     listYearFilter:listYearFilter, listStatusFilter:listStatusFilter,
     listRoadmapFilter:listRoadmapFilter, listComponentFilter:listComponentFilter,
     listDepFilter:listDepFilter, listPMRoleFilter:listPMRoleFilter,
-    listAssigneeFilter:listAssigneeFilter, listSearchQuery:listSearchQuery,
+    listAssigneeFilter:listAssigneeFilter, listAssigneeRoleMode:listAssigneeRoleMode,
+    listSearchQuery:listSearchQuery,
     _listSortCol:_listSortCol, _listSortAsc:_listSortAsc, _listPage:_listPage,
     listHideWontDo:listHideWontDo
   });
@@ -64,6 +67,7 @@ function _loadListFilters(){
   if(Array.isArray(f.listDepFilter))       listDepFilter=f.listDepFilter;
   if(Array.isArray(f.listPMRoleFilter))    listPMRoleFilter=f.listPMRoleFilter;
   if(Array.isArray(f.listAssigneeFilter))   listAssigneeFilter=f.listAssigneeFilter;
+  if(f.listAssigneeRoleMode)                 listAssigneeRoleMode=f.listAssigneeRoleMode;
   if(f.listSearchQuery)                    listSearchQuery=f.listSearchQuery;
   if(f._listSortCol)                       _listSortCol=f._listSortCol;
   if(typeof f._listSortAsc==='boolean')       _listSortAsc=f._listSortAsc;
@@ -73,7 +77,8 @@ function _loadListFilters(){
 function _saveSumFilters(){
   GDB.saveFilters('gdb_filter_initiative_timeline',{
     sumYearFilter:sumYearFilter, sumStageFilter:sumStageFilter,
-    sumRoadmapFilter:sumRoadmapFilter, sumAssigneeFilter:sumAssigneeFilter, sumComponentFilter:sumComponentFilter,
+    sumRoadmapFilter:sumRoadmapFilter, sumAssigneeFilter:sumAssigneeFilter, sumAssigneeRoleMode:sumAssigneeRoleMode,
+    sumComponentFilter:sumComponentFilter,
     sumDepFilter:sumDepFilter, sumPMRoleFilter:sumPMRoleFilter,
     sumSearchQuery:sumSearchQuery, hideNoDate:hideNoDate,
     _tlStart:_tlStart, _tlEnd:_tlEnd
@@ -86,6 +91,7 @@ function _loadSumFilters(){
   if(Array.isArray(f.sumStageFilter))     sumStageFilter=f.sumStageFilter;
   if(Array.isArray(f.sumRoadmapFilter))    sumRoadmapFilter=f.sumRoadmapFilter;
   if(Array.isArray(f.sumAssigneeFilter))   sumAssigneeFilter=f.sumAssigneeFilter;
+  if(f.sumAssigneeRoleMode)                  sumAssigneeRoleMode=f.sumAssigneeRoleMode;
   if(Array.isArray(f.sumComponentFilter)) sumComponentFilter=f.sumComponentFilter;
   if(Array.isArray(f.sumDepFilter))       sumDepFilter=f.sumDepFilter;
   if(Array.isArray(f.sumPMRoleFilter))    sumPMRoleFilter=f.sumPMRoleFilter;
@@ -106,7 +112,8 @@ function _loadInitFilters(){
 
 function resetSumFilters(){
   sumYearFilter=['ROADMAP_2026']; sumStageFilter=[]; sumRoadmapFilter=[];
-  sumComponentFilter=[]; sumDepFilter=[]; sumPMRoleFilter=[]; sumAssigneeFilter=[]; sumSearchQuery='';
+  sumComponentFilter=[]; sumDepFilter=[]; sumPMRoleFilter=[]; sumAssigneeFilter=[]; sumAssigneeRoleMode='any'; sumSearchQuery='';
+  _syncRoleToggle('sum');
   var si=document.getElementById('sum-search'); if(si)si.value='';
   GDB.saveFilters('gdb_filter_initiative_timeline',{});
   renderSummary();
@@ -114,7 +121,8 @@ function resetSumFilters(){
 function resetListFilters(){
   listYearFilter=['ROADMAP_2026']; listStatusFilter=[]; listRoadmapFilter=[];
   listComponentFilter=[]; listDepFilter=[]; listPMRoleFilter=[];
-  listAssigneeFilter=[]; listSearchQuery=''; listHideWontDo=false;
+  listAssigneeFilter=[]; listAssigneeRoleMode='any'; listSearchQuery=''; listHideWontDo=false;
+  _syncRoleToggle('list');
   var li=document.getElementById('list-search'); if(li)li.value='';
   GDB.saveFilters('gdb_filter_initiative_list',{});
   renderList();
@@ -517,9 +525,12 @@ function renderSummary(){
     filtered=filtered.filter(function(d){
       var a1=(d['Assignee.displayName']||'').trim().split(' ')[0];
       var a2s=(d['Assignee (2nd).displayName']||'').split(';').map(function(n){return n.trim().split(' ')[0];});
-      return sumAssigneeFilter.some(function(f){ return f===a1||a2s.indexOf(f)>=0; });
+      if(sumAssigneeRoleMode==='lead')    return sumAssigneeFilter.some(function(f){return f===a1;});
+      if(sumAssigneeRoleMode==='support') return sumAssigneeFilter.some(function(f){return a2s.indexOf(f)>=0;});
+      return sumAssigneeFilter.some(function(f){return f===a1||a2s.indexOf(f)>=0;});
     });
   }
+  _syncRoleToggle('sum');
   if(sumSearchQuery.trim()){
     var q=sumSearchQuery.trim().toLowerCase();
     filtered=filtered.filter(function(d){return(d.Summary||'').toLowerCase().indexOf(q)>=0;});
@@ -574,6 +585,27 @@ function onSumAssigneeToggle(val){
   var i=sumAssigneeFilter.indexOf(val); if(i>=0)sumAssigneeFilter.splice(i,1); else sumAssigneeFilter.push(val);
   renderSummary();
   var p=document.getElementById('sum-assignee-dropdown-panel'); if(p) p.style.display='block';
+}
+function setSumRoleMode(mode){
+  sumAssigneeRoleMode=mode;
+  _syncRoleToggle('sum');
+  renderSummary();
+}
+function setListRoleMode(mode){
+  listAssigneeRoleMode=mode;
+  _syncRoleToggle('list');
+  renderList();
+}
+function _syncRoleToggle(prefix){
+  var modes=['lead','any','support'];
+  var cur = prefix==='sum'?sumAssigneeRoleMode:listAssigneeRoleMode;
+  modes.forEach(function(m){
+    var el=document.getElementById(prefix+'-role-'+m);
+    if(!el)return;
+    el.style.background = m===cur ? 'var(--accent)' : 'var(--surface2)';
+    el.style.color       = m===cur ? '#fff'           : 'var(--text2)';
+    el.style.fontWeight  = m===cur ? '700'            : '500';
+  });
 }
 
 /* ── Done initiatives list ────────────────── */
@@ -1483,12 +1515,13 @@ function renderList(){
   if(listAssigneeFilter.length>0){
     filtered=filtered.filter(function(d){
       var a1=(d['Assignee.displayName']||'').trim().split(' ')[0];
-      if(listAssigneeFilter.indexOf(a1)>=0) return true;
-      return (d['Assignee (2nd).displayName']||'').split(';').some(function(n){
-        return listAssigneeFilter.indexOf(n.trim().split(' ')[0])>=0;
-      });
+      var a2s=(d['Assignee (2nd).displayName']||'').split(';').map(function(n){return n.trim().split(' ')[0];});
+      if(listAssigneeRoleMode==='lead')    return listAssigneeFilter.some(function(f){return f===a1;});
+      if(listAssigneeRoleMode==='support') return listAssigneeFilter.some(function(f){return a2s.indexOf(f)>=0;});
+      return listAssigneeFilter.some(function(f){return f===a1||a2s.indexOf(f)>=0;});
     });
   }
+  _syncRoleToggle('list');
   if(listComponentFilter.length>0){
     filtered=filtered.filter(function(d){
       var comps=(d['Components']||'').split(';').map(function(c){return c.trim();}).filter(Boolean);

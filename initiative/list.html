@@ -121,6 +121,12 @@
         <div id="ini-assignee-checkbox-list"></div>
       </div>
     </div>
+    <!-- Role mode toggle -->
+    <div style="display:flex;border:1px solid var(--border);border-radius:4px;overflow:hidden;height:26px;flex-shrink:0" title="Filter by role">
+      <button id="list-role-lead"    onclick="setListRoleMode('lead')"    style="padding:0 8px;font-size:11px;font-weight:500;border:none;border-right:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;white-space:nowrap;transition:background .15s">Lead</button>
+      <button id="list-role-any"     onclick="setListRoleMode('any')"     style="padding:0 8px;font-size:11px;font-weight:700;border:none;border-right:1px solid var(--border);background:var(--accent);color:#fff;cursor:pointer;white-space:nowrap;transition:background .15s">Any</button>
+      <button id="list-role-support" onclick="setListRoleMode('support')" style="padding:0 8px;font-size:11px;font-weight:500;border:none;background:var(--surface2);color:var(--text2);cursor:pointer;white-space:nowrap;transition:background .15s">Support</button>
+    </div>
   </div>
   <div class="pg-bar" id="list-pg-top"></div>
   <table class="dt" id="list-table" style="font-size:11.5px">

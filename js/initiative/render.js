@@ -240,7 +240,15 @@ function renderTimeline(data){
   var sy=syArr[0],sm=syArr[1],ey=eyArr[0],em=eyArr[1];
   var START=new Date(sy,sm-1,1),END=new Date(ey,em,0,23,59,59),totalMs=END-START,today=new Date();
   var tlData=hideNoDate?data.filter(function(d){return getStart(d['Target Project Start']||'')||getStart(d['Actual Project Start']||'');}):data;
-  tlData=tlData.slice().sort(function(a,b){var as=getStart(a['Target Project Start']||''),bs=getStart(b['Target Project Start']||'');if(!as&&!bs)return 0;if(!as)return 1;if(!bs)return-1;return new Date(as)-new Date(bs);});
+  tlData=tlData.slice().sort(function(a,b){
+    var as=getStart(a['Target Project Start']||''),bs=getStart(b['Target Project Start']||'');
+    if(!as&&!bs)return 0;if(!as)return 1;if(!bs)return-1;
+    var sd=new Date(as)-new Date(bs); if(sd!==0)return sd;
+    /* tiebreak: earlier target end first */
+    var ae=getStart(a['Target Project End']||''),be=getStart(b['Target Project End']||'');
+    if(!ae&&!be)return 0;if(!ae)return 1;if(!be)return-1;
+    return new Date(ae)-new Date(be);
+  });
   var mCols=[];var cy=sy,cm=sm-1;
   while(new Date(cy,cm,1)<=END){mCols.push({year:cy,month:cm});cm++;if(cm>11){cm=0;cy++;}}
   function _localDate(ds){var p=ds.split('-').map(Number);return new Date(p[0],p[1]-1,p[2]);}

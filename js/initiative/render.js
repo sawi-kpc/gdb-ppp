@@ -252,10 +252,13 @@ function renderTimeline(data){
     var as=getStart(a['Target Project Start']||''),bs=getStart(b['Target Project Start']||'');
     if(!as&&!bs)return 0;if(!as)return 1;if(!bs)return-1;
     var sd=new Date(as)-new Date(bs); if(sd!==0)return sd;
-    /* tiebreak: earlier target end first */
+    /* tiebreak 1: earlier target end first */
     var ae=getEnd(a['Target Project End']||''),be=getEnd(b['Target Project End']||'');
-    if(!ae&&!be)return 0;if(!ae)return 1;if(!be)return-1;
-    return new Date(ae)-new Date(be);
+    if(!ae&&!be){}else{if(!ae)return 1;if(!be)return-1;var ed=new Date(ae)-new Date(be);if(ed!==0)return ed;}
+    /* tiebreak 2: earlier go-live date first */
+    var ag=getStart(a['Go-live Date']||''),bg=getStart(b['Go-live Date']||'');
+    if(!ag&&!bg)return 0;if(!ag)return 1;if(!bg)return-1;
+    return new Date(ag)-new Date(bg);
   });
   var mCols=[];var cy=sy,cm=sm-1;
   while(new Date(cy,cm,1)<=END){mCols.push({year:cy,month:cm});cm++;if(cm>11){cm=0;cy++;}}

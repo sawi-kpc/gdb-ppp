@@ -612,41 +612,38 @@ function _buildGroupedCompDropdown(availComps, activeArr){
     '<button class="gdb-grp-clear" style="font-size:11px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Clear all</button>'+
     '</div>');
 
+  /* Groups only — standalone items fall through to ungrouped section */
   groups.forEach(function(grp){
     var children=grp.children||[];
-    if(children.length===0){
-      var cid=grp.id;
-      var isSpecial=(cid==='(missing component)');
-      if(!isSpecial&&availComps.indexOf(cid)<0)return;
-      grouped.add(cid);
-      var checked=(activeArr.indexOf(cid)>=0);
-      rows.push('<div class="gdb-grp-item" data-comp="'+cid+'" data-type="comp" style="padding:5px 10px;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--text)">'+
-        _chk(checked,false)+'<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+grp.label+'</span></div>');
-    } else {
-      var avail=children.filter(function(c){return availComps.indexOf(c)>=0;});
-      if(avail.length===0)return;
-      avail.forEach(function(c){grouped.add(c);});
-      var allChk=avail.every(function(c){return activeArr.indexOf(c)>=0;});
-      var someChk=avail.some(function(c){return activeArr.indexOf(c)>=0;});
-      rows.push('<div class="gdb-grp-item" data-group="'+grp.id+'" data-type="group" style="padding:5px 10px 4px;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.04em;text-transform:uppercase;">'+
-        _chk(allChk,someChk&&!allChk)+'<span>'+grp.label+'</span>'+
-        '<span style="font-size:10px;color:var(--text3);font-weight:400;margin-left:auto">'+avail.length+'</span></div>');
-      avail.forEach(function(c){
-        var ck=(activeArr.indexOf(c)>=0);
-        rows.push('<div class="gdb-grp-item" data-comp="'+c+'" data-type="comp" style="padding:4px 10px 4px 28px;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:11px;color:var(--text2)">'+
-          _chk(ck,false)+'<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+c+'</span></div>');
-      });
-    }
+    if(!children.length)return;
+    var avail=children.filter(function(c){return availComps.indexOf(c)>=0;});
+    if(avail.length===0)return;
+    avail.forEach(function(c){grouped.add(c);});
+    var allChk=avail.every(function(c){return activeArr.indexOf(c)>=0;});
+    var someChk=avail.some(function(c){return activeArr.indexOf(c)>=0;});
+    rows.push('<div class="gdb-grp-item" data-group="'+grp.id+'" data-type="group" style="padding:5px 10px 4px;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.04em;text-transform:uppercase;">'+
+      _chk(allChk,someChk&&!allChk)+'<span>'+grp.label+'</span>'+
+      '<span style="font-size:10px;color:var(--text3);font-weight:400;margin-left:auto">'+avail.length+'</span></div>');
+    avail.forEach(function(c){
+      var ck=(activeArr.indexOf(c)>=0);
+      rows.push('<div class="gdb-grp-item" data-comp="'+c+'" data-type="comp" style="padding:4px 10px 4px 28px;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:11px;color:var(--text2)">'+
+        _chk(ck,false)+'<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+c+'</span></div>');
+    });
   });
 
+  /* Ungrouped — any component in data not covered by a group, sorted; (missing component) always last */
   var ungrouped=availComps.filter(function(c){return!grouped.has(c);}).sort();
-  if(ungrouped.length){
-    rows.push('<div style="border-top:1px solid var(--border);margin-top:2px;padding:4px 10px 2px;font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.04em">Other</div>');
-    ungrouped.forEach(function(c){
-      var ck=(activeArr.indexOf(c)>=0);
-      rows.push('<div class="gdb-grp-item" data-comp="'+c+'" data-type="comp" style="padding:4px 10px;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--text)">'+
-        _chk(ck,false)+'<span>'+c+'</span></div>');
-    });
+  ungrouped.forEach(function(c){
+    var ck=(activeArr.indexOf(c)>=0);
+    rows.push('<div class="gdb-grp-item" data-comp="'+c+'" data-type="comp" style="padding:5px 10px;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--text)">'+
+      _chk(ck,false)+'<span>'+c+'</span></div>');
+  });
+  /* (missing component) — always shown at bottom if any item lacks component */
+  var hasMissingComp=allData.some(function(d){return!(d['Components']||'').trim();});
+  if(hasMissingComp){
+    var ck=(activeArr.indexOf('(missing component)')>=0);
+    rows.push('<div class="gdb-grp-item" data-comp="(missing component)" data-type="comp" style="padding:5px 10px;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--text)">'+
+      _chk(ck,false)+'<span>(missing component)</span></div>');
   }
 
   listEl.innerHTML=rows.join('');

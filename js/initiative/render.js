@@ -888,10 +888,15 @@ function renderCompleted(){
     done=done.filter(function(d){return(d.Summary||'').toLowerCase().indexOf(q)>=0;});
   }
 
-  /* Sort by Go-live date DESC, fallback Actual End, Target End */
+  /* Sort: Go-live date DESC (most recent first), tiebreak: Actual End → Target End */
   done.sort(function(a,b){
-    var da=getStart(a['Go-live Date']||'')||getEnd(a['Actual Project End']||'')||getEnd(a['Target Project End']||'')||'';
-    var db=getStart(b['Go-live Date']||'')||getEnd(b['Actual Project End']||'')||getEnd(b['Target Project End']||'')||'';
+    var ag=getStart(a['Go-live Date']||''), bg=getStart(b['Go-live Date']||'');
+    /* items with go-live come before items without */
+    if(ag&&!bg)return -1; if(!ag&&bg)return 1;
+    if(ag&&bg){var gd=bg.localeCompare(ag); if(gd!==0)return gd;}
+    /* fallback: Actual End then Target End */
+    var da=getEnd(a['Actual Project End']||'')||getEnd(a['Target Project End']||'')||'';
+    var db=getEnd(b['Actual Project End']||'')||getEnd(b['Target Project End']||'')||'';
     if(!da&&!db)return 0; if(!da)return 1; if(!db)return -1;
     return db.localeCompare(da);
   });
@@ -911,25 +916,39 @@ function renderCompleted(){
     var goLive=getStart(d['Go-live Date']||'');
     var aE=getEnd(d['Actual Project End']||'');
     var tE=getEnd(d['Target Project End']||'');
-    var dateDisp=goLive?fmtDate(goLive):aE?fmtDate(aE):tE?fmtDate(tE):'';
     var buOwner=(d['BU Owner']||'').replace(/@.+/,'').trim();
     var goal=d['Project Goal']||'';
     var impact=d['Business Impact']||'';
     var kpi=d['KPI vs Target']||'';
+    var mon=d['Project Monitoring Status']||'';
+    var isD=mon.toLowerCase().includes('delay');
+    var isR=mon.toLowerCase().includes('risk');
+    var isT=mon.toLowerCase().includes('track');
+    var emoji=mon?(isD?'🆘 ':isR?'⚠️ ':isT?'✅ ':''):'';
 
-    var html='<div class="done-item" style="margin-bottom:10px">';
-    html+='<div class="done-key">'+jiraLink(d.Key)+'</div>';
+    /* Go-live label after key (like timeline) */
+    var glLabel=goLive?'<span style="font-size:9px;color:var(--purple);font-weight:600;margin-left:6px">◆ Go-live: '+fmtFullDate(goLive)+'</span>':'';
+
+    /* Monitoring badge */
+    var monHtml=mon?monBadge(mon):'';
+
+    var html='<div class="done-item">';
+    /* header row: key+golive LEFT, mon badge RIGHT */
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">';
+    html+='<div class="done-key">'+jiraLink(d.Key)+glLabel+'</div>';
+    if(monHtml)html+=monHtml;
+    html+='</div>';
     html+='<div class="done-body">';
-    html+='<div class="done-name">'+d.Summary+'</div>';
+    html+='<div class="done-name">'+emoji+d.Summary+'</div>';
 
-    /* meta: goal · go-live · bu owner */
+    /* meta: goal · fallback date · bu owner (go-live moved to key-line) */
     var metaParts=[];
     if(goal)metaParts.push(goal);
-    if(dateDisp)metaParts.push((goLive?'Go-live: ':'Completed: ')+dateDisp);
+    if(!goLive){var fb=aE?fmtDate(aE):tE?fmtDate(tE):'';if(fb)metaParts.push('Completed: '+fb);}
     if(buOwner)metaParts.push('BU: '+buOwner);
     if(metaParts.length)html+='<div class="done-meta">'+metaParts.join(' &middot; ')+'</div>';
 
-    /* Business Impact with label */
+    /* Business Impact */
     if(impact){
       html+='<div style="margin-top:6px">';
       html+='<span style="font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">Business Impact</span>';
@@ -937,7 +956,7 @@ function renderCompleted(){
       html+='</div>';
     }
 
-    /* KPI vs Target with label */
+    /* KPI vs Target */
     if(kpi){
       html+='<div style="margin-top:5px">';
       html+='<span style="font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">KPI vs Target</span>';

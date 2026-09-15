@@ -88,13 +88,13 @@
 /* ── Done / Completed list ─────────────── */
 .done-list  { display:flex; flex-direction:column; gap:10px; }
 .done-item  {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--up);
+  background: rgba(88,166,255,.08);
+  border: 1px solid rgba(88,166,255,.25);
+  border-left: 3px solid rgba(88,166,255,.55);
   border-radius: var(--radius);
   padding: 14px 16px;
 }
-.done-key   { font-size:10px; color:var(--text3); font-weight:600; }
+.done-key   { font-size:10px; color:var(--accent); font-weight:700; }
 .done-name  { font-size:14px; font-weight:700; margin:4px 0; }
 .done-meta  { display:flex; gap:8px; flex-wrap:wrap; margin:6px 0; }
 .done-body  { font-size:12px; color:var(--text2); margin-top:6px; }

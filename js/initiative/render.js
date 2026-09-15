@@ -607,7 +607,7 @@ function _buildGroupedCompDropdown(availComps, activeArr){
   }
 
   /* ── Select all / Clear all at TOP ── */
-  rows.push('<div style="padding:5px 10px 5px;display:flex;gap:10px">'+
+  rows.push('<div style="padding:5px 10px 5px;border-bottom:1px solid var(--border);display:flex;gap:10px">'+
     '<button class="gdb-grp-selall" style="font-size:11px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Select all</button>'+
     '<button class="gdb-grp-clear" style="font-size:11px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Clear all</button>'+
     '</div>');

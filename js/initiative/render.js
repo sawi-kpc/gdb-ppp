@@ -495,6 +495,73 @@ function _filterComp(data, val) {
   });
 }
 
+
+/* ── Filter Presets (localStorage, max 5) ─────────────────────── */
+var _PRESET_KEY='gdb_presets_timeline';
+function _getPresets(){try{return JSON.parse(localStorage.getItem(_PRESET_KEY))||[];}catch(e){return[];}}
+function _setPresets(arr){try{localStorage.setItem(_PRESET_KEY,JSON.stringify(arr));}catch(e){}}
+
+function saveFilterPreset(){
+  var presets=_getPresets();
+  if(presets.length>=5){alert('สูงสุด 5 presets — กรุณาลบอันเก่าก่อน');return;}
+  var name=prompt('ชื่อ Filter Preset:','');
+  if(!name||!name.trim())return;
+  var filters={
+    sumYearFilter:sumYearFilter.slice(),sumStageFilter:sumStageFilter.slice(),
+    sumRoadmapFilter:sumRoadmapFilter.slice(),sumAssigneeFilter:sumAssigneeFilter.slice(),
+    sumAssigneeRoleMode:sumAssigneeRoleMode,sumComponentFilter:sumComponentFilter.slice(),
+    sumDepFilter:sumDepFilter.slice(),sumPMRoleFilter:sumPMRoleFilter.slice(),
+    sumSearchQuery:sumSearchQuery,hideNoDate:hideNoDate,
+    _tlStart:_tlStart,_tlEnd:_tlEnd
+  };
+  presets.push({name:name.trim(),filters:filters});
+  _setPresets(presets);
+  _renderPresetBar();
+}
+
+function loadFilterPreset(i){
+  var presets=_getPresets(); if(!presets[i])return;
+  var f=presets[i].filters;
+  if(Array.isArray(f.sumYearFilter)&&f.sumYearFilter.length) sumYearFilter=f.sumYearFilter;
+  if(Array.isArray(f.sumStageFilter))     sumStageFilter=f.sumStageFilter;
+  if(Array.isArray(f.sumRoadmapFilter))   sumRoadmapFilter=f.sumRoadmapFilter;
+  if(Array.isArray(f.sumAssigneeFilter))  sumAssigneeFilter=f.sumAssigneeFilter;
+  if(f.sumAssigneeRoleMode)               sumAssigneeRoleMode=f.sumAssigneeRoleMode;
+  if(Array.isArray(f.sumComponentFilter)) sumComponentFilter=f.sumComponentFilter;
+  if(Array.isArray(f.sumDepFilter))       sumDepFilter=f.sumDepFilter;
+  if(Array.isArray(f.sumPMRoleFilter))    sumPMRoleFilter=f.sumPMRoleFilter;
+  if(typeof f.sumSearchQuery==='string')  sumSearchQuery=f.sumSearchQuery;
+  if(typeof f.hideNoDate==='boolean')     hideNoDate=f.hideNoDate;
+  if(f._tlStart)                          _tlStart=f._tlStart;
+  if(f._tlEnd)                            _tlEnd=f._tlEnd;
+  _syncRoleToggle('sum');
+  var si=document.getElementById('sum-search'); if(si)si.value=sumSearchQuery||'';
+  renderSummary();
+}
+
+function deleteFilterPreset(i){
+  var presets=_getPresets();
+  presets.splice(i,1);
+  _setPresets(presets);
+  _renderPresetBar();
+}
+
+function _renderPresetBar(){
+  var el=document.getElementById('tl-preset-bar'); if(!el)return;
+  var presets=_getPresets();
+  if(!presets.length){el.innerHTML='';el.style.display='none';return;}
+  el.style.display='flex';
+  el.innerHTML=
+    '<span style="font-size:10px;color:var(--text3);font-weight:600;white-space:nowrap;align-self:center">Presets:</span>'+
+    presets.map(function(p,i){
+      return '<div style="display:inline-flex;align-items:center;gap:3px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:0 4px 0 8px;height:22px" title="Load: '+p.name+'">'+
+        '<span style="font-size:11px;color:var(--text);white-space:nowrap;cursor:pointer" onclick="loadFilterPreset('+i+')">'+p.name+'</span>'+
+        '<button onclick="deleteFilterPreset('+i+')" style="background:none;border:none;cursor:pointer;padding:2px 3px;font-size:10px;color:var(--text3);line-height:1" title="Delete">✕</button>'+
+      '</div>';
+    }).join('')+
+    (presets.length>=5?'<span style="font-size:10px;color:var(--amber);align-self:center">(5/5)</span>':'');
+}
+
 function renderSummary(){
   _loadSumFilters();
   _saveSumFilters();
@@ -586,6 +653,7 @@ function renderSummary(){
 
   buildMetrics(filtered,'sum-metrics');
   renderTimeline(filtered);
+  _renderPresetBar();
 }
 
 function onSumSearchChange(val){ sumSearchQuery=val||''; renderSummary(); }

@@ -65,18 +65,18 @@ function _buildMpHtml(which){
   var curMon=cur&&cur.split('-')[0]===String(yr)?parseInt(cur.split('-')[1]):0;
   var gridHtml=_MONTHS.map(function(m,i){
     var isSel=(i+1)===curMon;
-    return'<button class="tl-mp-m'+(isSel?' sel':'')+'" onclick="selectTlMonth(''+which+'','+yr+','+(i+1)+')">'+m+'</button>';
+    return'<button class="tl-mp-m'+(isSel?' sel':'')+'" onclick="selectTlMonth(\''+which+'\','+yr+','+(i+1)+')">'+m+'</button>';
   }).join('');
   var panel=open?'<div class="tl-mp-panel">'+
     '<div class="tl-mp-head">'+
-      '<button class="tl-mp-nav" onclick="navTlPickerYear(''+which+'',-1)">&#8249;</button>'+
+      '<button class="tl-mp-nav" onclick="navTlPickerYear(\''+which+'\',-1)">&#8249;</button>'+
       '<span class="tl-mp-year">'+yr+'</span>'+
-      '<button class="tl-mp-nav" onclick="navTlPickerYear(''+which+'',1)">&#8250;</button>'+
+      '<button class="tl-mp-nav" onclick="navTlPickerYear(\''+which+'\',1)">&#8250;</button>'+
     '</div>'+
     '<div class="tl-mp-grid">'+gridHtml+'</div>'+
   '</div>':'';
   return'<div class="tl-mp-wrap">'+
-    '<button class="tl-mp-btn" onclick="openTlMonthPicker(''+which+'')">'+_mpLabel(cur)+'<span style="font-size:8px;opacity:.6">▾</span></button>'+
+    '<button class="tl-mp-btn" onclick="openTlMonthPicker(\''+which+'\')">'+_mpLabel(cur)+'<span style="font-size:8px;opacity:.6">▾</span></button>'+
     panel+
   '</div>';
 }

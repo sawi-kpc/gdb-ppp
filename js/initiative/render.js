@@ -748,7 +748,7 @@ function _buildGroupedCompDropdown(availComps, activeArr){
   });
 
   /* Ungrouped — any component in data not covered by a group, sorted; (missing component) always last */
-  var ungrouped=availComps.filter(function(c){return!grouped.has(c);}).sort();
+  var ungrouped=availComps.filter(function(c){return!grouped.has(c)&&c!=='(missing component)';}).sort();
   ungrouped.forEach(function(c){
     var ck=(activeArr.indexOf(c)>=0);
     rows.push('<div class="gdb-grp-item" data-comp="'+c+'" data-type="comp" style="padding:5px 10px;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--text)">'+
@@ -827,7 +827,7 @@ function _buildGroupedCompDropdownFor(availComps, activeArr, cfg){
   });
 
   /* Ungrouped — sorted */
-  var ungrouped=availComps.filter(function(c){return!grouped.has(c);}).sort();
+  var ungrouped=availComps.filter(function(c){return!grouped.has(c)&&c!=='(missing component)';}).sort();
   ungrouped.forEach(function(c){
     var ck=(activeArr.indexOf(c)>=0);
     rows.push('<div class="gdb-grp-item" data-comp="'+c+'" data-type="comp" style="padding:5px 10px;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--text)">'+

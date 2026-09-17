@@ -225,8 +225,7 @@ function exportRoadmapPDF() {
   win.document.write(
     '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
     '<title>Roadmap ' + year + '</title>' +
-    '
-</head><body>' +
+    '<style>' + css + '</style></head><body>' +
     '<div class="prt-hdr"><strong>Roadmap ' + year + '</strong>' +
     '<span>' + count + ' · Generated ' + date + '</span></div>' +
     container.innerHTML +

@@ -169,6 +169,11 @@ document.addEventListener('click', function(e) {
       if (panel) panel.style.display = 'none';
     }
   });
+  /* Close month picker if click outside .tl-mp-wrap */
+  if (!e.target.closest('.tl-mp-wrap') && typeof _tlPickerOpen !== 'undefined' && _tlPickerOpen) {
+    _tlPickerOpen = '';
+    renderSummary();
+  }
 });
 </script>
 </body>

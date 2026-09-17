@@ -26,21 +26,59 @@ var donePMRoleFilter=[];
 
 /* ── Timeline focus range state ──────────────────────────── */
 var _tlStart='', _tlEnd='';
+var _tlPickerOpen='';
+var _tlPickerYear={start:new Date().getFullYear(),end:new Date().getFullYear()+1};
+var _MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function _initTlRange(){
   if(_tlStart&&_tlEnd)return;
   var yr=new Date().getFullYear(),defS=yr+'-01',defE=yr+'-12';
-  var opts=CONFIG.TIMELINE_RANGE_OPTIONS.map(function(o){return o.val;});
-  if(!_tlStart) _tlStart=opts.indexOf(defS)>=0?defS:(opts.find(function(v){return v>=defS;})||opts[0]);
-  if(!_tlEnd){var eM=opts.filter(function(v){return v<=defE;});_tlEnd=eM.length?eM[eM.length-1]:opts[opts.length-1];}
+  if(!_tlStart)_tlStart=defS;
+  if(!_tlEnd)_tlEnd=defE;
 }
-function onTlRangeChange(which,val){
-  if(which==='start')_tlStart=val; else _tlEnd=val;
+function _mpLabel(val){
+  if(!val)return'—';
+  var p=val.split('-');return _MONTHS[parseInt(p[1])-1]+' '+p[0];
+}
+function openTlMonthPicker(which){
+  if(_tlPickerOpen===which){_tlPickerOpen='';}
+  else{
+    _tlPickerOpen=which;
+    var v=which==='start'?_tlStart:_tlEnd;
+    if(v)_tlPickerYear[which]=parseInt(v.split('-')[0]);
+  }
   renderSummary();
 }
-function _tlOptHtml(sel){
-  return CONFIG.TIMELINE_RANGE_OPTIONS.map(function(o){
-    return'<option value="'+o.val+'"'+(o.val===sel?' selected':'')+'>'+o.label+'</option>';
+function navTlPickerYear(which,dir){
+  _tlPickerYear[which]=(_tlPickerYear[which]||new Date().getFullYear())+dir;
+  renderSummary();
+}
+function selectTlMonth(which,year,mon){
+  var val=year+'-'+String(mon).padStart(2,'0');
+  if(which==='start')_tlStart=val; else _tlEnd=val;
+  _tlPickerOpen='';
+  renderSummary();
+}
+function _buildMpHtml(which){
+  var cur=which==='start'?_tlStart:_tlEnd;
+  var yr=_tlPickerYear[which]||(cur?parseInt(cur.split('-')[0]):new Date().getFullYear());
+  var open=_tlPickerOpen===which;
+  var curMon=cur&&cur.split('-')[0]===String(yr)?parseInt(cur.split('-')[1]):0;
+  var gridHtml=_MONTHS.map(function(m,i){
+    var isSel=(i+1)===curMon;
+    return'<button class="tl-mp-m'+(isSel?' sel':'')+'" onclick="selectTlMonth(''+which+'','+yr+','+(i+1)+')">'+m+'</button>';
   }).join('');
+  var panel=open?'<div class="tl-mp-panel">'+
+    '<div class="tl-mp-head">'+
+      '<button class="tl-mp-nav" onclick="navTlPickerYear(''+which+'',-1)">&#8249;</button>'+
+      '<span class="tl-mp-year">'+yr+'</span>'+
+      '<button class="tl-mp-nav" onclick="navTlPickerYear(''+which+'',1)">&#8250;</button>'+
+    '</div>'+
+    '<div class="tl-mp-grid">'+gridHtml+'</div>'+
+  '</div>':'';
+  return'<div class="tl-mp-wrap">'+
+    '<button class="tl-mp-btn" onclick="openTlMonthPicker(''+which+'')">'+_mpLabel(cur)+'<span style="font-size:8px;opacity:.6">▾</span></button>'+
+    panel+
+  '</div>';
 }
 
 /* ── Filter state persistence (localStorage) ─────────────── */
@@ -321,9 +359,9 @@ function renderTimeline(data){
   var focusHtml='<div style="display:flex;flex-direction:column;justify-content:center;height:100%;padding:4px 10px 4px 0;gap:4px">'+
     '<div style="display:flex;align-items:center;gap:5px">'+
       '<span style="font-size:10px;color:var(--text2);font-weight:600;white-space:nowrap">Focus:</span>'+
-      '<select style="font-size:10.5px;padding:2px 5px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);cursor:pointer;outline:none" onchange="onTlRangeChange(\'start\',this.value)">'+_tlOptHtml(ss)+'</select>'+
+      _buildMpHtml('start')+
       '<span style="font-size:10px;color:var(--text3)">to</span>'+
-      '<select style="font-size:10.5px;padding:2px 5px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);cursor:pointer;outline:none" onchange="onTlRangeChange(\'end\',this.value)">'+_tlOptHtml(se)+'</select>'+
+      _buildMpHtml('end')+
     '</div>'+
   '</div>';
   var _togTrack='position:relative;width:26px;height:14px;border-radius:7px;transition:background .2s;flex-shrink:0;background:'+(hideNoDate?'var(--accent)':'var(--border)');

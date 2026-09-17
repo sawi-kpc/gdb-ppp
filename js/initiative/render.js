@@ -374,7 +374,9 @@ function renderTimeline(data){
     '</button>'+
   '</div>';
   var tlHeadInner=document.getElementById('tl-head-inner');
-  var headerHtml='<div class="tl-header"><div class="tl-label-head">'+focusHtml+'</div><div class="tl-grid-head"><div class="tl-qtr-row">'+qtrHtml+'</div><div class="tl-month-row">'+monHtml+'</div></div><div class="tl-status-head">'+noDateBtnHtml+'</div></div>';
+  var focusEl=document.getElementById('tl-focus-wrap'); if(focusEl) focusEl.innerHTML=focusHtml;
+  var noDateEl=document.getElementById('tl-no-date-wrap'); if(noDateEl) noDateEl.innerHTML=noDateBtnHtml;
+  var headerHtml='<div class="tl-qtr-row">'+qtrHtml+'</div><div class="tl-month-row">'+monHtml+'</div>';
   if(tlHeadInner) tlHeadInner.innerHTML=headerHtml;
   if(tlInner) tlInner.innerHTML=rowsHtml;
   /* Sync horizontal scroll between tl-container and sticky header */

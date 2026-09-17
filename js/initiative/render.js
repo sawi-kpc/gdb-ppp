@@ -257,8 +257,9 @@ function renderTimeline(data){
     if(!ae&&!be){}else{if(!ae)return 1;if(!be)return-1;var ed=new Date(ae)-new Date(be);if(ed!==0)return ed;}
     /* tiebreak 2: earlier go-live date first */
     var ag=getStart(a['Go-live Date']||''),bg=getStart(b['Go-live Date']||'');
-    if(!ag&&!bg)return 0;if(!ag)return 1;if(!bg)return-1;
-    return new Date(ag)-new Date(bg);
+    if(!ag&&!bg){}else{if(!ag)return 1;if(!bg)return-1;var gd=new Date(ag)-new Date(bg);if(gd!==0)return gd;}
+    /* tiebreak 3: initiative name A→Z */
+    return (a['Summary']||'').localeCompare(b['Summary']||'');
   });
   var mCols=[];var cy=sy,cm=sm-1;
   while(new Date(cy,cm,1)<=END){mCols.push({year:cy,month:cm});cm++;if(cm>11){cm=0;cy++;}}

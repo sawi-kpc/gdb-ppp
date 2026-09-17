@@ -1800,6 +1800,70 @@ function renderInitiatives(){
 
 /* CSV parser — handles normal row-per-record format */
 
+
+/* ── List Filter Presets (localStorage, max 5) ─────────────────────── */
+var _LIST_PRESET_KEY='gdb_presets_list';
+function _getListPresets(){try{return JSON.parse(localStorage.getItem(_LIST_PRESET_KEY))||[];}catch(e){return[];}}
+function _setListPresets(arr){try{localStorage.setItem(_LIST_PRESET_KEY,JSON.stringify(arr));}catch(e){}}
+
+function saveListFilterPreset(){
+  var presets=_getListPresets();
+  if(presets.length>=5){alert('สูงสุด 5 presets — กรุณาลบอันเก่าก่อน');return;}
+  var name=prompt('ชื่อ Filter Preset:','');
+  if(!name||!name.trim())return;
+  var filters={
+    listYearFilter:listYearFilter.slice(),listStatusFilter:listStatusFilter.slice(),
+    listRoadmapFilter:listRoadmapFilter.slice(),listComponentFilter:listComponentFilter.slice(),
+    listDepFilter:listDepFilter.slice(),listPMRoleFilter:listPMRoleFilter.slice(),
+    listAssigneeFilter:listAssigneeFilter.slice(),listAssigneeRoleMode:listAssigneeRoleMode,
+    listSearchQuery:listSearchQuery,listHideWontDo:listHideWontDo
+  };
+  presets.push({name:name.trim(),filters:filters});
+  _setListPresets(presets);
+  _renderListPresetBar();
+}
+
+function loadListFilterPreset(i){
+  var presets=_getListPresets(); if(!presets[i])return;
+  var f=presets[i].filters;
+  if(Array.isArray(f.listYearFilter)&&f.listYearFilter.length) listYearFilter=f.listYearFilter;
+  if(Array.isArray(f.listStatusFilter))     listStatusFilter=f.listStatusFilter;
+  if(Array.isArray(f.listRoadmapFilter))    listRoadmapFilter=f.listRoadmapFilter;
+  if(Array.isArray(f.listComponentFilter))  listComponentFilter=f.listComponentFilter;
+  if(Array.isArray(f.listDepFilter))        listDepFilter=f.listDepFilter;
+  if(Array.isArray(f.listPMRoleFilter))     listPMRoleFilter=f.listPMRoleFilter;
+  if(Array.isArray(f.listAssigneeFilter))   listAssigneeFilter=f.listAssigneeFilter;
+  if(f.listAssigneeRoleMode)                listAssigneeRoleMode=f.listAssigneeRoleMode;
+  if(typeof f.listSearchQuery==='string')  listSearchQuery=f.listSearchQuery;
+  if(typeof f.listHideWontDo==='boolean')  listHideWontDo=f.listHideWontDo;
+  _syncRoleToggle('list');
+  var si=document.getElementById('list-search'); if(si)si.value=listSearchQuery||'';
+  renderList();
+}
+
+function deleteListFilterPreset(i){
+  var presets=_getListPresets();
+  presets.splice(i,1);
+  _setListPresets(presets);
+  _renderListPresetBar();
+}
+
+function _renderListPresetBar(){
+  var el=document.getElementById('list-preset-bar'); if(!el)return;
+  var presets=_getListPresets();
+  if(!presets.length){el.innerHTML='';el.style.display='none';return;}
+  el.style.display='flex';
+  el.innerHTML=
+    '<span style="font-size:10px;color:var(--text3);font-weight:600;white-space:nowrap;align-self:center">Presets:</span>'+
+    presets.map(function(p,i){
+      return '<div style="display:inline-flex;align-items:center;gap:3px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:0 4px 0 8px;height:22px" title="Load: '+p.name+'">'+
+        '<span style="font-size:11px;color:var(--text);white-space:nowrap;cursor:pointer" onclick="loadListFilterPreset('+i+')">'+ p.name+'</span>'+
+        '<button onclick="deleteListFilterPreset('+i+')" style="background:none;border:none;cursor:pointer;padding:2px 3px;font-size:10px;color:var(--text3);line-height:1" title="Delete">✕</button>'+
+      '</div>';
+    }).join('')+
+    (presets.length>=5?'<span style="font-size:10px;color:var(--amber);align-self:center">(5/5)</span>':'');
+}
+
 function renderList(){
   _loadListFilters();
   _saveListFilters();
@@ -1937,6 +2001,7 @@ function renderList(){
   _lastListFiltered = filtered;
   _listPage = 1;
   _renderListPage();
+  _renderListPresetBar();
 }
 
 function _listPgHtml() {

@@ -340,10 +340,13 @@ function renderTimeline(data){
     var aS=getStart(d['Actual Project Start']||''),aE=getEnd(d['Actual Project End']||'');
     var glDate=getStart(d['Go-live Date']||'');
     var hasPlan=tS&&tE,hasActual=!!aS;
-    var planBar=hasPlan?'<div class="tl-bar tl-bar-plan" style="left:'+pct(tS).toFixed(2)+'%;width:'+wPct(tS,tE).toFixed(2)+'%"></div>':'';
-    var actBar=hasActual?'<div class="tl-bar '+(isD?'tl-bar-actual-del':'tl-bar-actual-ok')+'" style="left:'+pct(aS).toFixed(2)+'%;width:'+(aE?wPct(aS,aE).toFixed(2):Math.max(.5,((Math.min(today,END)-_localDate(aS))/totalMs*100)).toFixed(2))+'%"></div>':'';
+    var planBar='';
+    if(hasPlan){var tSD=_localDate(tS),tED=_localDate(tE);if(tSD<=END&&tED>=START)planBar='<div class="tl-bar tl-bar-plan" style="left:'+pct(tS).toFixed(2)+'%;width:'+wPct(tS,tE).toFixed(2)+'%"></div>';}
+    var actBar='';
+    if(hasActual){var aSD=_localDate(aS),aED=aE?_localDate(aE):today;if(aSD<=END&&aED>=START)actBar='<div class="tl-bar '+(isD?'tl-bar-actual-del':'tl-bar-actual-ok')+'" style="left:'+pct(aS).toFixed(2)+'%;width:'+(aE?wPct(aS,aE).toFixed(2):Math.max(.5,((Math.min(today,END)-_localDate(aS))/totalMs*100)).toFixed(2))+'%"></div>';}
     var glP=glDate?pct(glDate):null;
-    var glMarker=(glP!==null&&glP>=0&&glP<=100)?'<div class="tl-golive-v" style="left:'+glP.toFixed(2)+'%"><div class="tl-golive-diamond"></div></div>':'';
+    var glActualD=glDate?_localDate(glDate):null;
+    var glMarker=(glActualD&&glActualD>=START&&glActualD<=END)?'<div class="tl-golive-v" style="left:'+glP.toFixed(2)+'%"><div class="tl-golive-diamond"></div></div>':'';
     var tLine=(tS||tE)?'<span><span style="color:var(--accent);font-weight:600;min-width:40px;display:inline-block">Target</span>'+fmtMonYear(tS)+' → '+fmtMonYear(tE)+'</span>':'';
     var aLine=(aS||aE)?'<span><span style="color:'+(isD?'#E24B4A':'#1D9E75')+';font-weight:600;min-width:40px;display:inline-block">Actual</span>'+fmtMonYear(aS)+' → '+(aE?fmtMonYear(aE):'In progress')+'</span>':'';
     var dLine=(tLine||aLine)?'<div class="tl-date-line">'+[tLine,aLine].filter(Boolean).join('<br>')+'</div>':'';

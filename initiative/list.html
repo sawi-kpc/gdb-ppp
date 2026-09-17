@@ -7,24 +7,6 @@
 <link rel="stylesheet" href="../css/shared.css">
 <link rel="stylesheet" href="../css/gdb-shared.css">
 <link rel="stylesheet" href="../css/initiative.css">
-<style>
-#list-table { background: var(--surface); }
-#list-table tr:hover td { background: var(--surface2); }
-.pg-bar{display:flex;align-items:center;justify-content:flex-end;gap:4px;padding:7px 0}
-.pg-btn{padding:3px 9px;font-size:11px;font-weight:600;border-radius:5px;cursor:pointer;
-  border:1px solid var(--border);background:var(--surface2);color:var(--text2);transition:all .15s;min-width:30px;text-align:center}
-.pg-btn:hover:not(:disabled){color:var(--text);border-color:var(--text3)}
-.pg-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
-.pg-btn:disabled{opacity:.35;cursor:default}
-/* Hide Won't do toggle */
-#btn-list-hide-wontdo{display:inline-flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;padding:0;flex-shrink:0}
-.list-tog-track{position:relative;width:28px;height:16px;border-radius:8px;background:var(--border);transition:background .2s;flex-shrink:0}
-.list-tog-thumb{position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--text3);transition:transform .2s,background .2s}
-.list-tog-label{font-size:11.5px;font-weight:500;color:var(--text2);white-space:nowrap;transition:color .2s}
-#btn-list-hide-wontdo.active .list-tog-track{background:var(--accent)}
-#btn-list-hide-wontdo.active .list-tog-thumb{transform:translateX(12px);background:#fff}
-#btn-list-hide-wontdo.active .list-tog-label{color:var(--accent);font-weight:600}
-</style>
 </head>
 <body class="has-init-subnav">
 

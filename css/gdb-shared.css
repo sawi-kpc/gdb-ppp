@@ -139,3 +139,8 @@
 
 /* ── Responsive ───────────────────────────────────────────────────── */
 @media(max-width:900px){ .gdb-page-content{ padding:12px 14px } }
+
+/* ── Reset / Save filter buttons ─────────────────────────────────────── */
+.gdb-reset-btn  { height:26px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:none;color:var(--text3);font-size:11px;cursor:pointer;white-space:nowrap;transition:color .15s,border-color .15s }
+.gdb-reset-btn:hover { color:var(--text);border-color:var(--text3) }
+.gdb-save-btn   { height:26px;padding:0 10px;border:1px solid var(--accent);border-radius:4px;background:none;color:var(--accent);font-size:11px;cursor:pointer;white-space:nowrap }

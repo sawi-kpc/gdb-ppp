@@ -65,7 +65,9 @@ function _buildMpHtml(which){
   var curMon=cur&&cur.split('-')[0]===String(yr)?parseInt(cur.split('-')[1]):0;
   var gridHtml=_MONTHS.map(function(m,i){
     var isSel=(i+1)===curMon;
-    return'<button class="tl-mp-m'+(isSel?' sel':'')+'" onclick="selectTlMonth(\''+which+'\','+yr+','+(i+1)+')">'+m+'</button>';
+    var val=yr+'-'+String(i+1).padStart(2,'0');
+    var dis=(which==='start'&&_tlEnd&&val>_tlEnd)||(which==='end'&&_tlStart&&val<_tlStart);
+    return'<button class="tl-mp-m'+(isSel?' sel':'')+'"'+(dis?' disabled':' onclick="selectTlMonth(\''+which+'\','+yr+','+(i+1)+')"')+'>'+m+'</button>';
   }).join('');
   var panel=open?'<div class="tl-mp-panel">'+
     '<div class="tl-mp-head">'+

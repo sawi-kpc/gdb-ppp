@@ -282,6 +282,7 @@ table.dt td:first-child { white-space: nowrap; }
 .tl-mp-m{padding:5px 2px;font-size:11px;font-weight:500;text-align:center;border-radius:5px;cursor:pointer;background:none;border:none;color:var(--text2)}
 .tl-mp-m:hover{background:var(--surface2);color:var(--text)}
 .tl-mp-m.sel{background:var(--accent);color:#fff;font-weight:700}
+.tl-mp-m:disabled{opacity:.3;cursor:not-allowed;pointer-events:none}
 
 /* ════════════════════════════════════════════════════════════════
    Roadmap page CSS (initiative/roadmap.html)

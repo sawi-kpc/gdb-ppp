@@ -9,15 +9,17 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 /* Filter bar */
-.sum-filter{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 20px;background:var(--surface);border-bottom:1px solid var(--border)}
+.sum-filter{background:var(--surface);border-bottom:1px solid var(--border)}
+.sum-filter .sum-inner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-top:10px;padding-bottom:10px}
 .sum-filter-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
 .fb-btn{padding:3px 12px;font-size:11px;font-weight:600;border-radius:20px;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text2);transition:all .15s;white-space:nowrap}
 .fb-btn.active,.fb-btn:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+/* Inner max-width wrapper */
+.sum-inner{max-width:1600px;margin:0 auto;padding:0 24px;width:100%}
 /* Page layout */
-.sum-main{padding:14px 20px;display:flex;flex-direction:column;gap:20px}
+.sum-main{padding:14px 0;display:flex;flex-direction:column;gap:20px;max-width:1600px;margin:0 auto;padding-left:24px;padding-right:24px}
 /* Section */
-.sum-section-title{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;padding:0 2px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
-.sum-section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.sum-section-title{font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;padding:9px 14px;background:color-mix(in srgb,var(--accent) 22%,var(--surface));border-bottom:1px solid color-mix(in srgb,var(--accent) 40%,var(--border));display:flex;align-items:center;gap:8px}
 /* Panels */
 .sum-panel{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden}
 .sum-panel-head{padding:9px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
@@ -69,6 +71,16 @@
 .ovr-rate-fill{height:5px;background:var(--up);border-radius:3px}
 .ovr-rate-pct{font-size:11px;font-weight:700;color:var(--text);min-width:30px;text-align:right;font-variant-numeric:tabular-nums}
 .mon-cell{background:var(--surface2);border-radius:3px;font-size:11px;font-weight:600;padding:2px 6px;display:inline-block;min-width:26px;text-align:center}
+/* ── Section sub-nav ── */
+.sum-section-nav{background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:calc(var(--header-h) + var(--nav-h));z-index:20}
+.sum-section-nav .sum-inner{display:flex;gap:0;padding-top:0;padding-bottom:0}
+.sum-snav-tab{display:flex;align-items:center;gap:6px;padding:9px 16px;font-size:12px;font-weight:600;color:var(--text3);border-bottom:2px solid transparent;cursor:pointer;text-decoration:none;transition:color .15s,border-color .15s;white-space:nowrap}
+.sum-snav-tab:hover{color:var(--text2)}
+.sum-snav-tab.active{color:var(--text);border-bottom-color:var(--accent)}
+.snav-count{font-size:10px;font-weight:600;color:var(--text3);background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1px 7px;line-height:1.5;transition:color .15s,border-color .15s}
+.sum-snav-tab.active .snav-count{color:var(--accent);border-color:var(--accent)}
+/* ── Section group spacing ── */
+.sum-section-group{display:flex;flex-direction:column;gap:12px}
 </style>
 </head>
 
@@ -78,15 +90,29 @@
 <div id="sum-content" style="display:none">
 
   <div class="sum-filter">
-    <span class="sum-filter-label">Year</span>
-    <div id="sum-year-chips" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    <div class="sum-inner">
+      <span class="sum-filter-label">Year</span>
+      <div id="sum-year-chips" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    </div>
+  </div>
+
+  <!-- Section sub-nav -->
+  <div class="sum-section-nav" id="sum-section-nav">
+    <div class="sum-inner">
+      <a class="sum-snav-tab active" data-sec="initiative" href="#sum-sec-initiative">🎯 Initiative <span class="snav-count" id="sum-snav-count-init">—</span></a>
+      <a class="sum-snav-tab" data-sec="support" href="#sum-sec-support">🔧 Support <span class="snav-count" id="sum-snav-count-sup">—</span></a>
+      <a class="sum-snav-tab" data-sec="issue" href="#sum-sec-issue">🐛 Issue <span class="snav-count" id="sum-snav-count-issue">—</span></a>
+    </div>
   </div>
 
   <div class="sum-main">
 
     <!-- ═══ SECTION 1: INITIATIVE ═══ -->
-    <div>
+    <div id="sum-sec-initiative" class="sum-section-group">
       <div class="sum-section-title">🎯 Initiative</div>
+
+      <!-- KPI Strip -->
+      <div id="sum-init-kpi" style="margin-bottom:12px"></div>
 
       <!-- Overall by Quarter -->
       <div class="sum-panel" style="margin-bottom:12px">
@@ -145,7 +171,7 @@
     </div>
 
     <!-- ═══ SECTION 2: SUPPORT ═══ -->
-    <div>
+    <div id="sum-sec-support" class="sum-section-group">
       <div class="sum-section-title">🔧 Support Tasks</div>
       <div class="sum-panel">
         <div class="sum-panel-head">
@@ -161,7 +187,7 @@
     </div>
 
     <!-- ═══ SECTION 3: ISSUES ═══ -->
-    <div>
+    <div id="sum-sec-issue" class="sum-section-group">
       <div class="sum-section-title">🐛 Issues</div>
       <div class="grid-2">
         <div class="sum-panel">
@@ -341,6 +367,12 @@ function _render(){
   var issY  = _sum.issueData;
   var supY  = _sum.supData.filter(function(d){return _ym(_iyrS(d),cy);});
 
+  /* Update section nav counts */
+  var sniI=document.getElementById('sum-snav-count-init');   if(sniI)sniI.textContent=initY.length;
+  var sniS=document.getElementById('sum-snav-count-sup');    if(sniS)sniS.textContent=supY.length;
+  var sniQ=document.getElementById('sum-snav-count-issue');  if(sniQ)sniQ.textContent=issY.length;
+
+  _renderInitKpi(initY);
   _renderInitOverall(initY);
   _renderInitHeatmap(initY);
   _renderInitBars(initY);
@@ -395,6 +427,121 @@ function _parseDateRange(raw){
     if(!s)return null;
     var dt=new Date(s); return isNaN(dt)?null:dt;
   }catch(e){return null;}
+}
+
+/* ══ KPI Strip helpers ══ */
+function _sumIsOnTime(d){
+  var rawTgt=d['Target Project End']||''; if(!rawTgt)return false;
+  var tgtEnd=''; try{var obj=JSON.parse(rawTgt);tgtEnd=obj.end||'';}catch(e){}
+  if(!tgtEnd)return false;
+  var tgtDt=new Date(tgtEnd); if(isNaN(tgtDt))return false;
+  var rawAct=d['Actual Project End']||''; if(!rawAct)return false;
+  var actEnd=''; try{var ao=JSON.parse(rawAct);actEnd=ao.end||'';}catch(e){}
+  if(!actEnd)return false;
+  var actDt=new Date(actEnd); return !isNaN(actDt)&&actDt<=tgtDt;
+}
+function _sumIsDelayed(d){ return _monSt(d)==='Delayed'; }
+function _sumFilterA(items){ return items.filter(function(d){return (d['Roadmap Status']||'').trim()!=="Won't do";}); }
+function _sumFilterB(items){ return items.filter(function(d){
+  var rs=(d['Roadmap Status']||'').trim(), pm=(d['PM Role']||'').trim();
+  return rs!=="Won't do"&&rs.toLowerCase()!=='later'&&pm!=='Observer';
+}); }
+
+function _kpiDonut(v,total,size,color){
+  var sw=size<=30?2.5:3, r=(size-sw*2)/2;
+  var circ=+(2*Math.PI*r).toFixed(3);
+  var pct=total>0?Math.min(v/total,1):0;
+  var filled=+(pct*circ).toFixed(3), empty=+(circ-filled).toFixed(3);
+  var c=size/2;
+  var arc=pct<=0?'':' stroke-dasharray="'+filled+' '+Math.max(empty,0)+'" stroke-linecap="round"';
+  return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'" style="flex-shrink:0;transform:rotate(-90deg)">'+
+    '<circle cx="'+c+'" cy="'+c+'" r="'+r+'" fill="none" stroke="var(--border)" stroke-width="'+sw+'"/>'+
+    '<circle cx="'+c+'" cy="'+c+'" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="'+sw+'"'+arc+'/>'+
+  '</svg>';
+}
+
+function _kpiTile(t){
+  function half(data,scopeLabel,big){
+    var sub=data.total>0?'of '+data.total:'', size=big?36:28;
+    return '<div style="padding:'+(big?'5px 10px 2px':'2px 10px 5px')+';display:flex;align-items:center;justify-content:space-between;gap:4px">'+
+      '<div>'+
+        '<div style="display:flex;align-items:baseline;gap:3px">'+
+          '<span style="font-size:'+(big?18:13)+'px;font-weight:700;color:'+t.valColor+';font-variant-numeric:tabular-nums;line-height:1">'+data.v+'</span>'+
+          (sub?'<span style="font-size:9px;color:var(--text3)">'+sub+'</span>':'')+
+        '</div>'+
+        '<div style="font-size:8px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-top:1px">'+scopeLabel+'</div>'+
+      '</div>'+
+      _kpiDonut(data.v,data.total,size,t.valColor)+
+    '</div>';
+  }
+  return '<div style="flex:1;min-width:110px;background:var(--surface);border:1px solid var(--border);border-radius:6px;overflow:hidden">'+
+    half(t.a,'Full Roadmap',true)+
+    '<div style="height:1px;background:var(--border)"></div>'+
+    half(t.b,'Active Commitment',false)+
+    '<div style="padding:3px 10px;background:var(--surface2);border-top:1px solid var(--border);display:flex;align-items:center;gap:4px">'+
+      '<span style="display:inline-block;width:3px;height:8px;background:'+t.barColor+';border-radius:2px;flex-shrink:0"></span>'+
+      '<span style="font-size:9px;font-weight:700;color:var(--text2)">'+t.label+'</span>'+
+    '</div>'+
+  '</div>';
+}
+
+function _renderInitKpi(data){
+  var el=document.getElementById('sum-init-kpi'); if(!el)return;
+
+  /* Lead pool: unique initiatives where a team member is primary assignee */
+  var lKeys={};
+  var lead=data.filter(function(d){
+    var k=d.Key||''; if(lKeys[k])return false;
+    if(SUM_PEOPLE.indexOf(_fn(d['Assignee.displayName']))>=0){lKeys[k]=true;return true;}
+    return false;
+  });
+  /* Support pool: unique initiatives where a team member is secondary assignee */
+  var sKeys={};
+  var supp=data.filter(function(d){
+    var k=d.Key||''; if(sKeys[k])return false;
+    var a2=(d['Assignee (2nd).displayName']||'').split(';');
+    for(var i=0;i<a2.length;i++){if(SUM_PEOPLE.indexOf(_fn(a2[i]))>=0){sKeys[k]=true;return true;}}
+    return false;
+  });
+
+  var l1A=_sumFilterA(lead), l1B=_sumFilterB(lead);
+  var l2A=_sumFilterA(supp), l2B=_sumFilterB(supp);
+
+  var tiles=[
+    {label:'Lead Done',       barColor:'var(--accent)',valColor:'var(--up)',
+     a:{v:l1A.filter(function(d){return d.Status==='Done';}).length,total:l1A.length},
+     b:{v:l1B.filter(function(d){return d.Status==='Done';}).length,total:l1B.length}},
+    {label:'Lead On Time',    barColor:'var(--accent)',valColor:'var(--up)',
+     a:{v:l1A.filter(_sumIsOnTime).length,total:l1A.length},
+     b:{v:l1B.filter(_sumIsOnTime).length,total:l1B.length}},
+    {label:'Lead Delayed',    barColor:'var(--accent)',valColor:'var(--down)',
+     a:{v:l1A.filter(_sumIsDelayed).length,total:l1A.length},
+     b:{v:l1B.filter(_sumIsDelayed).length,total:l1B.length}},
+    {label:'Support Done',    barColor:'var(--teal)',  valColor:'var(--up)',
+     a:{v:l2A.filter(function(d){return d.Status==='Done';}).length,total:l2A.length},
+     b:{v:l2B.filter(function(d){return d.Status==='Done';}).length,total:l2B.length}},
+    {label:'Support On Time', barColor:'var(--teal)',  valColor:'var(--up)',
+     a:{v:l2A.filter(_sumIsOnTime).length,total:l2A.length},
+     b:{v:l2B.filter(_sumIsOnTime).length,total:l2B.length}},
+    {label:'Support Delayed', barColor:'var(--teal)',  valColor:'var(--down)',
+     a:{v:l2A.filter(_sumIsDelayed).length,total:l2A.length},
+     b:{v:l2B.filter(_sumIsDelayed).length,total:l2B.length}}
+  ];
+
+  function makeGroup(label,barColor,tileList,dim){
+    return '<div style="flex:1;min-width:0'+(dim?';opacity:0.6':'')+'">'+
+      '<div style="display:flex;align-items:center;gap:5px;padding:3px 6px;margin-bottom:4px;background:var(--surface2);border-bottom:1px solid var(--border)">'+
+        '<span style="display:inline-block;width:3px;height:10px;background:'+barColor+';border-radius:2px;flex-shrink:0"></span>'+
+        '<span style="font-size:9px;font-weight:700;color:'+barColor+';letter-spacing:.06em;text-transform:uppercase">'+label+'</span>'+
+      '</div>'+
+      '<div style="display:flex;gap:5px">'+tileList.map(_kpiTile).join('')+'</div>'+
+    '</div>';
+  }
+
+  el.innerHTML=
+    '<div style="display:flex;gap:0;align-items:flex-start;flex-wrap:wrap">'+
+      makeGroup('Lead Assignee','var(--accent)',tiles.slice(0,3),false)+
+    '</div>';
 }
 
 /* ── 1-Overview: % Delivery On Time (Done items only) ── */
@@ -481,12 +628,15 @@ function _buildOverallTable(id, data){
     '<th style="min-width:110px">% On Time</th>'+
     '</tr></thead><tbody>';
 
+  var curQLabel='Q'+(Math.ceil((new Date().getMonth()+1)/3))+' '+new Date().getFullYear();
   var totOn=0,totDel=0,totAll=0;
   sorted.forEach(function(q){
     var r=qtrs[q];
     totOn+=r.onTime; totDel+=r.delayed; totAll+=r.total;
-    html+='<tr>'+
-      '<td class="col-person" style="font-weight:700">'+q+'</td>'+
+    var isNow=(q===curQLabel);
+    var qLabel=q+(isNow?' <span style="font-size:8px;background:var(--accent);color:#fff;padding:1px 5px;border-radius:3px;margin-left:5px;vertical-align:middle;font-weight:700">now</span>':'');
+    html+='<tr'+(isNow?' style="background:rgba(124,92,30,.04)"':'')+'>'+
+      '<td class="col-person" style="font-weight:700">'+qLabel+'</td>'+
       '<td class="col-total">'+r.total+'</td>'+
       '<td>'+cell(r.onTime,'var(--up)')+'</td>'+
       '<td>'+cell(r.delayed,'var(--down)')+'</td>'+
@@ -864,6 +1014,51 @@ window.addEventListener('DOMContentLoaded',function(){
     );
   });
 });
+</script>
+
+<script>
+/* ── Section sub-nav scroll spy ── */
+(function() {
+  var sections = ['initiative','support','issue'];
+  var tabs = {};
+  sections.forEach(function(id) {
+    tabs[id] = document.querySelector('[data-sec="'+id+'"]');
+  });
+
+  function setActive(id) {
+    sections.forEach(function(s) {
+      if (tabs[s]) tabs[s].classList.toggle('active', s === id);
+    });
+  }
+
+  var obs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) {
+      if (e.isIntersecting) {
+        var id = e.target.id.replace('sum-sec-','');
+        setActive(id);
+      }
+    });
+  }, { rootMargin: '-40% 0px -55% 0px', threshold: 0 });
+
+  sections.forEach(function(id) {
+    var el = document.getElementById('sum-sec-'+id);
+    if (el) obs.observe(el);
+  });
+
+  /* Smooth scroll on tab click */
+  document.querySelectorAll('.sum-snav-tab').forEach(function(tab) {
+    tab.addEventListener('click', function(e) {
+      e.preventDefault();
+      var sec = this.dataset.sec;
+      var el = document.getElementById('sum-sec-'+sec);
+      if (!el) return;
+      var navTop = document.getElementById('sum-section-nav');
+      var offset = navTop ? navTop.getBoundingClientRect().bottom : 92;
+      var top = el.getBoundingClientRect().top + window.scrollY - offset - 12;
+      window.scrollTo({ top: top, behavior: 'smooth' });
+    });
+  });
+})();
 </script>
 </body>
 </html>

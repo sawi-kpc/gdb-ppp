@@ -9,72 +9,67 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 
-/* ── Person selector bar ─────────────────────────────── */
-.perf-selector{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 20px;background:var(--surface);border-bottom:1px solid var(--border)}
+/* ── Max-width inner wrapper (aligns with .perf-sections) ── */
+.perf-inner{max-width:1600px;margin:0 auto;padding:0 24px;width:100%}
+
+/* ── Person selector bar ── */
+.perf-selector{background:var(--surface);border-bottom:1px solid var(--border)}
+.perf-selector .perf-inner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-top:10px;padding-bottom:10px}
 .perf-selector-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
 #perf-person-select{height:28px;padding:0 10px;border:1px solid var(--border);border-radius:5px;background:var(--surface2);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;min-width:130px}
 .fb-btn{padding:3px 12px;font-size:11px;font-weight:600;border-radius:20px;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text2);transition:all .15s;white-space:nowrap}
-.fb-btn.active,.fb-btn:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+.fb-btn.active,.fb-btn:hover{background:color-mix(in srgb,var(--accent) 24%,var(--surface2));border-color:var(--accent);color:var(--accent)}
 
-/* ── Profile card ──────────────────────────────────────── */
-.perf-profile{display:flex;align-items:center;gap:14px;padding:10px 20px;background:var(--surface);border-bottom:1px solid var(--border);flex-wrap:wrap}
+/* ── Profile card ── */
+.perf-profile{background:var(--surface);border-bottom:1px solid var(--border)}
+.perf-profile .perf-inner{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-top:10px;padding-bottom:10px}
 .perf-avatar{width:40px;height:40px;border-radius:50%;background:var(--accent);color:#fff;font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .perf-person-name{font-size:15px;font-weight:700;color:var(--text)}
 .perf-person-sub{font-size:11px;color:var(--text3);margin-top:2px}
-.perf-kpi-strip{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
-.perf-kpi{display:flex;flex-direction:column;align-items:flex-start;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 11px;min-width:100px}
-.perf-kpi-num{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
-.perf-kpi-frac{font-size:10px;color:var(--text3);margin-top:1px;font-variant-numeric:tabular-nums}
-.perf-kpi-bar{width:100%;height:3px;background:var(--border);border-radius:2px;margin-top:5px}
-.perf-kpi-fill{height:3px;border-radius:2px}
-.perf-kpi-lab{font-size:10px;color:var(--text2);font-weight:600;margin-top:3px;white-space:nowrap}
 
-/* ── 4-column grid ────────────────────────────────────── */
-.perf-main{padding:12px 20px}
-.perf-cols{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:start}
-@media(max-width:900px){.perf-cols{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:540px){.perf-cols{grid-template-columns:1fr}}
-
-/* ── Column panel ──────────────────────────────────────── */
-.perf-col{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column}
-.perf-col-head{display:flex;align-items:center;gap:6px;padding:9px 12px;border-bottom:1px solid var(--border)}
-.perf-col-icon{font-size:14px;flex-shrink:0}
-.perf-col-title{font-size:12px;font-weight:700;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.perf-col-badge{font-size:10px;font-weight:700;color:var(--text3);background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:1px 5px;flex-shrink:0;font-variant-numeric:tabular-nums}
-
-/* ── Metrics inside column ─────────────────────────────── */
-.perf-col-body{padding:10px 12px;display:flex;flex-direction:column;gap:10px}
-.perf-metric-block{}
-.perf-metric-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
-.perf-metric-row{display:flex;align-items:baseline;gap:6px;margin-bottom:4px}
-.perf-big{font-size:22px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums;line-height:1}
-.perf-of{font-size:11px;color:var(--text3);font-variant-numeric:tabular-nums}
-.perf-pbar{height:4px;background:var(--surface2);border-radius:2px;border:1px solid var(--border);overflow:hidden}
-.perf-pbar-fill{height:4px;border-radius:2px;transition:width .4s}
-.perf-dots{display:flex;flex-direction:column;gap:4px;margin-top:4px}
-.pd-item{font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px;font-variant-numeric:tabular-nums}
-.pd-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.perf-divider{height:1px;background:var(--border);margin:2px -12px}
-.perf-empty{padding:20px 12px;text-align:center;font-size:11px;color:var(--text3)}
-
-/* ── Collapsible list ──────────────────────────────────── */
-.perf-list-toggle{display:flex;align-items:center;gap:6px;padding:7px 12px;cursor:pointer;font-size:11px;font-weight:600;color:var(--text2);background:none;border:none;border-top:1px solid var(--border);width:100%;text-align:left;transition:color .15s}
-.perf-list-toggle:hover{color:var(--text);background:var(--surface2)}
-.perf-toggle-icon{display:inline-block;transition:transform .2s;font-size:9px;color:var(--text3)}
-.perf-list-items{display:none;border-top:1px solid var(--border);max-height:320px;overflow-y:auto}
-.perf-list-items.open{display:block}
-.perf-lrow{display:flex;align-items:center;gap:6px;padding:6px 10px;border-bottom:1px solid rgba(48,54,61,.25);font-size:11px}
-.perf-lrow:last-child{border-bottom:none}
-.perf-lrow:hover{background:var(--surface2)}
-.perf-lkey{font-weight:700;color:var(--accent);flex-shrink:0;min-width:54px;font-size:10.5px}
-.perf-lsum{flex:1;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
-.perf-row-meta{font-size:10px;color:var(--text3);flex-shrink:0;font-variant-numeric:tabular-nums}
-.perf-tag{font-size:10px;font-weight:600;padding:1px 5px;border-radius:3px;flex-shrink:0;white-space:nowrap}
-.perf-tag-done{background:rgba(63,185,80,.1);color:var(--up);border:1px solid rgba(63,185,80,.2)}
-.perf-tag-prog{background:rgba(88,166,255,.12);color:var(--accent);border:1px solid rgba(88,166,255,.25)}
-.perf-tag-del{background:rgba(248,81,73,.1);color:var(--down);border:1px solid rgba(248,81,73,.2)}
-.perf-tag-risk{background:rgba(245,158,11,.1);color:var(--amber);border:1px solid rgba(245,158,11,.25)}
-.perf-tag-todo{background:var(--surface2);color:var(--text3);border:1px solid var(--border)}
+/* ── Section sub-nav ── */
+.perf-section-nav{background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:calc(var(--header-h) + var(--nav-h));z-index:20}
+.perf-section-nav .perf-inner{display:flex;gap:0;padding-top:0;padding-bottom:0}
+.perf-snav-tab{display:flex;align-items:center;gap:6px;padding:9px 16px;font-size:12px;font-weight:600;color:var(--text3);border-bottom:2px solid transparent;cursor:pointer;text-decoration:none;transition:color .15s,border-color .15s;white-space:nowrap}
+.perf-snav-tab:hover{color:var(--text2)}
+.perf-snav-tab.active{color:var(--text);border-bottom-color:var(--accent)}
+.snav-count{font-size:10px;font-weight:600;color:var(--text3);background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1px 7px;line-height:1.5;transition:color .15s,border-color .15s}
+.perf-snav-tab.active .snav-count{color:var(--accent);border-color:var(--accent)}
+/* ── Sections wrapper ── */
+.perf-sections{padding:20px 24px;max-width:1600px;margin:0 auto;display:flex;flex-direction:column;gap:32px}
+.perf-section-group{display:flex;flex-direction:column;gap:12px}
+.perf-section-heading{display:flex;align-items:center;gap:8px;padding:9px 14px;background:color-mix(in srgb,var(--accent) 22%,var(--surface));border-bottom:1px solid color-mix(in srgb,var(--accent) 40%,var(--border))}
+.perf-section-title{font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.05em;text-transform:uppercase}
+.perf-section-sub{font-size:10px;color:var(--text3);margin-left:auto}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+/* ── Heatmap table (matches summary page) ── */
+.stbl-wrap{overflow-x:auto}
+.stbl{width:100%;border-collapse:collapse;font-size:11.5px;min-width:420px}
+.stbl .cg-head{font-size:10px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.05em;padding:5px 8px;text-align:center;border-bottom:1px solid var(--border)}
+.stbl .cg-lead{background:rgba(88,166,255,.07);border-right:2px solid var(--border)}
+.stbl .cg-sup{background:rgba(34,211,164,.07);border-right:2px solid var(--border)}
+[data-theme="light"] .stbl .cg-lead{background:rgba(124,92,30,.06)}
+[data-theme="light"] .stbl .cg-sup{background:rgba(26,107,98,.06)}
+[data-theme="dark-warm"] .stbl .cg-lead{background:rgba(212,160,64,.07)}
+[data-theme="dark-warm"] .stbl .cg-sup{background:rgba(64,184,168,.07)}
+.stbl th{padding:5px 8px;font-size:10px;font-weight:600;color:var(--text2);text-align:center;border-bottom:1px solid var(--border);white-space:nowrap}
+.stbl th.col-person{text-align:left;width:160px;background:var(--surface);position:sticky;left:0;z-index:1}
+.stbl th.sep{border-right:2px solid var(--border)}
+.stbl td{padding:6px 8px;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle;font-variant-numeric:tabular-nums}
+.stbl tr:last-child td{border-bottom:none}
+.stbl tr:hover td{background:var(--surface2)}
+.stbl td.col-person{text-align:left;font-weight:600;color:var(--text);font-size:12px;white-space:nowrap;position:sticky;left:0;background:var(--surface);z-index:1;padding-left:10px}
+.stbl tr:hover td.col-person{background:var(--surface2)}
+.stbl td.sep{border-right:2px solid var(--border)}
+.hm{display:inline-block;min-width:28px;height:24px;border-radius:4px;line-height:24px;padding:0 5px;font-size:11px;font-weight:700}
+.hm-0{color:var(--text3)}
+.col-total{font-weight:700;color:var(--text);background:var(--surface2)!important}
+.p-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;flex-shrink:0}
+/* ── Overview quarter rate bar (mirrors summary page) ── */
+.ovr-rate-bar{display:flex;align-items:center;gap:6px}
+.ovr-rate-track{flex:1;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;border:1px solid var(--border)}
+.ovr-rate-fill{height:100%;border-radius:3px}
+.ovr-rate-pct{font-size:11px;font-weight:700;min-width:34px;text-align:right}
 </style>
 </head>
 
@@ -85,84 +80,69 @@
 
   <!-- Person + year selector -->
   <div class="perf-selector">
-    <span class="perf-selector-label">Person</span>
-    <select id="perf-person-select" onchange="window._perf.curPerson=this.value;_perfRender()"></select>
-    <span class="perf-selector-label" style="margin-left:10px">Year</span>
-    <div id="perf-year-chips" style="display:flex;gap:6px;flex-wrap:wrap"></div>
-  </div>
-
-  <!-- Profile card + KPI strip -->
-  <div class="perf-profile">
-    <div class="perf-avatar" id="perf-avatar">?</div>
-    <div>
-      <div class="perf-person-name" id="perf-name">—</div>
-      <div class="perf-person-sub">Personal Performance Report</div>
+    <div class="perf-inner">
+      <span class="perf-selector-label">Person</span>
+      <select id="perf-person-select" onchange="window._perf.curPerson=this.value;_perfRender()"></select>
+      <span class="perf-selector-label" style="margin-left:10px">Year</span>
+      <div id="perf-year-chips" style="display:flex;gap:6px;flex-wrap:wrap"></div>
     </div>
-    <div class="perf-kpi-strip" id="perf-kpi-strip"></div>
   </div>
 
-  <!-- 4 columns -->
-  <div class="perf-main">
-    <div class="perf-cols">
-
-      <!-- Col 1: Lead Initiative -->
-      <div class="perf-col">
-        <div class="perf-col-head">
-          <span class="perf-col-icon">🎯</span>
-          <span class="perf-col-title">Lead Initiative</span>
-          <span class="perf-col-badge" id="s1-badge">0</span>
-        </div>
-        <div class="perf-col-body" id="s1-perf"></div>
-        <button class="perf-list-toggle" onclick="perfToggleList('s1-list',this)">
-          <span class="perf-toggle-icon">▶</span>&ensp;Show items
-        </button>
-        <div class="perf-list-items" id="s1-list"></div>
+  <!-- Profile card -->
+  <div class="perf-profile">
+    <div class="perf-inner">
+      <div class="perf-avatar" id="perf-avatar">?</div>
+      <div>
+        <div class="perf-person-name" id="perf-name">—</div>
+        <div class="perf-person-sub" id="perf-person-sub">Personal Performance Report</div>
       </div>
+    </div>
+  </div>
 
-      <!-- Col 2: Support Initiative -->
-      <div class="perf-col">
-        <div class="perf-col-head">
-          <span class="perf-col-icon">🤝</span>
-          <span class="perf-col-title">Support Initiative</span>
-          <span class="perf-col-badge" id="s2-badge">0</span>
-        </div>
-        <div class="perf-col-body" id="s2-perf"></div>
-        <button class="perf-list-toggle" onclick="perfToggleList('s2-list',this)">
-          <span class="perf-toggle-icon">▶</span>&ensp;Show items
-        </button>
-        <div class="perf-list-items" id="s2-list"></div>
+  <!-- Section sub-nav -->
+  <div class="perf-section-nav" id="perf-section-nav">
+    <div class="perf-inner">
+      <a class="perf-snav-tab active" data-sec="initiative" href="#sec-initiative">🏗 Initiative <span class="snav-count" id="snav-count-init">—</span></a>
+      <a class="perf-snav-tab" data-sec="issue" href="#sec-issue">🐛 Issue <span class="snav-count" id="snav-count-issue">—</span></a>
+      <a class="perf-snav-tab" data-sec="support" href="#sec-support">🔧 Support <span class="snav-count" id="snav-count-sup">—</span></a>
+    </div>
+  </div>
+
+  <!-- Sections -->
+  <div class="perf-sections">
+
+    <!-- ── Initiative ── -->
+    <div id="sec-initiative" class="perf-section-group">
+      <div class="perf-section-heading">
+        <span class="perf-section-title">🏗 Initiative</span>
+        <span class="perf-section-sub" id="sec-init-sub"></span>
       </div>
+      <div id="perf-kpi"></div>
+      <div id="perf-overview-quarter" class="panel"></div>
+      <div id="perf-completion-heatmap" class="panel"></div>
+      <div id="perf-init-list" class="panel"></div>
+    </div>
 
-      <!-- Col 3: Issues -->
-      <div class="perf-col">
-        <div class="perf-col-head">
-          <span class="perf-col-icon">🐛</span>
-          <span class="perf-col-title">Issues</span>
-          <span class="perf-col-badge" id="s3-badge">0</span>
-        </div>
-        <div class="perf-col-body" id="s3-perf"></div>
-        <button class="perf-list-toggle" onclick="perfToggleList('s3-list',this)">
-          <span class="perf-toggle-icon">▶</span>&ensp;Show items
-        </button>
-        <div class="perf-list-items" id="s3-list"></div>
+    <!-- ── Issue ── -->
+    <div id="sec-issue" class="perf-section-group">
+      <div class="perf-section-heading">
+        <span class="perf-section-title">🐛 Issue</span>
+        <span class="perf-section-sub" id="sec-issue-sub"></span>
       </div>
+      <div id="perf-issue-panels"></div>
+    </div>
 
-      <!-- Col 4: Support Tasks -->
-      <div class="perf-col">
-        <div class="perf-col-head">
-          <span class="perf-col-icon">🔧</span>
-          <span class="perf-col-title">Support Tasks</span>
-          <span class="perf-col-badge" id="s4-badge">0</span>
-        </div>
-        <div class="perf-col-body" id="s4-perf"></div>
-        <button class="perf-list-toggle" onclick="perfToggleList('s4-list',this)">
-          <span class="perf-toggle-icon">▶</span>&ensp;Show items
-        </button>
-        <div class="perf-list-items" id="s4-list"></div>
+    <!-- ── Support ── -->
+    <div id="sec-support" class="perf-section-group">
+      <div class="perf-section-heading">
+        <span class="perf-section-title">🔧 Support</span>
+        <span class="perf-section-sub" id="sec-sup-sub"></span>
       </div>
+      <div id="perf-support-panels"></div>
+    </div>
 
-    </div><!-- /perf-cols -->
-  </div><!-- /perf-main -->
+  </div>
+
 </div><!-- /perf-content -->
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -184,7 +164,6 @@ function _perfMarkReady(src) {
   _perfCheckReady();
 }
 
-/* Initiative: set onDataReady BEFORE loadData() is called */
 window.onDataReady = function(data) {
   _perf.initData = data || [];
   _perfMarkReady('init');
@@ -200,22 +179,64 @@ window.addEventListener('DOMContentLoaded', function() {
       window.location.href='/gdb-ppp/';
       return;
     }
-    /* 1. Initiative */
     loadData();
 
-    /* 2. Issues */
     loadIssueData(
       function(data) { _perf.issueData = data || []; _perfMarkReady('issue'); },
       function(err)  { console.warn('[Perf] Issue:', err); _perf.issueData = []; _perfMarkReady('issue'); }
     );
 
-    /* 3. Support */
     loadSupportData(
       function(data) { _perf.supData = data || []; _perfMarkReady('sup'); },
       function(err)  { console.warn('[Perf] Support:', err); _perf.supData = []; _perfMarkReady('sup'); }
     );
   });
 });
+</script>
+
+<script>
+/* ── Section sub-nav scroll spy ── */
+(function() {
+  var sections = ['initiative','issue','support'];
+  var tabs = {};
+  sections.forEach(function(id) {
+    tabs[id] = document.querySelector('[data-sec="'+id+'"]');
+  });
+
+  function setActive(id) {
+    sections.forEach(function(s) {
+      if (tabs[s]) tabs[s].classList.toggle('active', s === id);
+    });
+  }
+
+  var obs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) {
+      if (e.isIntersecting) {
+        var id = e.target.id.replace('sec-','');
+        setActive(id);
+      }
+    });
+  }, { rootMargin: '-40% 0px -55% 0px', threshold: 0 });
+
+  sections.forEach(function(id) {
+    var el = document.getElementById('sec-'+id);
+    if (el) obs.observe(el);
+  });
+
+  /* Smooth scroll on tab click */
+  document.querySelectorAll('.perf-snav-tab').forEach(function(tab) {
+    tab.addEventListener('click', function(e) {
+      e.preventDefault();
+      var sec = this.dataset.sec;
+      var el = document.getElementById('sec-'+sec);
+      if (!el) return;
+      var navTop = document.getElementById('perf-section-nav');
+      var offset = navTop ? navTop.getBoundingClientRect().bottom : 92;
+      var top = el.getBoundingClientRect().top + window.scrollY - offset - 12;
+      window.scrollTo({ top: top, behavior: 'smooth' });
+    });
+  });
+})();
 </script>
 </body>
 </html>

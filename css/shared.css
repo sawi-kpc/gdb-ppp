@@ -245,7 +245,7 @@ tr:hover td { background: var(--surface2); }
   border-radius: 20px; font-size: 11px; font-weight: 600;
   cursor: pointer; transition: all .15s;
 }
-.yr-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.yr-btn.active { background: color-mix(in srgb,var(--accent) 24%,var(--surface2)); border-color: var(--accent); color: var(--accent); }
 
 /* ── BADGE / TAG ────────────────────────────── */
 .channel-badge {

@@ -34,15 +34,24 @@ var _perf = {
   listCollapsed: true,   /* Initiative List collapsed by default */
 };
 
-/* ── All three sources ready → render ── */
+/* ── Progressive ready: show page as soon as init data arrives ── */
 function _perfCheckReady() {
-  if (!_perf.ready.init || !_perf.ready.issue || !_perf.ready.sup) return;
+  if (!_perf.ready.init) return;
   var loadEl = document.getElementById('gdb-loading');
   if (loadEl) loadEl.style.display = 'none';
   var contEl = document.getElementById('perf-content');
-  if (contEl) contEl.style.display = 'block';
-  _perfBuildPeople();
+  if (contEl && contEl.style.display === 'none') {
+    contEl.style.display = 'block';
+    _perfBuildPeople();
+  }
   _perfRender();
+}
+
+function _perfSectionSkeleton(panelId, subId) {
+  var el = document.getElementById(panelId);
+  if (el) el.innerHTML = '<div style="padding:32px 0;text-align:center;color:var(--text3);font-size:12px;letter-spacing:.03em">Loading…</div>';
+  var sub = document.getElementById(subId);
+  if (sub) sub.textContent = '';
 }
 
 /* ── Build person dropdown ── */
@@ -103,6 +112,7 @@ function _perfDateQ(s) {
 
 /* ── Main render ── */
 function _perfRender() {
+  if (!_perf.ready.init) return;
   _perfBuildYearFilter();
 
   var p  = _perf.curPerson;
@@ -143,8 +153,16 @@ function _perfRender() {
   _buildPerfOverviewByQuarter(myAll, myI1, myI2, cy);
   _buildPerfCompletionHeatmap(myAll, myI1, myI2, cy);
   _buildPerfInitList(myAll, myI1, myI2, cy);
-  _buildPerfIssueSection(p, cy);
-  _buildPerfSupportSection(p, cy);
+  if (_perf.ready.issue) {
+    _buildPerfIssueSection(p, cy);
+  } else {
+    _perfSectionSkeleton('perf-issue-panels', 'sec-issue-sub');
+  }
+  if (_perf.ready.sup) {
+    _buildPerfSupportSection(p, cy);
+  } else {
+    _perfSectionSkeleton('perf-support-panels', 'sec-sup-sub');
+  }
 }
 
 /* ══════════════════════════════════════════════

@@ -1127,7 +1127,7 @@ function _buildPerfSupportSection(person, year) {
   });
   totRow += '<td style="padding:5px 8px;text-align:center;font-size:11px;font-weight:700;border-left:2px solid var(--border)">'+filtered.length+'</td>';
   totRow += '<td style="padding:5px 8px;text-align:center;font-size:11px;font-weight:700;color:var(--up)">'+done+'</td>';
-  totRow += '<td style="padding:5px 8px;text-align:center">'+pctBadge(pct)+'</td>';
+  totRow += '<td style="padding:5px 8px;text-align:center">'+ pctBar(pct,true)+'</td>';
   totRow += '</tr>';
 
   var chart2 = '<div class="panel">'+

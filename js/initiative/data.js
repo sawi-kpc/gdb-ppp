@@ -198,6 +198,7 @@ async function loadData(){
     renderAll();
     if (typeof window.onDataReady === 'function') { window.onDataReady(allData); }
   }
+}
 
 /* ── Initiatives List ────────────────────────────── */
 function renderAll(){

@@ -841,6 +841,17 @@ function _buildPerfSupportSection(person, year) {
     var m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     return m[dt.getMonth()]+' '+dt.getFullYear();
   }
+  function supQuarter(d) {
+    var raw = d.Due || d.due || '';
+    if (!raw) return null;
+    var dt = new Date(raw); if (isNaN(dt)) return null;
+    var mo = dt.getMonth();
+    return mo < 3 ? 'Q1' : mo < 6 ? 'Q2' : mo < 9 ? 'Q3' : 'Q4';
+  }
+  function supGroup(d) {
+    return (d.Group && d.Group.trim()) ? d.Group.trim() : 'Other';
+  }
+  function isDoneStatus(s) { return s==='Done'||s==='Closed'||s==='Resolved'; }
 
   var myTasks = _perf.supData.filter(function(d) {
     return _pfn(d.Assignee) === person;
@@ -860,7 +871,7 @@ function _buildPerfSupportSection(person, year) {
   }
 
   function stTagSup(s) {
-    var isDone = s==='Done'||s==='Closed'||s==='Resolved';
+    var isDone = isDoneStatus(s);
     var st = isDone
       ? 'background:rgba(63,185,80,.12);color:var(--up);border:1px solid rgba(63,185,80,.3)'
       : 'background:rgba(88,166,255,.12);color:var(--accent);border:1px solid rgba(88,166,255,.3)';
@@ -875,11 +886,12 @@ function _buildPerfSupportSection(person, year) {
     '</div>';
   }
 
-  var done = filtered.filter(function(d){ return d.Status==='Done'||d.Status==='Closed'||d.Status==='Resolved'; }).length;
+  var done = filtered.filter(function(d){ return isDoneStatus(d.Status); }).length;
   var pct  = filtered.length ? Math.round(done/filtered.length*100) : 0;
   var pctColor = pct>=80?'var(--up)':pct>=50?'var(--amber)':'var(--down)';
 
-  var kpiRow =
+  /* ── KPI summary panel ── */
+  var kpiPanel = '<div class="panel">'+
     '<div style="padding:9px 14px;display:flex;align-items:center;border-bottom:1px solid var(--border)">'+
       '<span style="font-size:12px;font-weight:700;color:var(--text)">Support Tasks</span>'+
       '<span style="font-size:11px;color:var(--text3);margin-left:auto">'+filtered.length+' tasks · '+(year==='All'?'all years':year)+'</span>'+
@@ -890,11 +902,146 @@ function _buildPerfSupportSection(person, year) {
       miniKpi('Done',    done,   'var(--up)')+
       '<div style="width:1px;background:var(--border)"></div>'+
       miniKpi('% Done',  pct+'%', pctColor)+
-    '</div>';
+    '</div>'+
+  '</div>';
 
-  var rows = filtered.map(function(d) {
+  /* ── Chart 1: By Quarter ── */
+  var QS = ['Q1','Q2','Q3','Q4'];
+  function qItems(q) { return filtered.filter(function(d){ return supQuarter(d)===q; }); }
+
+  function makeQSumRow(label, items, isTot) {
+    var d_ = items.filter(function(d){ return isDoneStatus(d.Status); }).length;
+    var p_ = items.length ? Math.round(d_/items.length*100) : 0;
+    var pc = p_>=80?'var(--up)':p_>=50?'var(--amber)':'var(--down)';
+    var rowBg = isTot ? 'background:var(--surface2)' : '';
+    var fw = isTot ? '700' : '400';
+    return '<tr style="'+rowBg+'">'+
+      '<td style="padding:6px 14px;font-size:12px;font-weight:'+(isTot?'700':'600')+';color:var(--text)">'+label+'</td>'+
+      '<td style="padding:6px 12px;text-align:center;font-size:12px;font-weight:'+fw+';font-variant-numeric:tabular-nums;color:var(--text)">'+items.length+'</td>'+
+      '<td style="padding:6px 12px;text-align:center;font-size:12px;font-weight:'+fw+';font-variant-numeric:tabular-nums;color:var(--up)">'+d_+'</td>'+
+      '<td style="padding:6px 14px;min-width:120px">'+
+        '<div class="ovr-rate-bar">'+
+          '<div class="ovr-rate-track"><div class="ovr-rate-fill" style="width:'+p_+'%;background:'+pc+'"></div></div>'+
+          '<span class="ovr-rate-pct" style="color:'+pc+'">'+p_+'%</span>'+
+        '</div>'+
+      '</td>'+
+    '</tr>';
+  }
+
+  var chart1Rows = QS.map(function(q){ return makeQSumRow(q, qItems(q), false); }).join('');
+  chart1Rows += makeQSumRow('Total', filtered, true);
+
+  var chart1 = '<div class="panel">'+
+    '<div style="padding:9px 14px;border-bottom:1px solid var(--border)">'+
+      '<span style="font-size:11px;font-weight:700;color:var(--text)">By Quarter</span>'+
+    '</div>'+
+    '<div class="stbl-wrap"><table class="stbl" style="min-width:300px">'+
+      '<thead><tr>'+
+        '<th style="text-align:left;padding:5px 14px">Quarter</th>'+
+        '<th style="text-align:center">Total</th>'+
+        '<th style="text-align:center">Done</th>'+
+        '<th style="text-align:left;padding:5px 14px;min-width:120px">% Complete</th>'+
+      '</tr></thead>'+
+      '<tbody>'+chart1Rows+'</tbody>'+
+    '</table></div>'+
+  '</div>';
+
+  /* ── Chart 2: Group × Quarter+Status matrix ── */
+  var allGroups = [];
+  filtered.forEach(function(d) {
+    var g = supGroup(d);
+    if (allGroups.indexOf(g) < 0) allGroups.push(g);
+  });
+  allGroups.sort();
+
+  var allStatuses = [];
+  filtered.forEach(function(d) {
+    if (d.Status && allStatuses.indexOf(d.Status) < 0) allStatuses.push(d.Status);
+  });
+  var statusOrder = ['In Progress','To do','Done'];
+  allStatuses.sort(function(a,b) {
+    var ai = statusOrder.indexOf(a); var bi = statusOrder.indexOf(b);
+    if (ai < 0) ai = 99; if (bi < 0) bi = 99;
+    return ai - bi;
+  });
+
+  var activeQs = QS.filter(function(q){ return filtered.some(function(d){ return supQuarter(d)===q; }); });
+  var colDefs = [];
+  activeQs.forEach(function(q) {
+    allStatuses.forEach(function(s) { colDefs.push({ q: q, s: s }); });
+  });
+
+  /* header row 1: quarter spans */
+  var qSpans = {};
+  colDefs.forEach(function(c) { qSpans[c.q] = (qSpans[c.q]||0)+1; });
+  var hdr1 = '<tr><th style="text-align:left;padding:5px 10px;font-size:10px;font-weight:700;color:var(--text3)">Group</th>';
+  activeQs.forEach(function(q) {
+    hdr1 += '<th colspan="'+qSpans[q]+'" style="text-align:center;padding:5px 6px;font-size:10px;font-weight:700;color:var(--text);border-left:1px solid var(--border)">'+q+'</th>';
+  });
+  hdr1 += '<th style="text-align:center;padding:5px 6px;font-size:10px;font-weight:700;color:var(--text3);border-left:2px solid var(--border)">Total</th></tr>';
+
+  /* header row 2: status sub-labels */
+  var seenQ = {};
+  var hdr2 = '<tr><th></th>';
+  colDefs.forEach(function(c) {
+    var brd = !seenQ[c.q] ? 'border-left:1px solid var(--border)' : '';
+    seenQ[c.q] = true;
+    var sColor = c.s==='Done'||c.s==='Closed'||c.s==='Resolved' ? 'color:var(--up)'
+      : c.s==='In Progress' ? 'color:var(--accent)' : 'color:var(--amber)';
+    hdr2 += '<th style="text-align:center;padding:3px 6px;font-size:10px;font-weight:600;white-space:nowrap;'+brd+';'+sColor+'">'+c.s+'</th>';
+  });
+  hdr2 += '<th style="border-left:2px solid var(--border)"></th></tr>';
+
+  /* data rows */
+  function cellN(g, q, s) {
+    return filtered.filter(function(d){ return supGroup(d)===g && supQuarter(d)===q && d.Status===s; }).length;
+  }
+  function hmSpan(n) {
+    if (!n) return '<span style="color:var(--text3)">—</span>';
+    var op = Math.min(0.12 + (n/6)*0.72, 0.84);
+    var fg = op>0.55 ? '#fff' : 'var(--accent)';
+    return '<span style="display:inline-block;min-width:22px;height:20px;line-height:20px;border-radius:3px;padding:0 4px;font-size:11px;font-weight:700;background:rgba(88,166,255,'+op.toFixed(2)+');color:'+fg+'">'+n+'</span>';
+  }
+
+  var matRows = allGroups.map(function(g) {
+    var seenQ2 = {};
+    var r = '<tr><td style="padding:5px 10px;font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;text-align:left">'+(g.replace(/_/g,' '))+'</td>';
+    colDefs.forEach(function(c) {
+      var brd = !seenQ2[c.q] ? 'border-left:1px solid var(--border)' : '';
+      seenQ2[c.q] = true;
+      r += '<td style="padding:5px 6px;text-align:center;'+brd+'">'+hmSpan(cellN(g,c.q,c.s))+'</td>';
+    });
+    var gt = filtered.filter(function(d){ return supGroup(d)===g; }).length;
+    r += '<td style="padding:5px 8px;text-align:center;font-size:11px;font-weight:700;color:var(--text);border-left:2px solid var(--border)">'+gt+'</td>';
+    r += '</tr>';
+    return r;
+  }).join('');
+
+  /* total row */
+  var seenQ3 = {};
+  var totRow = '<tr style="border-top:2px solid var(--border);background:var(--surface2)"><td style="padding:5px 10px;font-size:11px;font-weight:700;color:var(--text);text-align:left">Total</td>';
+  colDefs.forEach(function(c) {
+    var brd = !seenQ3[c.q] ? 'border-left:1px solid var(--border)' : '';
+    seenQ3[c.q] = true;
+    var n = filtered.filter(function(d){ return supQuarter(d)===c.q && d.Status===c.s; }).length;
+    totRow += '<td style="padding:5px 6px;text-align:center;font-size:11px;font-weight:700;color:var(--text2);'+brd+'">'+(n||'—')+'</td>';
+  });
+  totRow += '<td style="padding:5px 8px;text-align:center;font-size:11px;font-weight:700;color:var(--text);border-left:2px solid var(--border)">'+filtered.length+'</td></tr>';
+
+  var chart2 = '<div class="panel">'+
+    '<div style="padding:9px 14px;border-bottom:1px solid var(--border)">'+
+      '<span style="font-size:11px;font-weight:700;color:var(--text)">By Group & Quarter</span>'+
+    '</div>'+
+    '<div class="stbl-wrap"><table class="stbl">'+
+      '<thead>'+hdr1+hdr2+'</thead>'+
+      '<tbody>'+matRows+totRow+'</tbody>'+
+    '</table></div>'+
+  '</div>';
+
+  /* ── Task table ── */
+  var taskRows = filtered.map(function(d) {
     var mo = supMonth(d);
-    var isDone = d.Status==='Done'||d.Status==='Closed'||d.Status==='Resolved';
+    var doneFl = isDoneStatus(d.Status);
     return '<tr>'+
       '<td class="col-person" style="font-family:monospace;font-size:11px">'+
         '<a href="'+SUPPORT_JIRA_BASE+(d.Key||'')+'" target="_blank" style="color:var(--teal);text-decoration:none">'+
@@ -902,15 +1049,17 @@ function _buildPerfSupportSection(person, year) {
         '</a>'+
       '</td>'+
       '<td style="text-align:left;max-width:320px">'+
-        '<span style="font-size:11.5px;color:var(--text)'+(isDone?';opacity:0.65':'')+'">'+(d.Summary||'—')+'</span>'+
+        '<span style="font-size:11.5px;color:var(--text)'+(doneFl?';opacity:0.65':'')+'">'+(d.Summary||'—')+'</span>'+
       '</td>'+
       '<td>'+stTagSup(d.Status||'')+'</td>'+
       '<td style="color:var(--text3);font-size:11px">'+mo+'</td>'+
     '</tr>';
   }).join('');
 
-  el.innerHTML = '<div class="panel">'+
-    kpiRow+
+  var taskPanel = '<div class="panel">'+
+    '<div style="padding:9px 14px;border-bottom:1px solid var(--border)">'+
+      '<span style="font-size:11px;font-weight:700;color:var(--text)">Task List</span>'+
+    '</div>'+
     '<div class="stbl-wrap"><table class="stbl" style="min-width:400px">'+
       '<thead><tr>'+
         '<th class="col-person">Key</th>'+
@@ -918,7 +1067,9 @@ function _buildPerfSupportSection(person, year) {
         '<th>Status</th>'+
         '<th>Due</th>'+
       '</tr></thead>'+
-      '<tbody>'+rows+'</tbody>'+
+      '<tbody>'+taskRows+'</tbody>'+
     '</table></div>'+
   '</div>';
+
+  el.innerHTML = kpiPanel + chart1 + chart2 + taskPanel;
 }

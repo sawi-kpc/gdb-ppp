@@ -919,7 +919,7 @@ function _buildPerfSupportSection(person, year) {
     var rowBg = isTot ? 'background:var(--surface2)' : '';
     var fw = isTot ? '700' : '400';
     return '<tr style="'+rowBg+'">'+
-      '<td style="padding:6px 14px;font-size:12px;font-weight:'+(isTot?'700':'600')+';color:var(--text)">'+label+'</td>'+
+      '<td style="padding:6px 14px;font-size:12px;font-weight:'+(isTot?'700':'600')+';color:var(--text);text-align:left">'+label+'</td>'+
       '<td style="padding:6px 12px;text-align:center;font-size:12px;font-weight:'+fw+';font-variant-numeric:tabular-nums;color:var(--text)">'+items.length+'</td>'+
       '<td style="padding:6px 12px;text-align:center;font-size:12px;font-weight:'+fw+';font-variant-numeric:tabular-nums;color:var(--up)">'+d_+'</td>'+
       '<td style="padding:6px 14px;min-width:120px">'+
@@ -1069,19 +1069,23 @@ function _buildPerfSupportSection(person, year) {
   }).join('');
 
   var taskPanel = '<div class="panel">'+
-    '<div style="padding:9px 14px;border-bottom:1px solid var(--border)">'+
+    '<div style="padding:9px 14px;display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none"'+
+      ' onclick="var p=this.closest(\'.panel\'),b=p.querySelector(\'.sup-tl-body\'),ic=p.querySelector(\'.sup-tl-ic\'),o=b.style.display!=\'none\';b.style.display=o?\'none\':\'\';ic.textContent=o?\'▶\':\'▼\'">'+
       '<span style="font-size:11px;font-weight:700;color:var(--text)">Task List</span>'+
+      '<span style="font-size:11px;color:var(--text3)">('+filtered.length+' tasks)</span>'+
+      '<span class="sup-tl-ic" style="margin-left:auto;font-size:10px;color:var(--text3)">▶</span>'+
     '</div>'+
-    '<div class="stbl-wrap"><table class="stbl" style="min-width:400px">'+
-      '<thead><tr>'+
-        '<th class="col-person">Key</th>'+
-        '<th style="text-align:left">Summary</th>'+
-        '<th>Status</th>'+
-        '<th>Due</th>'+
-      '</tr></thead>'+
-      '<tbody>'+taskRows+'</tbody>'+
-    '</table></div>'+
+    '<div class="sup-tl-body" style="display:none">'+
+      '<div class="stbl-wrap"><table class="stbl" style="min-width:400px">'+
+        '<thead><tr>'+
+          '<th class="col-person">Key</th>'+
+          '<th style="text-align:left">Summary</th>'+
+          '<th>Status</th>'+
+          '<th>Due</th>'+
+        '</tr></thead>'+
+        '<tbody>'+taskRows+'</tbody>'+
+      '</table></div>'+
+    '</div>'+
   '</div>';
-
   el.innerHTML = kpiPanel + chart1 + chart2 + taskPanel;
 }

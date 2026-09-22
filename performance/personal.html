@@ -177,20 +177,24 @@ window.addEventListener('DOMContentLoaded', function() {
   gdbAuthGuard(function(user) {
     var _email=(user.email||'').toLowerCase();
     var _isAdmin=PERF_ALLOWED.indexOf(_email)>=0;
+    try{sessionStorage.setItem('gdb_perf_debug',JSON.stringify({src:'cb',ts:Date.now(),email:_email,isAdmin:_isAdmin,ppType:typeof PERF_PEOPLE,ppVal:typeof PERF_PEOPLE!=='undefined'?JSON.stringify(PERF_PEOPLE):'undef'}));}catch(e){}
+    console.log('[Perf] auth email:', _email, 'isAdmin:', _isAdmin, 'PERF_PEOPLE:', typeof PERF_PEOPLE);
+    var _local=_email.split('@')[0];
+    var _match=null;
+    for(var _i=0;_i<PERF_PEOPLE.length;_i++){
+      if(_local.startsWith(PERF_PEOPLE[_i].toLowerCase())){_match=PERF_PEOPLE[_i];break;}
+    }
     if(!_isAdmin){
-      var _local=_email.split('@')[0];
-      var _match=null;
-      for(var _i=0;_i<PERF_PEOPLE.length;_i++){
-        if(_local.startsWith(PERF_PEOPLE[_i].toLowerCase())){_match=PERF_PEOPLE[_i];break;}
-      }
+      console.log('[Perf] local:', _local, 'match:', _match);
+      try{sessionStorage.setItem('gdb_perf_debug',JSON.stringify({src:_match?'match':'no-match',ts:Date.now(),email:_email,local:_local,match:_match,ppType:typeof PERF_PEOPLE}));}catch(e){}
       if(!_match){window.location.href='/gdb-ppp/';return;}
-      _perf.curPerson=_match;
       var _ps=document.getElementById('perf-person-select');
       if(_ps)_ps.style.display='none';
       var _pl=document.querySelectorAll('.perf-selector-label')[0];
       if(_pl)_pl.style.display='none';
       if(typeof gdbHidePerformanceSummaryTab==='function')gdbHidePerformanceSummaryTab();
     }
+    if(_match)_perf.curPerson=_match;
     loadData();
 
     loadIssueData(

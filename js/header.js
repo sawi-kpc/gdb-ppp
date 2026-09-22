@@ -514,6 +514,7 @@ function gdbAuthGuard(onUser) {
     if (!_resolved) {
       _resolved = true;
       _unsub();
+      try{sessionStorage.setItem('gdb_perf_debug',JSON.stringify({src:'timer',ts:Date.now(),href:window.location.href}));}catch(e){}
       window.location.href = '/gdb-ppp/';
     }
   }, 4000); /* 4s timeout — longer than Safari's ITP delay */

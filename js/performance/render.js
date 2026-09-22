@@ -890,19 +890,19 @@ function _buildPerfSupportSection(person, year) {
   var pct  = filtered.length ? Math.round(done/filtered.length*100) : 0;
   var pctColor = pct>=80?'var(--up)':pct>=50?'var(--amber)':'var(--down)';
 
-  /* ── KPI summary panel ── */
-  var kpiPanel = '<div class="panel">'+
-    '<div style="padding:9px 14px;display:flex;align-items:center;border-bottom:1px solid var(--border)">'+
-      '<span style="font-size:12px;font-weight:700;color:var(--text)">Support Tasks</span>'+
-      '<span style="font-size:11px;color:var(--text3);margin-left:auto">'+filtered.length+' tasks · '+(year==='All'?'all years':year)+'</span>'+
-    '</div>'+
-    '<div style="display:flex;border-bottom:1px solid var(--border)">'+
-      miniKpi('Total',   filtered.length, 'var(--text)')+
-      '<div style="width:1px;background:var(--border)"></div>'+
-      miniKpi('Done',    done,   'var(--up)')+
-      '<div style="width:1px;background:var(--border)"></div>'+
-      miniKpi('% Done',  pct+'%', pctColor)+
-    '</div>'+
+  /* ── KPI summary — 3 separate cards ── */
+  function kpiCard(label, val, color) {
+    return '<div class="panel" style="flex:1">'+
+      '<div style="display:flex;flex-direction:column;align-items:center;padding:10px 8px">'+
+        '<span style="font-size:20px;font-weight:700;color:'+(color||'var(--text)')+';font-variant-numeric:tabular-nums;line-height:1.1">'+val+'</span>'+
+        '<span style="font-size:9px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-top:3px;text-align:center">'+label+'</span>'+
+      '</div>'+
+    '</div>';
+  }
+  var kpiPanel = '<div style="display:flex;gap:12px">'+
+    kpiCard('Total',   filtered.length, 'var(--text)')+
+    kpiCard('Done',    done,   'var(--up)')+
+    kpiCard('% Done',  pct+'%', pctColor)+
   '</div>';
 
   /* ── Chart 1: By Quarter ── */

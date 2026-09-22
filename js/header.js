@@ -534,6 +534,9 @@ function gdbAuthGuard(onUser) {
     var _perfLocal=_perfEmail.split('@')[0];
     if(_perfEl&&(_perfAllowed.indexOf(_perfEmail)>=0||_perfNames.some(function(n){return _perfLocal.startsWith(n);}))){
       _perfEl.style.display='';
+      if(_perfAllowed.indexOf(_perfEmail)<0){
+        _perfEl.href='/gdb-ppp/performance/personal.html';
+      }
     }
     if (typeof onUser === 'function') onUser(user, _auth);
   });

@@ -169,6 +169,15 @@ function buildGdbPerformanceSubNav() {
 }
 
 
+/* ── Hide Performance Summary tab (for personal-only users) ── */
+function gdbHidePerformanceSummaryTab() {
+  var subnav = document.getElementById('gdb-performance-subnav');
+  if (!subnav) return;
+  subnav.querySelectorAll('.gdb-init-tab').forEach(function(tab) {
+    if (tab.textContent.trim() === 'Summary') tab.style.display = 'none';
+  });
+}
+
 /* ── Cache status badge helpers (used by channel + initiative) ── */
 function gdbSetCacheBadge(state, label) {
   /* state: 'live' | 'cached' | 'loading' | 'hide' */

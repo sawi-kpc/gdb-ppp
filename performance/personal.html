@@ -175,9 +175,21 @@ window.addEventListener('DOMContentLoaded', function() {
 
   var PERF_ALLOWED=['sawitree.jakkrawannit@kingpower.com','chawanop.witthayaphirak@kingpower.com','petchpailin.tocharoen@kingpower.com'];
   gdbAuthGuard(function(user) {
-    if(PERF_ALLOWED.indexOf((user.email||'').toLowerCase())<0){
-      window.location.href='/gdb-ppp/';
-      return;
+    var _email=(user.email||'').toLowerCase();
+    var _isAdmin=PERF_ALLOWED.indexOf(_email)>=0;
+    if(!_isAdmin){
+      var _local=_email.split('@')[0];
+      var _match=null;
+      for(var _i=0;_i<PERF_PEOPLE.length;_i++){
+        if(_local.startsWith(PERF_PEOPLE[_i].toLowerCase())){_match=PERF_PEOPLE[_i];break;}
+      }
+      if(!_match){window.location.href='/gdb-ppp/';return;}
+      _perf.curPerson=_match;
+      var _ps=document.getElementById('perf-person-select');
+      if(_ps)_ps.style.display='none';
+      var _pl=document.querySelectorAll('.perf-selector-label')[0];
+      if(_pl)_pl.style.display='none';
+      if(typeof gdbHidePerformanceSummaryTab==='function')gdbHidePerformanceSummaryTab();
     }
     loadData();
 

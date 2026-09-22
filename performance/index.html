@@ -998,9 +998,13 @@ window.addEventListener('DOMContentLoaded',function(){
   buildGdbPerformanceSubNav();
 
   var PERF_ALLOWED=['sawitree.jakkrawannit@kingpower.com','chawanop.witthayaphirak@kingpower.com','petchpailin.tocharoen@kingpower.com'];
+  var _PERF_NAMES=['chalotorn','chawanop','natpapat','petchpailin','sawitree','sodsaran','somrythi'];
   gdbAuthGuard(function(user){
-    if(PERF_ALLOWED.indexOf((user.email||'').toLowerCase())<0){
-      window.location.href='/gdb-ppp/';
+    var _email=(user.email||'').toLowerCase();
+    if(PERF_ALLOWED.indexOf(_email)<0){
+      var _local=_email.split('@')[0];
+      var _isPersonal=_PERF_NAMES.some(function(n){return _local.startsWith(n);});
+      window.location.href=_isPersonal?'/gdb-ppp/performance/personal.html':'/gdb-ppp/';
       return;
     }
     loadData();

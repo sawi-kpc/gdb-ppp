@@ -934,7 +934,7 @@ function _buildPerfSupportSection(person, year) {
   }).join('');
   chart1Rows += makeQSumRow('Total', filtered, true);
 
-  var chart1 = '<div class="panel" style="flex:2;min-width:0">'+
+  var chart1 = '<div class="panel" style="flex:2;min-width:0;display:flex;flex-direction:column">'+
     '<div style="padding:9px 14px;border-bottom:1px solid var(--border)">'+
       '<span style="font-size:11px;font-weight:700;color:var(--text)">By Quarter</span>'+
     '</div>'+
@@ -964,12 +964,23 @@ function _buildPerfSupportSection(person, year) {
   }).filter(function(x){ return x.cnt > 0; });
 
   (function() {
+    /* top 5 by done count, rest → Other */
     var totalDone = groupDone.reduce(function(s,x){ return s+x.cnt; }, 0);
     if (!totalDone) { groupDone._svg = ''; groupDone._legend = ''; return; }
+
+    var sorted = groupDone.slice().sort(function(a,b){ return b.cnt-a.cnt; });
+    var top5 = sorted.slice(0,5);
+    var rest = sorted.slice(5);
+    if (rest.length) {
+      var otherCnt = rest.reduce(function(s,x){ return s+x.cnt; }, 0);
+      top5.push({ g: 'Other', cnt: otherCnt, color: 'var(--text3)' });
+    }
+    var display = top5;
+
     var cx=70, cy=70, R=60, ri=36;
     var paths = '';
     var angle = -Math.PI/2;
-    groupDone.forEach(function(x) {
+    display.forEach(function(x) {
       var slice = (x.cnt/totalDone)*2*Math.PI;
       if (slice < 0.001) return;
       var a2 = angle+slice;
@@ -984,34 +995,34 @@ function _buildPerfSupportSection(person, year) {
       angle = a2;
     });
     groupDone._svg =
-      '<svg viewBox="0 0 140 140" width="130" height="130" style="flex-shrink:0">'+
+      '<svg viewBox="0 0 140 140" width="120" height="120" style="flex-shrink:0">'+
         paths+
         '<text x="70" y="65" text-anchor="middle" style="font-size:18px;font-weight:700;fill:var(--text);font-variant-numeric:tabular-nums">'+totalDone+'</text>'+
         '<text x="70" y="80" text-anchor="middle" style="font-size:9px;font-weight:600;fill:var(--text3);text-transform:uppercase;letter-spacing:.05em">Done</text>'+
       '</svg>';
-    groupDone._legend = groupDone.map(function(x) {
+    groupDone._legend = display.map(function(x) {
       var pct = Math.round(x.cnt/totalDone*100);
-      return '<div style="display:flex;align-items:center;gap:6px;padding:3px 0">'+
+      return '<div style="display:flex;align-items:center;gap:6px;padding:4px 0">'+
         '<span style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:'+x.color+'"></span>'+
         '<span style="font-size:11px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+x.g+'">'+x.g+'</span>'+
-        '<span style="font-size:11px;font-weight:700;color:var(--text2);font-variant-numeric:tabular-nums;white-space:nowrap">'+x.cnt+' <span style="font-weight:400;color:var(--text3)">'+pct+'%</span></span>'+
+        '<span style="font-size:11px;font-weight:700;color:var(--text2);font-variant-numeric:tabular-nums;white-space:nowrap">('+x.cnt+') '+pct+'%</span>'+
       '</div>';
     }).join('');
   })();
 
-  var chart1b = '<div class="panel" style="flex:1;min-width:0">'+
+  var chart1b = '<div class="panel" style="flex:1;min-width:0;display:flex;flex-direction:column">'+
     '<div style="padding:9px 14px;border-bottom:1px solid var(--border)">'+
       '<span style="font-size:11px;font-weight:700;color:var(--text)">Done by Group</span>'+
     '</div>'+
-    '<div style="padding:12px 14px;display:flex;align-items:center;gap:12px">'+
+    '<div style="flex:1;padding:12px 14px;display:flex;align-items:center;gap:12px">'+
       (groupDone._svg||'<span style="color:var(--text3);font-size:11px">No done tasks</span>')+
-      '<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">'+
+      '<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">'+
         (groupDone._legend||'')+
       '</div>'+
     '</div>'+
   '</div>';
 
-  var chart1row = '<div style="display:flex;gap:12px;align-items:flex-start">'+chart1+chart1b+'</div>';
+  var chart1row = '<div style="display:flex;gap:12px;align-items:stretch">'+chart1+chart1b+'</div>';
 
   var activeQs = QS.filter(function(q){ return filtered.some(function(d){ return supQuarter(d)===q; }); });
 

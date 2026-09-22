@@ -907,6 +907,9 @@ function _buildPerfSupportSection(person, year) {
 
   /* ── Chart 1: By Quarter ── */
   var QS = ['Q1','Q2','Q3','Q4'];
+  var nowTag = '<span style="font-size:8px;background:var(--accent);color:#fff;padding:1px 5px;border-radius:3px;margin-left:4px;vertical-align:middle">now</span>';
+  var currentQStr = 'Q' + Math.ceil((new Date().getMonth()+1)/3);
+
   function qItems(q) { return filtered.filter(function(d){ return supQuarter(d)===q; }); }
 
   function makeQSumRow(label, items, isTot) {
@@ -928,7 +931,12 @@ function _buildPerfSupportSection(person, year) {
     '</tr>';
   }
 
-  var chart1Rows = QS.map(function(q){ return makeQSumRow(q, qItems(q), false); }).join('');
+  var chart1Rows = QS.map(function(q) {
+    var lbl = year !== 'All'
+      ? q + ' ' + year + (q === currentQStr ? nowTag : '')
+      : q;
+    return makeQSumRow(lbl, qItems(q), false);
+  }).join('');
   chart1Rows += makeQSumRow('Total', filtered, true);
 
   var chart1 = '<div class="panel">'+
@@ -946,7 +954,7 @@ function _buildPerfSupportSection(person, year) {
     '</table></div>'+
   '</div>';
 
-  /* ── Chart 2: Group × Quarter+Status matrix ── */
+  /* ── Chart 2: Group × Quarter (Total / Done / %) ── */
   var allGroups = [];
   filtered.forEach(function(d) {
     var g = supGroup(d);
@@ -954,79 +962,83 @@ function _buildPerfSupportSection(person, year) {
   });
   allGroups.sort();
 
-  var allStatuses = [];
-  filtered.forEach(function(d) {
-    if (d.Status && allStatuses.indexOf(d.Status) < 0) allStatuses.push(d.Status);
-  });
-  var statusOrder = ['In Progress','To do','Done'];
-  allStatuses.sort(function(a,b) {
-    var ai = statusOrder.indexOf(a); var bi = statusOrder.indexOf(b);
-    if (ai < 0) ai = 99; if (bi < 0) bi = 99;
-    return ai - bi;
-  });
-
   var activeQs = QS.filter(function(q){ return filtered.some(function(d){ return supQuarter(d)===q; }); });
-  var colDefs = [];
-  activeQs.forEach(function(q) {
-    allStatuses.forEach(function(s) { colDefs.push({ q: q, s: s }); });
-  });
 
-  /* header row 1: quarter spans */
-  var qSpans = {};
-  colDefs.forEach(function(c) { qSpans[c.q] = (qSpans[c.q]||0)+1; });
-  var hdr1 = '<tr><th style="text-align:left;padding:5px 10px;font-size:10px;font-weight:700;color:var(--text3)">Group</th>';
-  activeQs.forEach(function(q) {
-    hdr1 += '<th colspan="'+qSpans[q]+'" style="text-align:center;padding:5px 6px;font-size:10px;font-weight:700;color:var(--text);border-left:1px solid var(--border)">'+q+'</th>';
-  });
-  hdr1 += '<th style="text-align:center;padding:5px 6px;font-size:10px;font-weight:700;color:var(--text3);border-left:2px solid var(--border)">Total</th></tr>';
+  function qgStats(g, q) {
+    var items = filtered.filter(function(d){ return supGroup(d)===g && supQuarter(d)===q; });
+    var d_ = items.filter(function(d){ return isDoneStatus(d.Status); }).length;
+    var p_ = items.length ? Math.round(d_/items.length*100) : 0;
+    return { total: items.length, done: d_, pct: p_ };
+  }
+  function qStats(q) {
+    var items = filtered.filter(function(d){ return supQuarter(d)===q; });
+    var d_ = items.filter(function(d){ return isDoneStatus(d.Status); }).length;
+    var p_ = items.length ? Math.round(d_/items.length*100) : 0;
+    return { total: items.length, done: d_, pct: p_ };
+  }
 
-  /* header row 2: status sub-labels */
-  var seenQ = {};
+  function pctBadge(p) {
+    var c = p>=80?'var(--up)':p>=50?'var(--amber)':'var(--down)';
+    return '<span style="font-size:10px;font-weight:700;color:'+c+'">'+p+'%</span>';
+  }
+
+  /* header row 1: quarter spans (3 cols each: Total, Done, %) */
+  var hdr1 = '<tr>'+
+    '<th style="text-align:left;padding:5px 10px;font-size:10px;font-weight:700;color:var(--text3)">Group</th>';
+  activeQs.forEach(function(q) {
+    var lbl = year !== 'All' ? q + ' ' + year + (q===currentQStr?nowTag:'') : q;
+    hdr1 += '<th colspan="3" style="text-align:center;padding:5px 6px;font-size:10px;font-weight:700;color:var(--text);border-left:1px solid var(--border)">'+lbl+'</th>';
+  });
+  hdr1 += '<th colspan="3" style="text-align:center;padding:5px 6px;font-size:10px;font-weight:700;color:var(--text3);border-left:2px solid var(--border)">Total</th>';
+  hdr1 += '</tr>';
+
+  /* header row 2: sub-cols */
   var hdr2 = '<tr><th></th>';
-  colDefs.forEach(function(c) {
-    var brd = !seenQ[c.q] ? 'border-left:1px solid var(--border)' : '';
-    seenQ[c.q] = true;
-    var sColor = c.s==='Done'||c.s==='Closed'||c.s==='Resolved' ? 'color:var(--up)'
-      : c.s==='In Progress' ? 'color:var(--accent)' : 'color:var(--amber)';
-    hdr2 += '<th style="text-align:center;padding:3px 6px;font-size:10px;font-weight:600;white-space:nowrap;'+brd+';'+sColor+'">'+c.s+'</th>';
+  activeQs.forEach(function(q, qi) {
+    var brd = 'border-left:1px solid var(--border)';
+    hdr2 += '<th style="text-align:center;padding:3px 6px;font-size:10px;font-weight:600;color:var(--text2);'+brd+'">Total</th>';
+    hdr2 += '<th style="text-align:center;padding:3px 6px;font-size:10px;font-weight:600;color:var(--up)">Done</th>';
+    hdr2 += '<th style="text-align:center;padding:3px 6px;font-size:10px;font-weight:600;color:var(--text2)">%</th>';
   });
-  hdr2 += '<th style="border-left:2px solid var(--border)"></th></tr>';
+  hdr2 += '<th style="text-align:center;padding:3px 6px;font-size:10px;font-weight:600;color:var(--text2);border-left:2px solid var(--border)">Total</th>';
+  hdr2 += '<th style="text-align:center;padding:3px 6px;font-size:10px;font-weight:600;color:var(--up)">Done</th>';
+  hdr2 += '<th style="text-align:center;padding:3px 6px;font-size:10px;font-weight:600;color:var(--text2)">%</th>';
+  hdr2 += '</tr>';
 
   /* data rows */
-  function cellN(g, q, s) {
-    return filtered.filter(function(d){ return supGroup(d)===g && supQuarter(d)===q && d.Status===s; }).length;
-  }
-  function hmSpan(n) {
-    if (!n) return '<span style="color:var(--text3)">—</span>';
-    var op = Math.min(0.12 + (n/6)*0.72, 0.84);
-    var fg = op>0.55 ? '#fff' : 'var(--accent)';
-    return '<span style="display:inline-block;min-width:22px;height:20px;line-height:20px;border-radius:3px;padding:0 4px;font-size:11px;font-weight:700;background:rgba(88,166,255,'+op.toFixed(2)+');color:'+fg+'">'+n+'</span>';
-  }
-
   var matRows = allGroups.map(function(g) {
-    var seenQ2 = {};
-    var r = '<tr><td style="padding:5px 10px;font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;text-align:left">'+(g.replace(/_/g,' '))+'</td>';
-    colDefs.forEach(function(c) {
-      var brd = !seenQ2[c.q] ? 'border-left:1px solid var(--border)' : '';
-      seenQ2[c.q] = true;
-      r += '<td style="padding:5px 6px;text-align:center;'+brd+'">'+hmSpan(cellN(g,c.q,c.s))+'</td>';
+    var r = '<tr><td style="padding:5px 10px;font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;text-align:left">'+g+'</td>';
+    activeQs.forEach(function(q, qi) {
+      var s = qgStats(g, q);
+      var brd = 'border-left:1px solid var(--border)';
+      r += '<td style="padding:5px 6px;text-align:center;font-size:11px;font-variant-numeric:tabular-nums;'+brd+'">'+(s.total||'—')+'</td>';
+      r += '<td style="padding:5px 6px;text-align:center;font-size:11px;font-variant-numeric:tabular-nums;color:var(--up)">'+(s.done||'—')+'</td>';
+      r += '<td style="padding:5px 6px;text-align:center">'+(s.total ? pctBadge(s.pct) : '<span style="color:var(--text3)">—</span>')+'</td>';
     });
-    var gt = filtered.filter(function(d){ return supGroup(d)===g; }).length;
-    r += '<td style="padding:5px 8px;text-align:center;font-size:11px;font-weight:700;color:var(--text);border-left:2px solid var(--border)">'+gt+'</td>';
+    var gt = filtered.filter(function(d){ return supGroup(d)===g; });
+    var gd = gt.filter(function(d){ return isDoneStatus(d.Status); }).length;
+    var gp = gt.length ? Math.round(gd/gt.length*100) : 0;
+    r += '<td style="padding:5px 8px;text-align:center;font-size:11px;font-weight:700;color:var(--text);border-left:2px solid var(--border)">'+gt.length+'</td>';
+    r += '<td style="padding:5px 8px;text-align:center;font-size:11px;font-weight:700;color:var(--up)">'+gd+'</td>';
+    r += '<td style="padding:5px 8px;text-align:center">'+pctBadge(gp)+'</td>';
     r += '</tr>';
     return r;
   }).join('');
 
   /* total row */
-  var seenQ3 = {};
-  var totRow = '<tr style="border-top:2px solid var(--border);background:var(--surface2)"><td style="padding:5px 10px;font-size:11px;font-weight:700;color:var(--text);text-align:left">Total</td>';
-  colDefs.forEach(function(c) {
-    var brd = !seenQ3[c.q] ? 'border-left:1px solid var(--border)' : '';
-    seenQ3[c.q] = true;
-    var n = filtered.filter(function(d){ return supQuarter(d)===c.q && d.Status===c.s; }).length;
-    totRow += '<td style="padding:5px 6px;text-align:center;font-size:11px;font-weight:700;color:var(--text2);'+brd+'">'+(n||'—')+'</td>';
+  var totRow = '<tr style="border-top:2px solid var(--border);background:var(--surface2)">'+
+    '<td style="padding:5px 10px;font-size:11px;font-weight:700;color:var(--text);text-align:left">Total</td>';
+  activeQs.forEach(function(q) {
+    var s = qStats(q);
+    var brd = 'border-left:1px solid var(--border)';
+    totRow += '<td style="padding:5px 6px;text-align:center;font-size:11px;font-weight:700;color:var(--text);'+brd+'">'+s.total+'</td>';
+    totRow += '<td style="padding:5px 6px;text-align:center;font-size:11px;font-weight:700;color:var(--up)">'+s.done+'</td>';
+    totRow += '<td style="padding:5px 6px;text-align:center">'+pctBadge(s.pct)+'</td>';
   });
-  totRow += '<td style="padding:5px 8px;text-align:center;font-size:11px;font-weight:700;color:var(--text);border-left:2px solid var(--border)">'+filtered.length+'</td></tr>';
+  totRow += '<td style="padding:5px 8px;text-align:center;font-size:11px;font-weight:700;color:var(--text);border-left:2px solid var(--border)">'+filtered.length+'</td>';
+  totRow += '<td style="padding:5px 8px;text-align:center;font-size:11px;font-weight:700;color:var(--up)">'+done+'</td>';
+  totRow += '<td style="padding:5px 8px;text-align:center">'+pctBadge(pct)+'</td>';
+  totRow += '</tr>';
 
   var chart2 = '<div class="panel">'+
     '<div style="padding:9px 14px;border-bottom:1px solid var(--border)">'+

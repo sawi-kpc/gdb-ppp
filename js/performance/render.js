@@ -140,14 +140,26 @@ function _perfRender() {
   var nm = document.getElementById('perf-name');
   if (nm) nm.textContent = p;
 
+  /* For specific year: count only items with Target End date in that year (matches table logic) */
+  var _headerI1 = myI1, _headerI2 = myI2, _headerAll = myAll;
+  if (cy !== 'All') {
+    var _fy = parseInt(cy);
+    _headerI1 = myI1.filter(function(d){ return _perfInitQ(d,_fy)!==null; });
+    _headerI2 = myI2.filter(function(d){ return _perfInitQ(d,_fy)!==null; });
+    var _seen2 = {}; _headerAll = [];
+    _headerI1.concat(_headerI2).forEach(function(d){
+      var k=d.Key||d.key||''; if(!_seen2[k]){_seen2[k]=true;_headerAll.push(d);}
+    });
+  }
+
   var subEl = document.getElementById('perf-person-sub');
-  if (subEl) subEl.textContent = 'Lead: '+myI1.length+' · Support: '+myI2.length+' · Total: '+myAll.length+' initiatives';
+  if (subEl) subEl.textContent = 'Lead: '+_headerI1.length+' · Support: '+_headerI2.length+' · Total: '+_headerAll.length+' initiatives';
 
   /* Update initiative section sub-label */
   var initSub = document.getElementById('sec-init-sub');
-  if (initSub) initSub.textContent = myAll.length + ' initiatives' + (cy !== 'All' ? ' · ' + cy : '');
+  if (initSub) initSub.textContent = _headerAll.length + ' initiatives' + (cy !== 'All' ? ' · ' + cy : '');
   var snavInit = document.getElementById('snav-count-init');
-  if (snavInit) snavInit.textContent = myAll.length;
+  if (snavInit) snavInit.textContent = _headerAll.length;
 
   _buildPerfKpi(myI1, myI2, cy);
   _buildPerfOverviewByQuarter(myAll, myI1, myI2, cy);

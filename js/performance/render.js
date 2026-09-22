@@ -939,7 +939,7 @@ function _buildPerfSupportSection(person, year) {
   }).join('');
   chart1Rows += makeQSumRow('Total', filtered, true);
 
-  var chart1 = '<div class="panel" style="flex:1;min-width:0">'+
+  var chart1 = '<div class="panel" style="flex:2;min-width:0">'+
     '<div style="padding:9px 14px;border-bottom:1px solid var(--border)">'+
       '<span style="font-size:11px;font-weight:700;color:var(--text)">By Quarter</span>'+
     '</div>'+

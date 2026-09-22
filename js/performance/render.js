@@ -954,7 +954,7 @@ function _buildPerfSupportSection(person, year) {
     '</table></div>'+
   '</div>';
 
-  /* ── Chart 1b: % Complete by Group (side panel) ── */
+  /* ── Chart 1b: Done by Group — donut chart ── */
   var allGroups = [];
   filtered.forEach(function(d) {
     var g = supGroup(d);
@@ -962,25 +962,58 @@ function _buildPerfSupportSection(person, year) {
   });
   allGroups.sort();
 
-  /* build group completion bars */
-  var grpBars = allGroups.map(function(g) {
-    var gt = filtered.filter(function(d){ return supGroup(d)===g; });
-    var gd = gt.filter(function(d){ return isDoneStatus(d.Status); }).length;
-    var gp = gt.length ? Math.round(gd/gt.length*100) : 0;
-    var pc = gp>=80?'var(--up)':gp>=50?'var(--amber)':'var(--down)';
-    return '<div style="display:flex;align-items:center;gap:8px;padding:7px 14px;border-bottom:1px solid var(--border)">'+
-      '<span style="font-size:11px;font-weight:600;color:var(--text);flex:0 0 160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+g+'">'+g+'</span>'+
-      '<div class="ovr-rate-track" style="flex:1;height:6px"><div class="ovr-rate-fill" style="width:'+gp+'%;background:'+pc+'"></div></div>'+
-      '<span style="font-size:10px;font-weight:700;color:'+pc+';min-width:32px;text-align:right">'+gp+'%</span>'+
-      '<span style="font-size:10px;color:var(--text3);min-width:36px;text-align:right">'+gd+'/'+gt.length+'</span>'+
-    '</div>';
-  }).join('');
+  var PIE_COLORS = ['var(--accent)','var(--teal)','var(--amber)','var(--up)','var(--purple)','var(--down)','#79c0ff','#ffa657'];
+  var groupDone = allGroups.map(function(g,i) {
+    var cnt = filtered.filter(function(d){ return supGroup(d)===g && isDoneStatus(d.Status); }).length;
+    return { g: g, cnt: cnt, color: PIE_COLORS[i % PIE_COLORS.length] };
+  }).filter(function(x){ return x.cnt > 0; });
+
+  (function() {
+    var totalDone = groupDone.reduce(function(s,x){ return s+x.cnt; }, 0);
+    if (!totalDone) { groupDone._svg = ''; groupDone._legend = ''; return; }
+    var cx=70, cy=70, R=60, ri=36;
+    var paths = '';
+    var angle = -Math.PI/2;
+    groupDone.forEach(function(x) {
+      var slice = (x.cnt/totalDone)*2*Math.PI;
+      if (slice < 0.001) return;
+      var a2 = angle+slice;
+      var lg = slice>Math.PI?1:0;
+      var x1o=(cx+R*Math.cos(angle)).toFixed(2), y1o=(cy+R*Math.sin(angle)).toFixed(2);
+      var x2o=(cx+R*Math.cos(a2)).toFixed(2),    y2o=(cy+R*Math.sin(a2)).toFixed(2);
+      var x1i=(cx+ri*Math.cos(angle)).toFixed(2), y1i=(cy+ri*Math.sin(angle)).toFixed(2);
+      var x2i=(cx+ri*Math.cos(a2)).toFixed(2),    y2i=(cy+ri*Math.sin(a2)).toFixed(2);
+      paths += '<path d="M'+x1o+','+y1o+' A'+R+','+R+' 0 '+lg+',1 '+x2o+','+y2o+
+        ' L'+x2i+','+y2i+' A'+ri+','+ri+' 0 '+lg+',0 '+x1i+','+y1i+' Z"'+
+        ' style="fill:'+x.color+'" stroke="var(--surface)" stroke-width="2"/>';
+      angle = a2;
+    });
+    groupDone._svg =
+      '<svg viewBox="0 0 140 140" width="130" height="130" style="flex-shrink:0">'+
+        paths+
+        '<text x="70" y="65" text-anchor="middle" style="font-size:18px;font-weight:700;fill:var(--text);font-variant-numeric:tabular-nums">'+totalDone+'</text>'+
+        '<text x="70" y="80" text-anchor="middle" style="font-size:9px;font-weight:600;fill:var(--text3);text-transform:uppercase;letter-spacing:.05em">Done</text>'+
+      '</svg>';
+    groupDone._legend = groupDone.map(function(x) {
+      var pct = Math.round(x.cnt/totalDone*100);
+      return '<div style="display:flex;align-items:center;gap:6px;padding:3px 0">'+
+        '<span style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:'+x.color+'"></span>'+
+        '<span style="font-size:11px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+x.g+'">'+x.g+'</span>'+
+        '<span style="font-size:11px;font-weight:700;color:var(--text2);font-variant-numeric:tabular-nums;white-space:nowrap">'+x.cnt+' <span style="font-weight:400;color:var(--text3)">'+pct+'%</span></span>'+
+      '</div>';
+    }).join('');
+  })();
 
   var chart1b = '<div class="panel" style="flex:1;min-width:0">'+
     '<div style="padding:9px 14px;border-bottom:1px solid var(--border)">'+
-      '<span style="font-size:11px;font-weight:700;color:var(--text)">% Complete by Group</span>'+
+      '<span style="font-size:11px;font-weight:700;color:var(--text)">Done by Group</span>'+
     '</div>'+
-    grpBars+
+    '<div style="padding:12px 14px;display:flex;align-items:center;gap:12px">'+
+      (groupDone._svg||'<span style="color:var(--text3);font-size:11px">No done tasks</span>')+
+      '<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">'+
+        (groupDone._legend||'')+
+      '</div>'+
+    '</div>'+
   '</div>';
 
   var chart1row = '<div style="display:flex;gap:12px;align-items:flex-start">'+chart1+chart1b+'</div>';

@@ -1039,9 +1039,35 @@ function _buildPerfSupportSection(person, year) {
     return { total: items.length, done: d_, pct: p_ };
   }
 
-  function pctBadge(p) {
+  /* pre-compute max total for heatmap scaling */
+  var _hmMax = 1;
+  allGroups.forEach(function(g) {
+    activeQs.forEach(function(q) {
+      var n = qgStats(g,q).total; if (n > _hmMax) _hmMax = n;
+    });
+  });
+  if (filtered.length > _hmMax) _hmMax = filtered.length;
+
+  function hmBg(n) {
+    if (!n) return '';
+    var op = Math.min(0.08 + (n/_hmMax)*0.52, 0.6).toFixed(2);
+    return 'background:rgba(88,166,255,'+op+')';
+  }
+  function doneBg(n) {
+    if (!n) return '';
+    var op = Math.min(0.08 + (n/_hmMax)*0.52, 0.6).toFixed(2);
+    return 'background:rgba(63,185,80,'+op+')';
+  }
+  function pctBar(p, isTot) {
+    if (p === null || p === undefined) return '<span style="color:var(--text3)">—</span>';
     var c = p>=80?'var(--up)':p>=50?'var(--amber)':'var(--down)';
-    return '<span style="font-size:10px;font-weight:700;color:'+c+'">'+p+'%</span>';
+    var fw = isTot ? '700' : '600';
+    return '<div style="display:flex;align-items:center;gap:4px;min-width:70px">'+
+      '<div style="flex:1;height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;border:1px solid var(--border)">'+
+        '<div style="height:100%;border-radius:2px;background:'+c+';width:'+p+'%"></div>'+
+      '</div>'+
+      '<span style="font-size:10px;font-weight:'+fw+';color:'+c+';white-space:nowrap;min-width:28px;text-align:right">'+p+'%</span>'+
+    '</div>';
   }
 
   /* header row 1: quarter spans (3 cols each: Total, Done, %) */
@@ -1060,11 +1086,11 @@ function _buildPerfSupportSection(person, year) {
     var brd = 'border-left:1px solid var(--border)';
     hdr2 += '<th style="text-align:center;padding:3px 6px;font-size:10px;font-weight:600;color:var(--text2);'+brd+'">Total</th>';
     hdr2 += '<th style="text-align:center;padding:3px 6px;font-size:10px;font-weight:600;color:var(--up)">Done</th>';
-    hdr2 += '<th style="text-align:center;padding:3px 6px;font-size:10px;font-weight:600;color:var(--text2)">%</th>';
+    hdr2 += '<th style="text-align:center;padding:3px 8px;font-size:10px;font-weight:600;color:var(--text2);min-width:90px">%</th>';
   });
   hdr2 += '<th style="text-align:center;padding:3px 6px;font-size:10px;font-weight:600;color:var(--text2);border-left:2px solid var(--border)">Total</th>';
   hdr2 += '<th style="text-align:center;padding:3px 6px;font-size:10px;font-weight:600;color:var(--up)">Done</th>';
-  hdr2 += '<th style="text-align:center;padding:3px 6px;font-size:10px;font-weight:600;color:var(--text2)">%</th>';
+  hdr2 += '<th style="text-align:center;padding:3px 8px;font-size:10px;font-weight:600;color:var(--text2);min-width:90px">%</th>';
   hdr2 += '</tr>';
 
   /* data rows */
@@ -1073,16 +1099,18 @@ function _buildPerfSupportSection(person, year) {
     activeQs.forEach(function(q, qi) {
       var s = qgStats(g, q);
       var brd = 'border-left:1px solid var(--border)';
-      r += '<td style="padding:5px 6px;text-align:center;font-size:11px;font-variant-numeric:tabular-nums;'+brd+'">'+(s.total||'—')+'</td>';
-      r += '<td style="padding:5px 6px;text-align:center;font-size:11px;font-variant-numeric:tabular-nums;color:var(--up)">'+(s.done||'—')+'</td>';
-      r += '<td style="padding:5px 6px;text-align:center">'+(s.total ? pctBadge(s.pct) : '<span style="color:var(--text3)">—</span>')+'</td>';
+      var tbg = s.total ? hmBg(s.total) : '';
+      var dbg = s.done  ? doneBg(s.done) : '';
+      r += '<td style="padding:5px 6px;text-align:center;font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;'+brd+';'+tbg+'">'+(s.total||'—')+'</td>';
+      r += '<td style="padding:5px 6px;text-align:center;font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;'+dbg+'">'+(s.done||'—')+'</td>';
+      r += '<td style="padding:4px 8px">'+(s.total ? pctBar(s.pct,false) : '<span style="color:var(--text3)">—</span>')+'</td>';
     });
     var gt = filtered.filter(function(d){ return supGroup(d)===g; });
     var gd = gt.filter(function(d){ return isDoneStatus(d.Status); }).length;
     var gp = gt.length ? Math.round(gd/gt.length*100) : 0;
-    r += '<td style="padding:5px 8px;text-align:center;font-size:11px;font-weight:700;color:var(--text);border-left:2px solid var(--border)">'+gt.length+'</td>';
-    r += '<td style="padding:5px 8px;text-align:center;font-size:11px;font-weight:700;color:var(--up)">'+gd+'</td>';
-    r += '<td style="padding:5px 8px;text-align:center">'+pctBadge(gp)+'</td>';
+    r += '<td style="padding:5px 8px;text-align:center;font-size:11px;font-weight:700;border-left:2px solid var(--border);'+hmBg(gt.length)+'">'+gt.length+'</td>';
+    r += '<td style="padding:5px 8px;text-align:center;font-size:11px;font-weight:700;'+doneBg(gd)+'">'+gd+'</td>';
+    r += '<td style="padding:4px 8px">'+(gt.length ? pctBar(gp,true) : '<span style="color:var(--text3)">—</span>')+'</td>';
     r += '</tr>';
     return r;
   }).join('');
@@ -1093,11 +1121,11 @@ function _buildPerfSupportSection(person, year) {
   activeQs.forEach(function(q) {
     var s = qStats(q);
     var brd = 'border-left:1px solid var(--border)';
-    totRow += '<td style="padding:5px 6px;text-align:center;font-size:11px;font-weight:700;color:var(--text);'+brd+'">'+s.total+'</td>';
+    totRow += '<td style="padding:5px 6px;text-align:center;font-size:11px;font-weight:700;'+brd+'">'+s.total+'</td>';
     totRow += '<td style="padding:5px 6px;text-align:center;font-size:11px;font-weight:700;color:var(--up)">'+s.done+'</td>';
-    totRow += '<td style="padding:5px 6px;text-align:center">'+pctBadge(s.pct)+'</td>';
+    totRow += '<td style="padding:4px 8px">'+pctBar(s.pct,true)+'</td>';
   });
-  totRow += '<td style="padding:5px 8px;text-align:center;font-size:11px;font-weight:700;color:var(--text);border-left:2px solid var(--border)">'+filtered.length+'</td>';
+  totRow += '<td style="padding:5px 8px;text-align:center;font-size:11px;font-weight:700;border-left:2px solid var(--border)">'+filtered.length+'</td>';
   totRow += '<td style="padding:5px 8px;text-align:center;font-size:11px;font-weight:700;color:var(--up)">'+done+'</td>';
   totRow += '<td style="padding:5px 8px;text-align:center">'+pctBadge(pct)+'</td>';
   totRow += '</tr>';

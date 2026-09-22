@@ -405,31 +405,25 @@ function _buildPerfCompletionHeatmap(myAll, myI1, myI2, year) {
     });
   });
 
-  function hmBg(val, status, role) {
-    if (!val||!gmax) return null;
-    var a = 0.15+0.72*(val/gmax);
-    if (status==='Done')                              return _perfRgba(_perfCssVar('--chart-green'), a);
-    if (status==='Delivery'||status==='Ready for Delivery') return _perfRgba(_perfCssVar(role==='lead'?'--chart-blue':'--chart-teal'), a);
-    if (status==='Parking Lot')                       return _perfRgba(_perfCssVar('--chart-dim')||'#888', Math.min(a,0.55));
-    return _perfRgba(_perfCssVar('--chart-amber'), a);
+  function hmBg(val, maxVal) {
+    if (!val || !maxVal) return null;
+    var op = Math.min(0.08 + (val/maxVal)*0.52, 0.6).toFixed(2);
+    return 'rgba(88,166,255,'+op+')';
   }
-  function hmBgComb(val, status) {
-    if (!val||!maxComb) return null;
-    var a = 0.15+0.72*(val/maxComb);
-    if (status==='Done')                              return _perfRgba(_perfCssVar('--chart-green'), a);
-    if (status==='Delivery'||status==='Ready for Delivery') return _perfRgba(_perfCssVar('--chart-blue'), a);
-    if (status==='Parking Lot')                       return _perfRgba(_perfCssVar('--chart-dim')||'#888', Math.min(a,0.55));
-    return _perfRgba(_perfCssVar('--chart-amber'), a);
+  function hmBgDone(val, maxVal) {
+    if (!val || !maxVal) return null;
+    var op = Math.min(0.08 + (val/maxVal)*0.52, 0.6).toFixed(2);
+    return 'rgba(63,185,80,'+op+')';
   }
   function hmCell(val, status, role) {
-    var bg = hmBg(val, status, role);
+    var bg = status==='Done' ? hmBgDone(val, gmax) : hmBg(val, gmax);
     if (!bg) return '<span class="hm hm-0">—</span>';
-    return '<span class="hm" style="background:'+bg+';color:#fff">'+val+'</span>';
+    return '<span class="hm" style="background:'+bg+';color:var(--text)">'+val+'</span>';
   }
   function hmCellComb(val, status) {
-    var bg = hmBgComb(val, status);
+    var bg = status==='Done' ? hmBgDone(val, maxComb) : hmBg(val, maxComb);
     if (!bg) return '<span class="hm hm-0">—</span>';
-    return '<span class="hm" style="background:'+bg+';color:#fff">'+val+'</span>';
+    return '<span class="hm" style="background:'+bg+';color:var(--text)">'+val+'</span>';
   }
 
   var N = PERF_STAGES.length;

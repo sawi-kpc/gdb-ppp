@@ -203,8 +203,13 @@ window.addEventListener('DOMContentLoaded', function() {
     );
 
     loadSupportData(
-      function(data) { _perf.supData = data || []; _perfMarkReady('sup'); },
-      function(err)  { console.warn('[Perf] Support:', err); _perf.supData = []; _perfMarkReady('sup'); }
+      function(data) {
+        var loaded = data || [];
+        /* Guard: don't overwrite non-empty cache with empty (SWR background re-fetch edge case) */
+        if (loaded.length > 0 || _perf.supData.length === 0) { _perf.supData = loaded; }
+        _perfMarkReady('sup');
+      },
+      function(err)  { console.warn('[Perf] Support:', err); if (!_perf.supData.length) _perf.supData = []; _perfMarkReady('sup'); }
     );
   });
 });

@@ -618,31 +618,25 @@ function _buildPerfKpi(myI1, myI2, year) {
   var i2B = _perfFilterB(myI2);
 
   var tiles = [
-    { label: 'Lead Done',       color: 'var(--accent)', inverse: false,
+    { label: 'Lead Done',       color: 'var(--accent)', arcColor: 'var(--up)',
       a: { v: i1A.filter(function(d){ return d.Status==='Done'; }).length, total: i1A.length },
       b: { v: i1B.filter(function(d){ return d.Status==='Done'; }).length, total: i1B.length } },
-    { label: 'Lead On Time',    color: 'var(--accent)', inverse: false,
+    { label: 'Lead On Time',    color: 'var(--accent)', arcColor: 'var(--accent)',
       a: { v: i1A.filter(_perfIsOnTime).length, total: i1A.length },
       b: { v: i1B.filter(_perfIsOnTime).length, total: i1B.length } },
-    { label: 'Lead Delayed',    color: 'var(--accent)', inverse: true,
+    { label: 'Lead Delayed',    color: 'var(--accent)', arcColor: 'var(--down)',
       a: { v: i1A.filter(_perfIsDelayed).length, total: i1A.length },
       b: { v: i1B.filter(_perfIsDelayed).length, total: i1B.length } },
-    { label: 'Support Done',    color: 'var(--teal)', inverse: false,
+    { label: 'Support Done',    color: 'var(--teal)', arcColor: 'var(--up)',
       a: { v: i2A.filter(function(d){ return d.Status==='Done'; }).length, total: i2A.length },
       b: { v: i2B.filter(function(d){ return d.Status==='Done'; }).length, total: i2B.length } },
-    { label: 'Support On Time', color: 'var(--teal)', inverse: false,
+    { label: 'Support On Time', color: 'var(--teal)', arcColor: 'var(--accent)',
       a: { v: i2A.filter(_perfIsOnTime).length, total: i2A.length },
       b: { v: i2B.filter(_perfIsOnTime).length, total: i2B.length } },
-    { label: 'Support Delayed', color: 'var(--teal)', inverse: true,
+    { label: 'Support Delayed', color: 'var(--teal)', arcColor: 'var(--down)',
       a: { v: i2A.filter(_perfIsDelayed).length, total: i2A.length },
       b: { v: i2B.filter(_perfIsDelayed).length, total: i2B.length } }
   ];
-
-  function _kpiColor(pct, inverse) {
-    if (pct <= 0) return 'var(--text3)';
-    if (inverse) return pct <= 0.2 ? 'var(--amber)' : 'var(--down)';
-    return pct >= 0.8 ? 'var(--up)' : pct >= 0.5 ? 'var(--amber)' : 'var(--down)';
-  }
 
   function makeTile(t) {
     function donutSvg(v, total, size) {
@@ -653,20 +647,19 @@ function _buildPerfKpi(myI1, myI2, year) {
       var filled = +(pct * circ).toFixed(3);
       var empty  = +(circ - filled).toFixed(3);
       var c = size / 2;
-      var arcColor = _kpiColor(pct, t.inverse);
       var arc = pct <= 0
         ? ' stroke="none"'
         : ' stroke-dasharray="'+filled+' '+Math.max(empty, 0)+'" stroke-linecap="round"';
       return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'" style="flex-shrink:0;transform:rotate(-90deg)">'+
         '<circle cx="'+c+'" cy="'+c+'" r="'+r+'" fill="none" stroke="var(--border)" stroke-width="'+sw+'"/>'+
-        '<circle cx="'+c+'" cy="'+c+'" r="'+r+'" fill="none" stroke="'+arcColor+'" stroke-width="'+sw+'"'+arc+'/>'+
+        '<circle cx="'+c+'" cy="'+c+'" r="'+r+'" fill="none" stroke="'+t.arcColor+'" stroke-width="'+sw+'"'+arc+'/>'+
       '</svg>';
     }
     function half(data, scopeLabel, big) {
       var sub = data.total > 0 ? 'of '+data.total : '';
       var size = big ? 36 : 28;
       var pct = data.total > 0 ? data.v / data.total : 0;
-      var numColor = _kpiColor(pct, t.inverse);
+      var numColor = pct <= 0 ? 'var(--text3)' : t.arcColor;
       return '<div style="padding:'+(big?'5px 10px 2px':'2px 10px 5px')+';display:flex;align-items:center;justify-content:space-between;gap:4px">'+
         '<div>'+
           '<div style="display:flex;align-items:baseline;gap:3px">'+

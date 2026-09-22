@@ -78,7 +78,7 @@ function loadIssueData(onSuccess, onError, _bgRevalidate) {
     if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('hide');
     if (typeof onError === 'function')
       onError('Request timed out. Please check your network connection or try again later.');
-  }, 15000);
+  }, 8000);
 
   window[cbName] = function(json) {
     if (done) return;

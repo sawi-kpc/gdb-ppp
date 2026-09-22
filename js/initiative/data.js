@@ -167,6 +167,12 @@ async function loadData(){
   }
 
   if (!_swr) {
+    var _embInit = getEmbedded();
+    if (_embInit && _embInit.length) {
+      allData = _embInit;
+      renderAll();
+      if (typeof window.onDataReady === 'function') window.onDataReady(allData);
+    }
     (function(){var _e=document.getElementById('refresh-time');if(_e)_e.textContent='Fetching\u2026';})();
     if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('loading', 'Loading…');
   }

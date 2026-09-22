@@ -865,11 +865,6 @@ function _buildPerfSupportSection(person, year) {
   var subEl = document.getElementById('sec-sup-sub');
   if (subEl) subEl.textContent = myTasks.length + ' tasks' + (year !== 'All' ? ' · ' + year : '');
 
-  if (!filtered.length) {
-    el.innerHTML = '<div class="panel">'+_perfEmptyPanel('Support Tasks','No support tasks for this person / year')+'</div>';
-    return;
-  }
-
   function stTagSup(s) {
     var isDone = isDoneStatus(s);
     var st = isDone

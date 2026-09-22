@@ -259,6 +259,7 @@ function _perfQTable(items, year) {
   }
 
   var rows = '';
+  var totalItems = items;
   if (year === 'All') {
     var yearMap = {};
     items.forEach(function(d){
@@ -270,6 +271,7 @@ function _perfQTable(items, year) {
     var years = Object.keys(yearMap).sort();
     if (!years.length) return '<div style="padding:10px;font-size:11px;color:var(--text3)">No data</div>';
     years.forEach(function(yr){ rows += makeQRow(yr, yearMap[yr], false); });
+    totalItems = items;
   } else {
     var filterYear = parseInt(year);
     var currentQ = Math.ceil((new Date().getMonth()+1)/3);
@@ -279,9 +281,10 @@ function _perfQTable(items, year) {
         (q===currentQ?' <span style="font-size:8px;background:var(--accent);color:#fff;padding:1px 5px;border-radius:3px;margin-left:3px;vertical-align:middle">now</span>':'');
       rows += makeQRow(lbl, inQ, false);
     });
+    totalItems = items.filter(function(d){ return _perfInitQ(d, filterYear) !== null; });
   }
   if (!rows) return '<div style="padding:10px;font-size:11px;color:var(--text3)">No data</div>';
-  rows += makeQRow('Total', items, true);
+  rows += makeQRow('Total', totalItems, true);
   return '<div class="stbl-wrap"><table class="stbl" style="min-width:300px">'+thead+'<tbody>'+rows+'</tbody></table></div>';
 }
 

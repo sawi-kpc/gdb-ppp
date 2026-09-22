@@ -49,20 +49,21 @@ function getIssueCacheAge() {
 }
 
 /* ── JSONP fetch ────────────────────────────────────────────── */
-function loadIssueData(onSuccess, onError) {
-  /* 1. Serve from cache if still fresh */
+function loadIssueData(onSuccess, onError, _bgRevalidate) {
+  /* 1. SWR: serve from cache immediately, revalidate in background */
   var cached = _issueCacheGet();
-  if (cached) {
+  if (cached && !_bgRevalidate) {
     issueData = cached.data;
     var age = getIssueCacheAge();
     if (typeof gdbSetCacheBadge === 'function')
       gdbSetCacheBadge('cached', age ? '⚡ Cached · ' + age.label : '⚡ Cached');
     if (typeof onSuccess === 'function') onSuccess(issueData);
+    setTimeout(function(){ loadIssueData(onSuccess, null, true); }, 0);
     return;
   }
 
   /* 2. Fetch live from Apps Script */
-  if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('loading', 'Loading…');
+  if (!_bgRevalidate && typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('loading', 'Loading…');
 
   var cbName = '_gdbIssueCb_' + Date.now();
   var script = document.createElement('script');

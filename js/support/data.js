@@ -49,20 +49,21 @@ function getSupportCacheAge() {
 }
 
 /* ── JSONP fetch ────────────────────────────────────────────── */
-function loadSupportData(onSuccess, onError) {
-  /* 1. Serve from cache if still fresh */
+function loadSupportData(onSuccess, onError, _bgRevalidate) {
+  /* 1. SWR: serve from cache immediately, revalidate in background */
   var cached = _supCacheGet();
-  if (cached) {
+  if (cached && !_bgRevalidate) {
     supportData = cached.data;
     var age = getSupportCacheAge();
     if (typeof gdbSetCacheBadge === 'function')
       gdbSetCacheBadge('cached', age ? '⚡ Cached · ' + age.label : '⚡ Cached');
     if (typeof onSuccess === 'function') onSuccess(supportData);
+    setTimeout(function(){ loadSupportData(onSuccess, null, true); }, 0);
     return;
   }
 
   /* 2. Fetch live */
-  if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('loading', 'Loading…');
+  if (!_bgRevalidate && typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('loading', 'Loading…');
 
   var cbName = '_gdbSupCb_' + Date.now();
   var script = document.createElement('script');

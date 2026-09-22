@@ -153,8 +153,9 @@ function parseSheetRows(text,embeddedData){
 
 /* Data load — 3-tier: Apps Script → CSV direct → embedded */
 async function loadData(){
-  /* ── Initiative cache check ──────────────────────────── */
+  /* ── SWR: serve stale cache immediately, revalidate in background ── */
   var _iniCached = _iniCacheGet();
+  var _swr = false;
   if (_iniCached) {
     allData = _iniCached.data;
     var _age = getIniCacheAge();
@@ -162,11 +163,13 @@ async function loadData(){
       gdbSetCacheBadge('cached', _age ? '⚡ Cached · ' + _age.label : '⚡ Cached');
     renderAll();
     if (typeof window.onDataReady === 'function') window.onDataReady(allData);
-    return;
+    _swr = true; /* continue to fetch fresh data silently */
   }
 
-  (function(){var _e=document.getElementById('refresh-time');if(_e)_e.textContent='Fetching\u2026';})();
-  if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('loading', 'Loading…');
+  if (!_swr) {
+    (function(){var _e=document.getElementById('refresh-time');if(_e)_e.textContent='Fetching\u2026';})();
+    if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('loading', 'Loading…');
+  }
   let fetched=false;
   const ts=()=>new Date().toLocaleString('en-GB',{timeZone:'Asia/Bangkok',hour12:false,day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
   if(!fetched&&CONFIG.APPS_SCRIPT_URL){
@@ -180,12 +183,15 @@ async function loadData(){
   if(!fetched){
     try{const proxy='https://corsproxy.io/?'+encodeURIComponent(CONFIG.SHEET_URL);const r=await fetch(proxy);if(!r.ok)throw new Error();const parsed=parseSheetRows(await r.text(),getEmbedded());if(parsed.length>0){allData=parsed;fetched=true;(function(){var _e=document.getElementById('refresh-time');if(_e)_e.textContent=ts()+' (via proxy)';})();}}catch(e){console.warn('[GDB] Proxy:',e.message);}
   }
-  if(!fetched){allData=getEmbedded();
+  if(!fetched && !_swr){allData=getEmbedded();
   _iniCacheSet(allData);
   if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('live', '● Live data');;const _now=new Date();(function(){var _e=document.getElementById('refresh-time');if(_e)_e.textContent='\uD83D\uDCE6 Embedded data · '+_now.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+_now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+' — set APPS_SCRIPT_URL for live';})();}
   renderAll();
-  if (typeof window.onDataReady === 'function') { window.onDataReady(allData); }
-}
+  /* SWR: only re-render when fresh network data arrived */
+  if (fetched || !_swr) {
+    renderAll();
+    if (typeof window.onDataReady === 'function') { window.onDataReady(allData); }
+  }
 
 /* ── Initiatives List ────────────────────────────── */
 function renderAll(){

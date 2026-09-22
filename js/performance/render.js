@@ -939,7 +939,7 @@ function _buildPerfSupportSection(person, year) {
   }).join('');
   chart1Rows += makeQSumRow('Total', filtered, true);
 
-  var chart1 = '<div class="panel">'+
+  var chart1 = '<div class="panel" style="flex:1;min-width:0">'+
     '<div style="padding:9px 14px;border-bottom:1px solid var(--border)">'+
       '<span style="font-size:11px;font-weight:700;color:var(--text)">By Quarter</span>'+
     '</div>'+
@@ -954,13 +954,36 @@ function _buildPerfSupportSection(person, year) {
     '</table></div>'+
   '</div>';
 
-  /* ── Chart 2: Group × Quarter (Total / Done / %) ── */
+  /* ── Chart 1b: % Complete by Group (side panel) ── */
   var allGroups = [];
   filtered.forEach(function(d) {
     var g = supGroup(d);
     if (allGroups.indexOf(g) < 0) allGroups.push(g);
   });
   allGroups.sort();
+
+  /* build group completion bars */
+  var grpBars = allGroups.map(function(g) {
+    var gt = filtered.filter(function(d){ return supGroup(d)===g; });
+    var gd = gt.filter(function(d){ return isDoneStatus(d.Status); }).length;
+    var gp = gt.length ? Math.round(gd/gt.length*100) : 0;
+    var pc = gp>=80?'var(--up)':gp>=50?'var(--amber)':'var(--down)';
+    return '<div style="display:flex;align-items:center;gap:8px;padding:7px 14px;border-bottom:1px solid var(--border)">'+
+      '<span style="font-size:11px;font-weight:600;color:var(--text);flex:0 0 160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+g+'">'+g+'</span>'+
+      '<div class="ovr-rate-track" style="flex:1;height:6px"><div class="ovr-rate-fill" style="width:'+gp+'%;background:'+pc+'"></div></div>'+
+      '<span style="font-size:10px;font-weight:700;color:'+pc+';min-width:32px;text-align:right">'+gp+'%</span>'+
+      '<span style="font-size:10px;color:var(--text3);min-width:36px;text-align:right">'+gd+'/'+gt.length+'</span>'+
+    '</div>';
+  }).join('');
+
+  var chart1b = '<div class="panel" style="flex:1;min-width:0">'+
+    '<div style="padding:9px 14px;border-bottom:1px solid var(--border)">'+
+      '<span style="font-size:11px;font-weight:700;color:var(--text)">% Complete by Group</span>'+
+    '</div>'+
+    grpBars+
+  '</div>';
+
+  var chart1row = '<div style="display:flex;gap:12px;align-items:flex-start">'+chart1+chart1b+'</div>';
 
   var activeQs = QS.filter(function(q){ return filtered.some(function(d){ return supQuarter(d)===q; }); });
 
@@ -1087,5 +1110,5 @@ function _buildPerfSupportSection(person, year) {
       '</table></div>'+
     '</div>'+
   '</div>';
-  el.innerHTML = kpiPanel + chart1 + chart2 + taskPanel;
+  el.innerHTML = kpiPanel + chart1row + chart2 + taskPanel;
 }

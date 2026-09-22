@@ -526,10 +526,13 @@ function gdbAuthGuard(onUser) {
     _unsub();
     setGdbUser(user);
     _gdbFavInit(user.uid);
-    /* Show Performance nav link only for allowed emails */
+    /* Show Performance nav link for PERF_ALLOWED (admin) and Group 2 (personal-only) */
     var _perfAllowed=['sawitree.jakkrawannit@kingpower.com','chawanop.witthayaphirak@kingpower.com','petchpailin.tocharoen@kingpower.com'];
+    var _perfNames=['chalotorn','chawanop','natpapat','petchpailin','sawitree','sodsaran','somrythi'];
     var _perfEl=document.getElementById('gdb-nav-perf');
-    if(_perfEl && _perfAllowed.indexOf((user.email||'').toLowerCase())>=0){
+    var _perfEmail=(user.email||'').toLowerCase();
+    var _perfLocal=_perfEmail.split('@')[0];
+    if(_perfEl&&(_perfAllowed.indexOf(_perfEmail)>=0||_perfNames.some(function(n){return _perfLocal.startsWith(n);}))){
       _perfEl.style.display='';
     }
     if (typeof onUser === 'function') onUser(user, _auth);

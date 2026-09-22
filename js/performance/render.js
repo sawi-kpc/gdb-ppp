@@ -240,26 +240,13 @@ function _perfQTable(items, year) {
 
   function dash() { return '<span style="color:var(--text3)">—</span>'; }
 
-  /* pre-compute per-quarter max for heatmap scaling */
-  var _qMax = { total: 1, onTime: 1 };
-  (function() {
-    var filterYear2 = year === 'All' ? null : parseInt(year);
-    var quarters = [1,2,3,4];
-    quarters.forEach(function(q) {
-      var inQ = filterYear2
-        ? items.filter(function(d){ return _perfInitQ(d,filterYear2)===q; })
-        : items;
-      var t = inQ.length;
-      var ot = inQ.filter(_perfIsOnTime).length;
-      var dl = inQ.filter(_perfIsDelayed).length;
-      if (t  > _qMax.total)   _qMax.total   = t;
-      if (ot > _qMax.onTime)  _qMax.onTime  = ot;
-    });
-  })();
-  function _qHmBg(val, maxVal, r, g, b) {
-    if (!val || !maxVal) return '';
-    var op = Math.min(0.08 + (val/maxVal)*0.52, 0.6).toFixed(2);
-    return ';background:rgba('+r+','+g+','+b+','+op+')';
+  function _qChip(val, cv) {
+    if (!val) return dash();
+    var hx = _perfCssVar(cv);
+    var bg = _perfRgba(hx, 0.12);
+    var bd = _perfRgba(hx, 0.28);
+    return '<span style="display:inline-block;padding:1px 8px;border-radius:4px;font-size:11px;font-weight:700;'+
+      'background:'+bg+';color:var('+cv+');border:1px solid '+bd+';font-variant-numeric:tabular-nums">'+val+'</span>';
   }
 
   function makeQRow(label, rowItems, isTotalRow) {
@@ -283,13 +270,11 @@ function _perfQTable(items, year) {
         '<td style="'+brd+'">'+pctCell+'</td>'+
         '</tr>';
     }
-    var bgT  = _qHmBg(total,  _qMax.total,  88,166,255);
-    var bgOT = _qHmBg(onTime, _qMax.onTime, 63,185,80);
     return '<tr>'+
       '<td class="col-person">'+label+'</td>'+
-      '<td class="col-total" style="text-align:center'+bgT+'">'+total+'</td>'+
-      '<td style="text-align:center;color:var(--up)'+bgOT+'">'+(onTime||dash())+'</td>'+
-      '<td style="text-align:center;color:var(--down)">'+(delayed||dash())+'</td>'+
+      '<td class="col-total" style="text-align:center">'+_qChip(total,'--accent')+'</td>'+
+      '<td style="text-align:center">'+_qChip(onTime,'--up')+'</td>'+
+      '<td style="text-align:center">'+_qChip(delayed,'--down')+'</td>'+
       '<td>'+pctCell+'</td>'+
       '</tr>';
   }
@@ -384,47 +369,25 @@ function _buildPerfCompletionHeatmap(myAll, myI1, myI2, year) {
 
   var ST_ABBR = ['Parking Lot','Budget Appr.','Discovery','Ready','Delivery','Done'];
 
-  /* Global max for consistent color scale */
-  var gmax = 0, maxComb = 0;
-  [myI1, myI2, myAll].forEach(function(pool) {
-    PERF_GOAL_ORDER.concat(['']).forEach(function(goal) {
-      PERF_STAGES.forEach(function(st) {
-        var v = pool.filter(function(d){
-          return (goal===''?!(d['Project Goal']||'').trim():(d['Project Goal']||'').trim()===goal) && d.Status===st;
-        }).length;
-        if (v > gmax) gmax = v;
-      });
-    });
-  });
-  PERF_GOAL_ORDER.concat(['']).forEach(function(goal) {
-    PERF_STAGES.forEach(function(st) {
-      var v = myAll.filter(function(d){
-        return (goal===''?!(d['Project Goal']||'').trim():(d['Project Goal']||'').trim()===goal) && d.Status===st;
-      }).length;
-      if (v > maxComb) maxComb = v;
-    });
-  });
-
-  function hmBg(val, maxVal) {
-    if (!val || !maxVal) return null;
-    var op = Math.min(0.08 + (val/maxVal)*0.52, 0.6).toFixed(2);
-    return 'rgba(88,166,255,'+op+')';
-  }
-  function hmBgDone(val, maxVal) {
-    if (!val || !maxVal) return null;
-    var op = Math.min(0.08 + (val/maxVal)*0.52, 0.6).toFixed(2);
-    return 'rgba(63,185,80,'+op+')';
+  var _hmStChip = {
+    'Parking Lot':        '--text3',
+    'Budget Approval':    '--amber',
+    'Discovery':          '--purple',
+    'Ready for Delivery': '--teal',
+    'Delivery':           '--accent',
+    'Done':               '--up',
+  };
+  function _hmChip(val, cv) {
+    if (!val) return '<span class="hm hm-0">—</span>';
+    var hx = _perfCssVar(cv);
+    var bg = _perfRgba(hx, 0.12);
+    var bd = _perfRgba(hx, 0.28);
+    return '<span class="hm" style="background:'+bg+';color:var('+cv+');border:1px solid '+bd+'">'+val+'</span>';
   }
   function hmCell(val, status, role) {
-    var bg = status==='Done' ? hmBgDone(val, gmax) : hmBg(val, gmax);
-    if (!bg) return '<span class="hm hm-0">—</span>';
-    return '<span class="hm" style="background:'+bg+';color:var(--text)">'+val+'</span>';
+    return _hmChip(val, _hmStChip[status] || '--text3');
   }
-  function hmCellComb(val, status) {
-    var bg = status==='Done' ? hmBgDone(val, maxComb) : hmBg(val, maxComb);
-    if (!bg) return '<span class="hm hm-0">—</span>';
-    return '<span class="hm" style="background:'+bg+';color:var(--text)">'+val+'</span>';
-  }
+  function hmCellComb(val, status) { return hmCell(val, status, ''); }
 
   var N = PERF_STAGES.length;
 
@@ -931,10 +894,16 @@ function _buildPerfSupportSection(person, year) {
     var pc = p_>=80?'var(--up)':p_>=50?'var(--amber)':'var(--down)';
     var rowBg = isTot ? 'background:var(--surface2)' : '';
     var fw = isTot ? '700' : '400';
+    var _totCell = isTot
+      ? '<span style="font-size:12px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums">'+items.length+'</span>'
+      : _supChip(items.length,'--accent');
+    var _doneCell = isTot
+      ? '<span style="font-size:12px;font-weight:700;color:var(--up);font-variant-numeric:tabular-nums">'+d_+'</span>'
+      : _supChip(d_,'--up');
     return '<tr style="'+rowBg+'">'+
       '<td style="padding:6px 14px;font-size:12px;font-weight:'+(isTot?'700':'600')+';color:var(--text);text-align:left">'+label+'</td>'+
-      '<td style="padding:6px 12px;text-align:center;font-size:12px;font-weight:'+fw+';font-variant-numeric:tabular-nums;color:var(--text)">'+items.length+'</td>'+
-      '<td style="padding:6px 12px;text-align:center;font-size:12px;font-weight:'+fw+';font-variant-numeric:tabular-nums;color:var(--up)">'+d_+'</td>'+
+      '<td style="padding:6px 12px;text-align:center">'+_totCell+'</td>'+
+      '<td style="padding:6px 12px;text-align:center">'+_doneCell+'</td>'+
       '<td style="padding:6px 14px;min-width:120px">'+
         '<div class="ovr-rate-bar">'+
           '<div class="ovr-rate-track"><div class="ovr-rate-fill" style="width:'+p_+'%;background:'+pc+'"></div></div>'+
@@ -1057,24 +1026,13 @@ function _buildPerfSupportSection(person, year) {
     return { total: items.length, done: d_, pct: p_ };
   }
 
-  /* pre-compute max total for heatmap scaling */
-  var _hmMax = 1;
-  allGroups.forEach(function(g) {
-    activeQs.forEach(function(q) {
-      var n = qgStats(g,q).total; if (n > _hmMax) _hmMax = n;
-    });
-  });
-  if (filtered.length > _hmMax) _hmMax = filtered.length;
-
-  function hmBg(n) {
-    if (!n) return '';
-    var op = Math.min(0.08 + (n/_hmMax)*0.52, 0.6).toFixed(2);
-    return 'background:rgba(88,166,255,'+op+')';
-  }
-  function doneBg(n) {
-    if (!n) return '';
-    var op = Math.min(0.08 + (n/_hmMax)*0.52, 0.6).toFixed(2);
-    return 'background:rgba(63,185,80,'+op+')';
+  function _supChip(n, cv) {
+    if (!n) return '—';
+    var hx = _perfCssVar(cv);
+    var bg = _perfRgba(hx, 0.12);
+    var bd = _perfRgba(hx, 0.28);
+    return '<span style="display:inline-block;padding:1px 8px;border-radius:4px;font-size:11px;font-weight:700;'+
+      'background:'+bg+';color:var('+cv+');border:1px solid '+bd+';font-variant-numeric:tabular-nums">'+n+'</span>';
   }
   function pctBar(p, isTot) {
     if (p === null || p === undefined) return '<span style="color:var(--text3)">—</span>';
@@ -1117,17 +1075,15 @@ function _buildPerfSupportSection(person, year) {
     activeQs.forEach(function(q, qi) {
       var s = qgStats(g, q);
       var brd = 'border-left:1px solid var(--border)';
-      var tbg = s.total ? hmBg(s.total) : '';
-      var dbg = s.done  ? doneBg(s.done) : '';
-      r += '<td style="padding:5px 6px;text-align:center;font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;'+brd+';'+tbg+'">'+(s.total||'—')+'</td>';
-      r += '<td style="padding:5px 6px;text-align:center;font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;'+dbg+'">'+(s.done||'—')+'</td>';
+      r += '<td style="padding:5px 6px;text-align:center;'+brd+'">'+_supChip(s.total,'--accent')+'</td>';
+      r += '<td style="padding:5px 6px;text-align:center">'+_supChip(s.done,'--up')+'</td>';
       r += '<td style="padding:4px 8px">'+(s.total ? pctBar(s.pct,false) : '<span style="color:var(--text3)">—</span>')+'</td>';
     });
     var gt = filtered.filter(function(d){ return supGroup(d)===g; });
     var gd = gt.filter(function(d){ return isDoneStatus(d.Status); }).length;
     var gp = gt.length ? Math.round(gd/gt.length*100) : 0;
-    r += '<td style="padding:5px 8px;text-align:center;font-size:11px;font-weight:700;border-left:2px solid var(--border);'+hmBg(gt.length)+'">'+gt.length+'</td>';
-    r += '<td style="padding:5px 8px;text-align:center;font-size:11px;font-weight:700;'+doneBg(gd)+'">'+gd+'</td>';
+    r += '<td style="padding:5px 8px;text-align:center;border-left:2px solid var(--border)">'+_supChip(gt.length,'--accent')+'</td>';
+    r += '<td style="padding:5px 8px;text-align:center">'+_supChip(gd,'--up')+'</td>';
     r += '<td style="padding:4px 8px">'+(gt.length ? pctBar(gp,true) : '<span style="color:var(--text3)">—</span>')+'</td>';
     r += '</tr>';
     return r;

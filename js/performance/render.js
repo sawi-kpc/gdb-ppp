@@ -240,6 +240,29 @@ function _perfQTable(items, year) {
 
   function dash() { return '<span style="color:var(--text3)">—</span>'; }
 
+  /* pre-compute per-quarter max for heatmap scaling */
+  var _qMax = { total: 1, onTime: 1, delayed: 1 };
+  (function() {
+    var filterYear2 = year === 'All' ? null : parseInt(year);
+    var quarters = [1,2,3,4];
+    quarters.forEach(function(q) {
+      var inQ = filterYear2
+        ? items.filter(function(d){ return _perfInitQ(d,filterYear2)===q; })
+        : items;
+      var t = inQ.length;
+      var ot = inQ.filter(_perfIsOnTime).length;
+      var dl = inQ.filter(_perfIsDelayed).length;
+      if (t  > _qMax.total)   _qMax.total   = t;
+      if (ot > _qMax.onTime)  _qMax.onTime  = ot;
+      if (dl > _qMax.delayed) _qMax.delayed = dl;
+    });
+  })();
+  function _qHmBg(val, maxVal, r, g, b) {
+    if (!val || !maxVal) return '';
+    var op = (0.07 + (val/maxVal)*0.48).toFixed(2);
+    return ';background:rgba('+r+','+g+','+b+','+op+')';
+  }
+
   function makeQRow(label, rowItems, isTotalRow) {
     var total   = rowItems.length;
     var onTime  = rowItems.filter(_perfIsOnTime).length;
@@ -261,11 +284,14 @@ function _perfQTable(items, year) {
         '<td style="'+brd+'">'+pctCell+'</td>'+
         '</tr>';
     }
+    var bgT  = _qHmBg(total,   _qMax.total,   88,166,255);
+    var bgOT = _qHmBg(onTime,  _qMax.onTime,  63,185,80);
+    var bgDl = _qHmBg(delayed, _qMax.delayed, 248,81,73);
     return '<tr>'+
       '<td class="col-person">'+label+'</td>'+
-      '<td class="col-total" style="text-align:center">'+total+'</td>'+
-      '<td style="text-align:center;color:var(--up)">'+(onTime||dash())+'</td>'+
-      '<td style="text-align:center;color:var(--down)">'+(delayed||dash())+'</td>'+
+      '<td class="col-total" style="text-align:center'+bgT+'">'+total+'</td>'+
+      '<td style="text-align:center;color:var(--up)'+bgOT+'">'+(onTime||dash())+'</td>'+
+      '<td style="text-align:center;color:var(--down)'+bgDl+'">'+(delayed||dash())+'</td>'+
       '<td>'+pctCell+'</td>'+
       '</tr>';
   }

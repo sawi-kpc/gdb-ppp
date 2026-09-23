@@ -527,15 +527,13 @@ function gdbAuthGuard(onUser) {
     _unsub();
     setGdbUser(user);
     _gdbFavInit(user.uid);
-    /* Show Performance nav link for PERF_ALLOWED (admin) and Group 2 (personal-only) */
-    var _perfAllowed=['sawitree.jakkrawannit@kingpower.com','chawanop.witthayaphirak@kingpower.com','petchpailin.tocharoen@kingpower.com'];
-    var _perfNames=['chalotorn','chawanop','natpapat','petchpailin','sawitree','sodsaran','somrythi'];
+    /* Resolve and store roles — uses GDB_ROLE_CONFIG from roles.js */
+    if (typeof gdbStoreRoles === 'function') gdbStoreRoles(user.email);
+    /* Show Performance nav link */
     var _perfEl=document.getElementById('gdb-nav-perf');
-    var _perfEmail=(user.email||'').toLowerCase();
-    var _perfLocal=_perfEmail.split('@')[0];
-    if(_perfEl&&(_perfAllowed.indexOf(_perfEmail)>=0||_perfNames.some(function(n){return _perfLocal.startsWith(n);}))){
+    if(_perfEl&&(gdbHasRole('perf_admin')||gdbHasRole('perf_viewer'))){
       _perfEl.style.display='';
-      if(_perfAllowed.indexOf(_perfEmail)<0){
+      if(!gdbHasRole('perf_admin')){
         _perfEl.href='/gdb-ppp/performance/personal.html';
       }
     }

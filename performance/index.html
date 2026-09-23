@@ -220,6 +220,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="../js/initiative/config.js"></script>
+<script src="../js/roles.js"></script>
 <script src="../js/header.js"></script>
 <script src="../js/initiative/data.js"></script>
 <script src="../js/issue/config.js"></script>
@@ -997,14 +998,9 @@ window.addEventListener('DOMContentLoaded',function(){
   buildGdbHeader({showRefresh:false});
   buildGdbPerformanceSubNav();
 
-  var PERF_ALLOWED=['sawitree.jakkrawannit@kingpower.com','chawanop.witthayaphirak@kingpower.com','petchpailin.tocharoen@kingpower.com','somrythi.pipattanasirikul@kingpower.com'];
-  var _PERF_NAMES=['chalotorn','chawanop','natpapat','petchpailin','sawitree','sodsaran','somrythi'];
   gdbAuthGuard(function(user){
-    var _email=(user.email||'').toLowerCase();
-    if(PERF_ALLOWED.indexOf(_email)<0){
-      var _local=_email.split('@')[0];
-      var _isPersonal=_PERF_NAMES.some(function(n){return _local.startsWith(n);});
-      window.location.href=_isPersonal?'/gdb-ppp/performance/personal.html':'/gdb-ppp/';
+    if(!gdbHasRole('perf_admin')){
+      window.location.href=gdbHasRole('perf_viewer')?'/gdb-ppp/performance/personal.html':'/gdb-ppp/';
       return;
     }
     loadData();

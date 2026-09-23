@@ -176,7 +176,8 @@ window.addEventListener('DOMContentLoaded', function() {
 
   gdbAuthGuard(function(user) {
     var _isAdmin=gdbHasRole('perf_admin');
-    var _match=gdbPerfViewerName(user.email);
+    var _namePrefix=gdbPerfViewerName(user.email);
+    var _match=_namePrefix?_namePrefix.charAt(0).toUpperCase()+_namePrefix.slice(1):null;
     if(!_isAdmin){
       if(!_match){window.location.href='/gdb-ppp/';return;}
       var _ps=document.getElementById('perf-person-select');

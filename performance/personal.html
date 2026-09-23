@@ -173,7 +173,7 @@ window.addEventListener('DOMContentLoaded', function() {
   buildGdbHeader({ showRefresh: false });
   buildGdbPerformanceSubNav();
 
-  var PERF_ALLOWED=['sawitree.jakkrawannit@kingpower.com','chawanop.witthayaphirak@kingpower.com','petchpailin.tocharoen@kingpower.com'];
+  var PERF_ALLOWED=['sawitree.jakkrawannit@kingpower.com','chawanop.witthayaphirak@kingpower.com','petchpailin.tocharoen@kingpower.com','somrythi.pipattanasirikul@kingpower.com'];
   gdbAuthGuard(function(user) {
     var _email=(user.email||'').toLowerCase();
     var _isAdmin=PERF_ALLOWED.indexOf(_email)>=0;

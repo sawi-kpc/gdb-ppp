@@ -592,7 +592,7 @@ function _buildPerfInitList(myAll, myI1, myI2, year) {
       var active = _perf.curRole === o.val;
       var isLast = i === ROLE_OPTS.length - 1;
       var bg = active ? 'background:var(--accent);color:#fff;font-weight:700;' : 'background:var(--surface2);color:var(--text2);font-weight:500;';
-      var br = isLast ? '' : 'border-right:1px solid var(--border);';
+      var br = isLast ? 'border-right:none;' : 'border-right:1px solid var(--border);';
       return '<button onclick="_perf.curRole=\''+o.val+'\';_perfRender()" style="'+bg+br+
         'border-top:none;border-bottom:none;border-left:none;padding:0 8px;font-size:11px;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s">'+o.label+'</button>';
     }).join('')+

@@ -562,6 +562,22 @@ function _renderInitOverall(data){
   _buildOverallTable('init-overall-b', dataB);
 }
 
+function _sumCssVar(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+function _sumRgba(hex,a){
+  hex=(hex||'').replace('#','');
+  if(hex.length===3)hex=hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+  if(!hex||hex.length!==6)return 'transparent';
+  var r=parseInt(hex.substr(0,2),16),g=parseInt(hex.substr(2,2),16),b=parseInt(hex.substr(4,2),16);
+  return 'rgba('+r+','+g+','+b+','+Math.min(1,a).toFixed(2)+')';
+}
+function _sumChip(val,cv){
+  if(!val)return '<span style="color:var(--text3)">—</span>';
+  var hx=_sumCssVar(cv);
+  var bg=_sumRgba(hx,0.12);
+  var bd=_sumRgba(hx,0.28);
+  return '<span style="display:inline-block;padding:1px 8px;border-radius:4px;font-size:11px;font-weight:700;'+
+    'background:'+bg+';color:var('+cv+');border:1px solid '+bd+';font-variant-numeric:tabular-nums">'+val+'</span>';
+}
 function _buildOverallTable(id, data){
   /* Quarter from Target Project End.end only — skip items with no end date.
      On Time  : Done + actual ≤ target
@@ -638,9 +654,9 @@ function _buildOverallTable(id, data){
     var qLabel=q+(isNow?' <span style="font-size:8px;background:var(--accent);color:#fff;padding:1px 5px;border-radius:3px;margin-left:5px;vertical-align:middle;font-weight:700">now</span>':'');
     html+='<tr'+(isNow?' style="background:rgba(124,92,30,.04)"':'')+'>'+
       '<td class="col-person" style="font-weight:700">'+qLabel+'</td>'+
-      '<td class="col-total">'+r.total+'</td>'+
-      '<td>'+cell(r.onTime,'var(--up)')+'</td>'+
-      '<td>'+cell(r.delayed,'var(--down)')+'</td>'+
+      '<td class="col-total" style="text-align:center">'+_sumChip(r.total,'--accent')+'</td>'+
+      '<td style="text-align:center">'+_sumChip(r.onTime,'--up')+'</td>'+
+      '<td style="text-align:center">'+_sumChip(r.delayed,'--down')+'</td>'+
       '<td>'+rateCell(r.onTime,r.total)+'</td>'+
     '</tr>';
   });

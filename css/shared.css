@@ -253,6 +253,29 @@ tr:hover td { background: var(--surface2); }
   border-radius: 20px; border: 1px solid currentColor;
 }
 
+/* ── PROGRESS BAR ───────────────────────────── */
+#gdb-progress {
+  position: fixed; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--accent); z-index: 10000;
+  transform: scaleX(0); transform-origin: left;
+  transition: transform .3s ease, opacity .5s ease;
+  opacity: 0; pointer-events: none;
+}
+
+/* ── SKELETON SHIMMER ────────────────────────── */
+@keyframes gdb-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.gdb-skel {
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--surface2) 25%, var(--border) 50%, var(--surface2) 75%);
+  background-size: 200% 100%;
+  animation: gdb-shimmer 1.4s ease-in-out infinite;
+}
+.gdb-skel-wrap { padding: 16px 12px; display: flex; flex-direction: column; gap: 8px; }
+.gdb-skel-row  { height: 13px; border-radius: 3px; }
+
 /* ── LOADING / ERROR ────────────────────────── */
 #gdb-loading {
   position: fixed; inset: 0; background: var(--bg);

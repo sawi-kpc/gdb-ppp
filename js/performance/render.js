@@ -32,6 +32,7 @@ var _perf = {
   curYear: String(new Date().getFullYear()),
   curRole: 'any',        /* 'lead' | 'any' | 'support' */
   listCollapsed: true,   /* Initiative List collapsed by default */
+  _builtPeople: false,
 };
 
 /* ── Progressive ready: show page as soon as init data arrives ── */
@@ -40,18 +41,27 @@ function _perfCheckReady() {
   var loadEl = document.getElementById('gdb-loading');
   if (loadEl) loadEl.style.display = 'none';
   var contEl = document.getElementById('perf-content');
-  if (contEl && contEl.style.display === 'none') {
-    contEl.style.display = 'block';
-    _perfBuildPeople();
+  if (contEl) {
+    if (contEl.style.display === 'none') contEl.style.display = 'block';
+    if (!_perf._builtPeople) { _perf._builtPeople = true; _perfBuildPeople(); }
   }
   _perfRender();
 }
 
 function _perfSectionSkeleton(panelId, subId) {
   var el = document.getElementById(panelId);
-  if (el) el.innerHTML = '<div style="padding:32px 0;text-align:center;color:var(--text3);font-size:12px;letter-spacing:.03em">Loading…</div>';
+  if (el) el.innerHTML = _gdbSkeletonHTML(3);
   var sub = document.getElementById(subId);
   if (sub) sub.textContent = '';
+}
+function _gdbSkeletonHTML(rows, heights) {
+  var h = heights || [14, 14, 14, 14, 14];
+  var divs = '';
+  for (var i = 0; i < rows; i++) {
+    var w = [100, 82, 65, 90, 75][i % 5];
+    divs += '<div class="gdb-skel gdb-skel-row" style="width:'+w+'%;height:'+(h[i]||13)+'px"></div>';
+  }
+  return '<div class="gdb-skel-wrap">'+divs+'</div>';
 }
 
 /* ── Build person dropdown ── */

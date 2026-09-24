@@ -74,9 +74,7 @@
 </head>
 
 <body class="has-init-subnav">
-<div id="gdb-loading" class="gdb-loading-state"><div class="gdb-spinner-wrap"></div>Loading data…</div>
-
-<div id="perf-content" style="display:none">
+<div id="perf-content">
 
   <!-- Person + year selector -->
   <div class="perf-selector">
@@ -162,6 +160,7 @@
 var _perfLoadCount = 0;
 function _perfMarkReady(src) {
   _perf.ready[src] = true;
+  if (typeof gdbProgressStep === 'function') gdbProgressStep();
   _perfCheckReady();
 }
 
@@ -187,6 +186,7 @@ window.addEventListener('DOMContentLoaded', function() {
       if(typeof gdbHidePerformanceSummaryTab==='function')gdbHidePerformanceSummaryTab();
     }
     if(_match)_perf.curPerson=_match;
+    if(typeof gdbProgressStart==='function')gdbProgressStart(3);
     loadData();
 
     loadIssueData(

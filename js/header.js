@@ -490,6 +490,40 @@ function _gdbFavInit(uid){
   _gdbFavRender(uid);
 }
 
+/* ── PROGRESS BAR ──────────────────────────── */
+(function() {
+  var _bar, _total = 1, _done = 0;
+  function _ensureBar() {
+    if (!_bar) {
+      _bar = document.createElement('div');
+      _bar.id = 'gdb-progress';
+      document.body.appendChild(_bar);
+    }
+    return _bar;
+  }
+  window.gdbProgressStart = function(total) {
+    _total = total || 3; _done = 0;
+    var b = _ensureBar();
+    b.style.opacity = '1';
+    b.style.transform = 'scaleX(0.06)';
+  };
+  window.gdbProgressStep = function() {
+    _done = Math.min(_done + 1, _total);
+    var ratio = _done >= _total ? 1 : (0.06 + (_done / _total) * 0.88);
+    var b = _ensureBar();
+    b.style.transform = 'scaleX(' + ratio.toFixed(3) + ')';
+    if (_done >= _total) {
+      setTimeout(function() { b.style.opacity = '0'; }, 350);
+    }
+  };
+  window.gdbProgressDone = function() {
+    _done = _total;
+    var b = _ensureBar();
+    b.style.transform = 'scaleX(1)';
+    setTimeout(function() { b.style.opacity = '0'; }, 350);
+  };
+})();
+
 /* ── AUTH GUARD ──────────────────────────── */
 function gdbAuthGuard(onUser) {
   if (!firebase.apps.length) {

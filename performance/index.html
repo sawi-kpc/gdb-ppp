@@ -85,9 +85,7 @@
 </head>
 
 <body class="has-init-subnav">
-<div id="gdb-loading" class="gdb-loading-state"><div class="gdb-spinner-wrap"></div>Loading performance data…</div>
-
-<div id="sum-content" style="display:none">
+<div id="sum-content">
 
   <div class="sum-filter">
     <div class="sum-inner">
@@ -112,7 +110,7 @@
       <div class="sum-section-title">🎯 Initiative</div>
 
       <!-- KPI Strip -->
-      <div id="sum-init-kpi" style="margin-bottom:12px"></div>
+      <div id="sum-init-kpi" style="margin-bottom:12px"><div class="gdb-skel-wrap"><div class="gdb-skel gdb-skel-row" style="width:100%;height:13px"></div><div class="gdb-skel gdb-skel-row" style="width:82%;height:13px"></div><div class="gdb-skel gdb-skel-row" style="width:65%;height:13px"></div></div></div>
 
       <!-- Overall by Quarter -->
       <div class="sum-panel" style="margin-bottom:12px">
@@ -182,6 +180,7 @@
           <div class="stbl-wrap">
             <table class="stbl mon-tbl" id="sup-mon-tbl"></table>
           </div>
+          <div id="sup-skel"><div class="gdb-skel-wrap"><div class="gdb-skel gdb-skel-row" style="width:100%;height:13px"></div><div class="gdb-skel gdb-skel-row" style="width:82%;height:13px"></div><div class="gdb-skel gdb-skel-row" style="width:65%;height:13px"></div></div></div>
         </div>
       </div>
     </div>
@@ -199,6 +198,7 @@
             <div class="stbl-wrap">
               <table class="stbl" id="issue-tbl"></table>
             </div>
+            <div id="issue-skel"><div class="gdb-skel-wrap"><div class="gdb-skel gdb-skel-row" style="width:100%;height:13px"></div><div class="gdb-skel gdb-skel-row" style="width:82%;height:13px"></div><div class="gdb-skel gdb-skel-row" style="width:65%;height:13px"></div></div></div>
           </div>
         </div>
         <div class="sum-panel">
@@ -325,11 +325,35 @@ function _sortMonths(keys){
 ══════════════════════════════════════════════════ */
 function _sumMarkReady(src){
   _sum.ready[src]=true;
-  if(!_sum.ready.init||!_sum.ready.issue||!_sum.ready.sup)return;
-  document.getElementById('gdb-loading').style.display='none';
-  document.getElementById('sum-content').style.display='block';
-  _buildYearChips();
-  _render();
+  if(typeof gdbProgressStep==='function')gdbProgressStep();
+  if(!_sum.ready.init&&!_sum.ready.issue&&!_sum.ready.sup)return;
+  /* partial render when any source arrives */
+  if(_sum.ready.init){
+    _buildYearChips();
+    var cy=_sum.curYear;
+    var initY=_sum.initData.filter(function(d){if(cy==='All')return true;return _iyrIAll(d).indexOf(cy)>=0;});
+    _renderInitKpi(initY);
+    _renderInitOverall(initY);
+    _renderInitHeatmap(initY);
+    _renderInitBars(initY);
+  }
+  if(_sum.ready.sup){
+    var cy=_sum.curYear;
+    var supY=_sum.supData.filter(function(d){return _ym(_iyrS(d),cy);});
+    _renderSupMonthTable(supY);
+    var supSkel=document.getElementById('sup-skel');if(supSkel)supSkel.style.display='none';
+  }
+  if(_sum.ready.issue){
+    var issY=_sum.issueData;
+    _renderIssueTable(issY);
+    _renderIssueBar(issY);
+    var issSkel=document.getElementById('issue-skel');if(issSkel)issSkel.style.display='none';
+  }
+  /* full re-render once all ready (updates nav counts + year chips) */
+  if(_sum.ready.init&&_sum.ready.issue&&_sum.ready.sup){
+    _buildYearChips();
+    _render();
+  }
 }
 
 function _buildYearChips(){
@@ -1019,6 +1043,7 @@ window.addEventListener('DOMContentLoaded',function(){
       window.location.href=gdbHasRole('perf_viewer')?'/gdb-ppp/performance/personal.html':'/gdb-ppp/';
       return;
     }
+    if(typeof gdbProgressStart==='function')gdbProgressStart(3);
     loadData();
     loadIssueData(
       function(data){_sum.issueData=data||[];_sumMarkReady('issue');},

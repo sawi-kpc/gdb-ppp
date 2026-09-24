@@ -186,6 +186,11 @@ window.addEventListener('DOMContentLoaded', function() {
       if(typeof gdbHidePerformanceSummaryTab==='function')gdbHidePerformanceSummaryTab();
     }
     if(_match)_perf.curPerson=_match;
+    /* Populate person select immediately after auth (admin only) — don't wait for data */
+    if(_isAdmin && typeof _perfBuildPeople==='function'){
+      _perfBuildPeople();
+      if(_perf)_perf._builtPeople=true;
+    }
     if(typeof gdbProgressStart==='function')gdbProgressStart(3);
     loadData();
 

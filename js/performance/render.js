@@ -587,12 +587,14 @@ function _buildPerfInitList(myAll, myI1, myI2, year) {
 
   /* Segmented role filter */
   var ROLE_OPTS = [{val:'lead',label:'Lead'},{val:'any',label:'Any'},{val:'support',label:'Support'}];
-  var segCtrl = '<div style="display:flex;border:1px solid var(--border);border-radius:20px;overflow:hidden;background:var(--surface2)">'+
-    ROLE_OPTS.map(function(o){
+  var segCtrl = '<div style="display:flex;border:1px solid var(--border);border-radius:4px;overflow:hidden;height:26px;flex-shrink:0" title="Filter by role">'+
+    ROLE_OPTS.map(function(o,i){
       var active = _perf.curRole === o.val;
-      var bg = active ? 'background:var(--accent);color:#fff;' : 'background:transparent;color:var(--text2);';
-      return '<button onclick="_perf.curRole=\''+o.val+'\';_perfRender()" style="'+bg+
-        'border:none;padding:4px 14px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .15s">'+o.label+'</button>';
+      var isLast = i === ROLE_OPTS.length - 1;
+      var bg = active ? 'background:var(--accent);color:#fff;font-weight:700;' : 'background:var(--surface2);color:var(--text2);font-weight:500;';
+      var br = isLast ? '' : 'border-right:1px solid var(--border);';
+      return '<button onclick="_perf.curRole=\''+o.val+'\';_perfRender()" style="'+bg+br+
+        'border-top:none;border-bottom:none;border-left:none;padding:0 8px;font-size:11px;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s">'+o.label+'</button>';
     }).join('')+
     '</div>';
 

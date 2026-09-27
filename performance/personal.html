@@ -174,11 +174,11 @@ window.addEventListener('DOMContentLoaded', function() {
   buildGdbPerformanceSubNav();
 
   gdbAuthGuard(function(user) {
-    var _isAdmin=gdbHasRole('perf_admin');
-    var _namePrefix=gdbPerfViewerName(user.email);
+    var _isAdmin=gdbHasRole('super_admin')||gdbHasRole('perf_supervisor');
+    var _namePrefix=gdbPerfViewerName();
     var _match=_namePrefix?_namePrefix.charAt(0).toUpperCase()+_namePrefix.slice(1):null;
     if(!_isAdmin){
-      if(!_match){window.location.href='/gdb-ppp/';return;}
+      if(!_match&&!gdbHasRole('perf_staff')){window.location.href='/gdb-ppp/';return;}
       var _ps=document.getElementById('perf-person-select');
       if(_ps)_ps.style.display='none';
       var _pl=document.querySelectorAll('.perf-selector-label')[0];

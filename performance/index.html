@@ -1039,8 +1039,9 @@ window.addEventListener('DOMContentLoaded',function(){
   buildGdbPerformanceSubNav();
 
   gdbAuthGuard(function(user){
-    if(!gdbHasRole('perf_admin')){
-      window.location.href=gdbHasRole('perf_viewer')?'/gdb-ppp/performance/personal.html':'/gdb-ppp/';
+    var _canSum=gdbHasRole('super_admin')||gdbHasRole('perf_supervisor');
+      if(!_canSum){
+      window.location.href=(gdbHasRole('perf_staff'))?'/gdb-ppp/performance/personal.html':'/gdb-ppp/';
       return;
     }
     if(typeof gdbProgressStart==='function')gdbProgressStart(3);

@@ -547,13 +547,22 @@ function gdbAuthGuard(onUser) {
     setGdbUser(fakeUser);
     var favUid = email.replace(/[^a-zA-Z0-9]/g, '_');
     _gdbFavInit(favUid);
-    if (typeof gdbStoreRoles === 'function') gdbStoreRoles(email);
-    var _perfEl = document.getElementById('gdb-nav-perf');
-    if (_perfEl && (gdbHasRole('perf_admin') || gdbHasRole('perf_viewer'))) {
-      _perfEl.style.display = '';
-      if (!gdbHasRole('perf_admin')) _perfEl.href = '/gdb-ppp/performance/personal.html';
+    var _doNav = function() {
+      var _perfEl = document.getElementById('gdb-nav-perf');
+      var _canPerf = gdbHasRole('super_admin') || gdbHasRole('perf_supervisor') || gdbHasRole('perf_staff');
+      if (_perfEl && _canPerf) {
+        _perfEl.style.display = '';
+        if (!gdbHasRole('super_admin') && !gdbHasRole('perf_supervisor')) {
+          _perfEl.href = '/gdb-ppp/performance/personal.html';
+        }
+      }
+      if (typeof onUser === 'function') onUser(fakeUser, _auth);
+    };
+    if (typeof gdbFetchAndStoreRoles === 'function') {
+      gdbFetchAndStoreRoles(email).then(_doNav).catch(_doNav);
+    } else {
+      _doNav();
     }
-    if (typeof onUser === 'function') onUser(fakeUser, _auth);
   }
 
   /* Try Cloudflare Access identity endpoint first */
@@ -592,13 +601,20 @@ function gdbAuthGuard(onUser) {
       _unsub();
       setGdbUser(user);
       _gdbFavInit(user.uid);
-      if (typeof gdbStoreRoles === 'function') gdbStoreRoles(user.email);
-      var _perfEl=document.getElementById('gdb-nav-perf');
-      if(_perfEl&&(gdbHasRole('perf_admin')||gdbHasRole('perf_viewer'))){
-        _perfEl.style.display='';
-        if(!gdbHasRole('perf_admin')) _perfEl.href='/gdb-ppp/performance/personal.html';
-      }
-      if (typeof onUser === 'function') onUser(user, _auth);
+      var _fbUser = user;
+      var _fbDoNav = function() {
+        var _perfEl=document.getElementById('gdb-nav-perf');
+        var _canPerf=gdbHasRole('super_admin')||gdbHasRole('perf_supervisor')||gdbHasRole('perf_staff');
+        if(_perfEl&&_canPerf){
+          _perfEl.style.display='';
+          if(!gdbHasRole('super_admin')&&!gdbHasRole('perf_supervisor'))
+            _perfEl.href='/gdb-ppp/performance/personal.html';
+        }
+        if(typeof onUser==='function') onUser(_fbUser,_auth);
+      };
+      if(typeof gdbFetchAndStoreRoles==='function'){
+        gdbFetchAndStoreRoles(user.email).then(_fbDoNav).catch(_fbDoNav);
+      } else { _fbDoNav(); }
     });
   }
 }

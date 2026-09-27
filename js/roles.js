@@ -1,55 +1,56 @@
-/* ── GDB Role Config ────────────────────────────────────────────────────────
-   Single source of truth for all role/permission definitions.
-   To add a user or role: edit GDB_ROLE_CONFIG only.
+/* ── GDB Role System ─────────────────────────────────────────────────────────
+   Roles stored in Firestore: team_members/{sanitized_email}
+   Fields: email, name, roles[], perfName (for perf_staff), active
+
+   Roles:
+     super_admin      — full access to everything
+     viewer           — initiative, issue, support only
+     perf_supervisor  — viewer + performance summary + all personal views
+     perf_staff       — viewer + performance personal (own only)
 ─────────────────────────────────────────────────────────────────────────── */
 
-var GDB_ROLE_CONFIG = {
-
-  /* Full access to Performance summary + all personal views */
-  perf_admin: {
-    emails: [
-      'sawitree.jakkrawannit@kingpower.com',
-      'chawanop.witthayaphirak@kingpower.com',
-      'petchpailin.tocharoen@kingpower.com',
-      'somrythi.pipattanasirikul@kingpower.com'
-    ]
-  },
-
-  /* Personal performance view only — matched by email local-part prefix */
-  perf_viewer: {
-    namePrefixes: ['chalotorn','chawanop','natpapat','petchpailin','sawitree','sodsaran','somrythi']
-  }
-
+var GDB_FIREBASE_CONFIG = {
+  apiKey:    'AIzaSyCaS5kLNbm5lSLRHd1rdr0sXRCS5lB_Rgc',
+  projectId: 'gdb-dashboard-prod'
 };
 
-/* ── Helpers ── */
+/* ── Fetch roles from Firestore REST API (no SDK needed) ── */
+function gdbFetchAndStoreRoles(email) {
+  var docId = email.toLowerCase().replace(/[^a-z0-9]/g, '_');
+  var url = 'https://firestore.googleapis.com/v1/projects/' + GDB_FIREBASE_CONFIG.projectId +
+            '/databases/(default)/documents/team_members/' + docId +
+            '?key=' + GDB_FIREBASE_CONFIG.apiKey;
 
-/* Resolve all roles for an email — returns string[] */
-function gdbResolveRoles(email) {
-  var roles = [];
-  var e = (email || '').toLowerCase();
-  var local = e.split('@')[0];
-  Object.keys(GDB_ROLE_CONFIG).forEach(function(role) {
-    var cfg = GDB_ROLE_CONFIG[role];
-    if (cfg.emails && cfg.emails.indexOf(e) >= 0) {
-      roles.push(role);
-    }
-    if (cfg.namePrefixes && cfg.namePrefixes.some(function(n) { return local.startsWith(n.toLowerCase()); })) {
-      if (roles.indexOf(role) < 0) roles.push(role);
-    }
-  });
-  return roles;
+  return fetch(url)
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(doc) {
+      var roles = [];
+      var perfName = null;
+      if (doc && doc.fields) {
+        var activeField = doc.fields.active;
+        if (!activeField || activeField.booleanValue !== false) {
+          var rf = doc.fields.roles;
+          if (rf && rf.arrayValue && rf.arrayValue.values) {
+            roles = rf.arrayValue.values.map(function(v) { return v.stringValue; }).filter(Boolean);
+          }
+          var pf = doc.fields.perfName;
+          if (pf && pf.stringValue) perfName = pf.stringValue;
+        }
+      }
+      window._gdbRoles = roles;
+      window._gdbNamePrefix = perfName;
+      try { sessionStorage.setItem('gdb_roles', JSON.stringify(roles)); } catch(e) {}
+      try { sessionStorage.setItem('gdb_perf_name', perfName || ''); } catch(e) {}
+      return roles;
+    })
+    .catch(function() {
+      window._gdbRoles = [];
+      window._gdbNamePrefix = null;
+      return [];
+    });
 }
 
-/* Store resolved roles after login — called by gdbAuthGuard */
-function gdbStoreRoles(email) {
-  var roles = gdbResolveRoles(email);
-  window._gdbRoles = roles;
-  try { sessionStorage.setItem('gdb_roles', JSON.stringify(roles)); } catch(e) {}
-  return roles;
-}
-
-/* Check if current user has a specific role */
+/* ── Check if current user has a role ── */
 function gdbHasRole(role) {
   if (window._gdbRoles) return window._gdbRoles.indexOf(role) >= 0;
   try {
@@ -58,13 +59,11 @@ function gdbHasRole(role) {
   } catch(e) { return false; }
 }
 
-/* For perf_viewer: return the matched PERF_PEOPLE name, or null */
-function gdbPerfViewerName(email) {
-  var local = (email || '').toLowerCase().split('@')[0];
-  var cfg = GDB_ROLE_CONFIG.perf_viewer;
-  if (!cfg || !cfg.namePrefixes) return null;
-  for (var i = 0; i < cfg.namePrefixes.length; i++) {
-    if (local.startsWith(cfg.namePrefixes[i].toLowerCase())) return cfg.namePrefixes[i];
-  }
-  return null;
+/* ── For perf_staff: return stored perfName (which person's data to show) ── */
+function gdbPerfViewerName() {
+  if (typeof window._gdbNamePrefix !== 'undefined') return window._gdbNamePrefix || null;
+  try { return sessionStorage.getItem('gdb_perf_name') || null; } catch(e) { return null; }
 }
+
+/* ── Legacy shim: gdbStoreRoles(email) — now a no-op, use gdbFetchAndStoreRoles ── */
+function gdbStoreRoles() {}

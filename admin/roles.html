@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Team Roles — GDB Admin</title>
+<link rel="stylesheet" href="../css/shared.css">
+<link rel="stylesheet" href="../css/gdb-shared.css">
+<style>
+.admin-wrap{max-width:900px;margin:32px auto;padding:0 24px}
+.admin-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.admin-title{font-size:18px;font-weight:700;color:var(--text)}
+.admin-sub{font-size:12px;color:var(--text3);margin-top:2px}
+.btn-add{height:32px;padding:0 16px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer}
+.btn-add:hover{opacity:.88}
+.members-table{width:100%;border-collapse:collapse;font-size:12px}
+.members-table th{text-align:left;padding:8px 12px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border)}
+.members-table td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text)}
+.members-table tr:last-child td{border-bottom:none}
+.members-table tr:hover td{background:var(--surface2)}
+.role-chip{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;margin:1px 2px}
+.chip-super_admin{background:rgba(248,81,73,.15);color:#f85149}
+.chip-viewer{background:rgba(139,148,158,.15);color:var(--text2)}
+.chip-perf_supervisor{background:rgba(88,166,255,.15);color:var(--accent)}
+.chip-perf_staff{background:rgba(34,211,164,.15);color:var(--teal)}
+.status-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:6px}
+.dot-active{background:var(--up)}
+.dot-inactive{background:var(--text3)}
+.btn-edit{padding:3px 10px;font-size:11px;border:1px solid var(--border);border-radius:4px;background:none;color:var(--text2);cursor:pointer}
+.btn-edit:hover{border-color:var(--accent);color:var(--accent)}
+.btn-del{padding:3px 10px;font-size:11px;border:1px solid var(--border);border-radius:4px;background:none;color:var(--text3);cursor:pointer;margin-left:4px}
+.btn-del:hover{border-color:var(--down);color:var(--down)}
+/* Modal */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:24px;width:440px;max-width:94vw}
+.modal-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px}
+.form-row{margin-bottom:14px}
+.form-label{font-size:11px;font-weight:600;color:var(--text3);margin-bottom:5px;display:block;text-transform:uppercase;letter-spacing:.05em}
+.form-input{width:100%;height:32px;padding:0 10px;border:1px solid var(--border);border-radius:5px;background:var(--surface2);color:var(--text);font-size:12px;box-sizing:border-box}
+.form-input:focus{outline:none;border-color:var(--accent)}
+.roles-grid{display:flex;flex-direction:column;gap:8px}
+.role-cb{display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 10px;border:1px solid var(--border);border-radius:6px}
+.role-cb:hover{background:var(--surface2)}
+.role-cb input{accent-color:var(--accent)}
+.role-name{font-size:12px;font-weight:600;color:var(--text)}
+.role-desc{font-size:10px;color:var(--text3);margin-left:auto}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+.btn-cancel{padding:6px 16px;border:1px solid var(--border);border-radius:5px;background:none;color:var(--text2);font-size:12px;cursor:pointer}
+.btn-save{padding:6px 16px;border:none;border-radius:5px;background:var(--accent);color:#fff;font-size:12px;font-weight:600;cursor:pointer}
+.empty-state{text-align:center;padding:48px 24px;color:var(--text3);font-size:13px}
+</style>
+</head>
+<body class="has-init-subnav">
+
+<div class="admin-wrap">
+  <div class="admin-head">
+    <div>
+      <div class="admin-title">Team Role Management</div>
+      <div class="admin-sub">Manage who can access GDB Dashboard and what they can see</div>
+    </div>
+    <button class="btn-add" onclick="openModal()">+ Add Member</button>
+  </div>
+
+  <div class="panel">
+    <table class="members-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Roles</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="members-tbody">
+        <tr><td colspan="5" class="empty-state">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-bg" id="modal-bg">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Add Member</div>
+    <div class="form-row">
+      <label class="form-label">Email</label>
+      <input class="form-input" id="f-email" type="email" placeholder="name@kingpower.com">
+    </div>
+    <div class="form-row">
+      <label class="form-label">Name</label>
+      <input class="form-input" id="f-name" type="text" placeholder="First name">
+    </div>
+    <div class="form-row">
+      <label class="form-label">Perf Name (for perf_staff only)</label>
+      <input class="form-input" id="f-perfname" type="text" placeholder="e.g. sawitree">
+    </div>
+    <div class="form-row">
+      <label class="form-label">Roles</label>
+      <div class="roles-grid">
+        <label class="role-cb"><input type="checkbox" id="r-super_admin" value="super_admin"><span class="role-name">super_admin</span><span class="role-desc">Full access</span></label>
+        <label class="role-cb"><input type="checkbox" id="r-viewer" value="viewer"><span class="role-name">viewer</span><span class="role-desc">Initiative / Issue / Support</span></label>
+        <label class="role-cb"><input type="checkbox" id="r-perf_supervisor" value="perf_supervisor"><span class="role-name">perf_supervisor</span><span class="role-desc">viewer + Perf summary + all personal</span></label>
+        <label class="role-cb"><input type="checkbox" id="r-perf_staff" value="perf_staff"><span class="role-name">perf_staff</span><span class="role-desc">viewer + Perf personal (own only)</span></label>
+      </div>
+    </div>
+    <div class="form-row" style="display:flex;align-items:center;gap:10px">
+      <label class="form-label" style="margin:0">Active</label>
+      <input type="checkbox" id="f-active" checked style="accent-color:var(--accent);width:16px;height:16px">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveMember()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="../js/roles.js"></script>
+<script src="../js/header.js"></script>
+
+<script>
+var _db, _editingDocId = null;
+
+var ROLE_CHIPS = {
+  super_admin:     '<span class="role-chip chip-super_admin">super_admin</span>',
+  viewer:          '<span class="role-chip chip-viewer">viewer</span>',
+  perf_supervisor: '<span class="role-chip chip-perf_supervisor">perf_supervisor</span>',
+  perf_staff:      '<span class="role-chip chip-perf_staff">perf_staff</span>'
+};
+
+function _docId(email) {
+  return email.toLowerCase().replace(/[^a-z0-9]/g, '_');
+}
+
+function loadMembers() {
+  _db.collection('team_members').orderBy('name').get().then(function(snap) {
+    var tbody = document.getElementById('members-tbody');
+    if (snap.empty) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No members yet — click Add Member</td></tr>';
+      return;
+    }
+    tbody.innerHTML = snap.docs.map(function(doc) {
+      var d = doc.data();
+      var roles = (d.roles || []).map(function(r) { return ROLE_CHIPS[r] || r; }).join('');
+      var active = d.active !== false;
+      return '<tr>' +
+        '<td><strong>' + (d.name || '—') + '</strong></td>' +
+        '<td style="color:var(--text2)">' + (d.email || doc.id) + '</td>' +
+        '<td>' + (roles || '<span style="color:var(--text3)">—</span>') + '</td>' +
+        '<td><span class="status-dot ' + (active ? 'dot-active' : 'dot-inactive') + '"></span>' + (active ? 'Active' : 'Inactive') + '</td>' +
+        '<td style="white-space:nowrap">' +
+          '<button class="btn-edit" onclick="openModal(\'' + doc.id + '\')">Edit</button>' +
+          '<button class="btn-del" onclick="deleteMember(\'' + doc.id + '\',\'' + (d.name||d.email) + '\')">Remove</button>' +
+        '</td>' +
+      '</tr>';
+    }).join('');
+  });
+}
+
+function openModal(docId) {
+  _editingDocId = docId || null;
+  document.getElementById('modal-title').textContent = docId ? 'Edit Member' : 'Add Member';
+  document.getElementById('f-email').value = '';
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-perfname').value = '';
+  document.getElementById('f-active').checked = true;
+  ['super_admin','viewer','perf_supervisor','perf_staff'].forEach(function(r) {
+    document.getElementById('r-' + r).checked = false;
+  });
+  if (docId) {
+    document.getElementById('f-email').disabled = true;
+    _db.collection('team_members').doc(docId).get().then(function(doc) {
+      if (!doc.exists) return;
+      var d = doc.data();
+      document.getElementById('f-email').value = d.email || '';
+      document.getElementById('f-name').value = d.name || '';
+      document.getElementById('f-perfname').value = d.perfName || '';
+      document.getElementById('f-active').checked = d.active !== false;
+      (d.roles || []).forEach(function(r) {
+        var el = document.getElementById('r-' + r);
+        if (el) el.checked = true;
+      });
+    });
+  } else {
+    document.getElementById('f-email').disabled = false;
+  }
+  document.getElementById('modal-bg').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal-bg').classList.remove('open');
+}
+
+function saveMember() {
+  var email = document.getElementById('f-email').value.trim().toLowerCase();
+  var name = document.getElementById('f-name').value.trim();
+  var perfName = document.getElementById('f-perfname').value.trim();
+  var active = document.getElementById('f-active').checked;
+  var roles = ['super_admin','viewer','perf_supervisor','perf_staff'].filter(function(r) {
+    return document.getElementById('r-' + r).checked;
+  });
+  if (!email) { alert('Email is required'); return; }
+  var docId = _editingDocId || _docId(email);
+  var data = { email: email, name: name, roles: roles, active: active };
+  if (perfName) data.perfName = perfName;
+  _db.collection('team_members').doc(docId).set(data, { merge: true }).then(function() {
+    closeModal();
+    loadMembers();
+  }).catch(function(e) { alert('Error: ' + e.message); });
+}
+
+function deleteMember(docId, label) {
+  if (!confirm('Remove ' + label + '?')) return;
+  _db.collection('team_members').doc(docId).delete().then(loadMembers);
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+  buildGdbHeader({ showRefresh: false });
+  gdbAuthGuard(function(user) {
+    if (!gdbHasRole('super_admin')) {
+      document.body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3)">Access denied — super_admin only</div>';
+      return;
+    }
+    if (!firebase.apps.length) {
+      firebase.initializeApp({
+        apiKey: 'AIzaSyCaS5kLNbm5lSLRHd1rdr0sXRCS5lB_Rgc',
+        authDomain: 'gdb-dashboard-prod.firebaseapp.com',
+        projectId: 'gdb-dashboard-prod'
+      });
+    }
+    _db = firebase.firestore();
+    loadMembers();
+  });
+});
+document.getElementById('modal-bg').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+</script>
+</body>
+</html>

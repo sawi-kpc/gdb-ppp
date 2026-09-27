@@ -32,7 +32,7 @@ body{padding-top:0;}
 <body class="auth-page">
 <div class="auth-card" id="auth-card">
   <div class="auth-logo">GDB</div>
-  <div class="auth-sub">GDB Product and Project Portfolio Dashboard</div>
+  <div class="auth-sub">Product and Project Portfolio Dashboard</div>
   <div class="auth-checking" id="auth-checking">
     <div class="auth-spinner"></div>
     Verifying access…
@@ -103,8 +103,8 @@ fetch('/cdn-cgi/access/get-identity', { credentials: 'same-origin' })
       card.innerHTML +=
         '<div class="access-denied">' +
         '<div class="access-denied-icon">🔒</div>' +
-        '<div class="access-denied-title">Authentication Required</div>' +
-        '<div class="access-denied-msg">Please access this dashboard through the secure link provided by your admin.</div>' +
+        '<div class="access-denied-title">Permission Required</div>' +
+        '<div class="access-denied-msg">Please contact kpcproduct@kingpower.com to request permission.</div>' +
         '<a class="access-denied-email" href="mailto:kpcproduct@kingpower.com">kpcproduct@kingpower.com</a>' +
         '</div>';
     }

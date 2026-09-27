@@ -208,7 +208,7 @@ function buildGdbHeader(opts) {
     '<a class="gdb-header-brand" href="/gdb-ppp/channel/">' +
       '<div class="gdb-logo">GDB</div>' +
       '<div><div class="gdb-brand-name">GDB Dashboard</div>' +
-      '<div class="gdb-brand-sub">GDB Product and Project Portfolio</div></div>' +
+      '<div class="gdb-brand-sub">Product and Project Portfolio</div></div>' +
     '</a>' +
     '<div class="gdb-header-spacer"></div>' +
     '<div class="gdb-header-right">' +

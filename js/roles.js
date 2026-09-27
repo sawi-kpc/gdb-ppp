@@ -35,6 +35,8 @@ function gdbFetchAndStoreRoles(email) {
           }
           var pf = doc.fields.perfName;
           if (pf && pf.stringValue) perfName = pf.stringValue;
+          else if (!perfName && doc.fields.name && doc.fields.name.stringValue)
+            perfName = doc.fields.name.stringValue.split(' ')[0];
         }
       }
       window._gdbRoles = roles;

@@ -13,7 +13,7 @@ var GDB_MAINTENANCE       = '__MAINTENANCE_MODE__'; /* injected at deploy */
 (function() {
   var isOn = GDB_MAINTENANCE_LOCAL === true || GDB_MAINTENANCE === 'true';
   if (isOn && window.location.pathname.indexOf('/maintenance') === -1) {
-    window.location.replace('/gdb-ppp/maintenance/');
+    window.location.replace('/maintenance/');
   }
 })();
 
@@ -63,12 +63,12 @@ function buildGdbInitiativeSubNav() {
   var projActive      = p.endsWith('/initiative/projects.html') ? ' active' : '';
 
   var subNav = '<div class="gdb-init-subnav" id="gdb-init-subnav">' +
-    '<a class="gdb-init-tab' + timelineActive + '" href="/gdb-ppp/initiative/index.html">Timeline</a>' +
-    '<a class="gdb-init-tab' + roadmapActive + '" href="/gdb-ppp/initiative/roadmap.html">Roadmap</a>' +
-    '<a class="gdb-init-tab' + dashActive + '" href="/gdb-ppp/initiative/dashboard.html">Dashboard</a>' +
-    '<a class="gdb-init-tab' + listActive + '" href="/gdb-ppp/initiative/list.html">List</a>' +
-    '<a class="gdb-init-tab' + compActive + '" href="/gdb-ppp/initiative/completed.html">Completed</a>' +
-    '<a class="gdb-init-tab' + projActive + '" href="/gdb-ppp/initiative/projects.html">Projects</a>' +
+    '<a class="gdb-init-tab' + timelineActive + '" href="/initiative/index.html">Timeline</a>' +
+    '<a class="gdb-init-tab' + roadmapActive + '" href="/initiative/roadmap.html">Roadmap</a>' +
+    '<a class="gdb-init-tab' + dashActive + '" href="/initiative/dashboard.html">Dashboard</a>' +
+    '<a class="gdb-init-tab' + listActive + '" href="/initiative/list.html">List</a>' +
+    '<a class="gdb-init-tab' + compActive + '" href="/initiative/completed.html">Completed</a>' +
+    '<a class="gdb-init-tab' + projActive + '" href="/initiative/projects.html">Projects</a>' +
   '</div>';
 
   document.body.insertAdjacentHTML('afterbegin', subNav);
@@ -98,9 +98,9 @@ function buildGdbIssueSubNav() {
   var listActive  = p.endsWith('/issue/list.html') ? ' active' : '';
 
   var subNav = '<div class="gdb-init-subnav" id="gdb-issue-subnav">' +
-    '<a class="gdb-init-tab' + boardActive + '" href="/gdb-ppp/issue/">Board</a>' +
-    '<a class="gdb-init-tab' + dashActive  + '" href="/gdb-ppp/issue/dashboard.html">Dashboard</a>' +
-    '<a class="gdb-init-tab' + listActive  + '" href="/gdb-ppp/issue/list.html">List</a>' +
+    '<a class="gdb-init-tab' + boardActive + '" href="/issue/">Board</a>' +
+    '<a class="gdb-init-tab' + dashActive  + '" href="/issue/dashboard.html">Dashboard</a>' +
+    '<a class="gdb-init-tab' + listActive  + '" href="/issue/list.html">List</a>' +
   '</div>';
 
   document.body.insertAdjacentHTML('afterbegin', subNav);
@@ -125,9 +125,9 @@ function buildGdbSupportSubNav() {
   var calActive  = p.endsWith('/support/calendar.html') ? ' active' : '';
 
   var subNav = '<div class="gdb-init-subnav" id="gdb-support-subnav">' +
-    '<a class="gdb-init-tab' + dashActive + '" href="/gdb-ppp/support/">Dashboard</a>' +
-    '<a class="gdb-init-tab' + listActive + '" href="/gdb-ppp/support/list.html">List</a>' +
-    '<a class="gdb-init-tab' + calActive  + '" href="/gdb-ppp/support/calendar.html">Calendar</a>' +
+    '<a class="gdb-init-tab' + dashActive + '" href="/support/">Dashboard</a>' +
+    '<a class="gdb-init-tab' + listActive + '" href="/support/list.html">List</a>' +
+    '<a class="gdb-init-tab' + calActive  + '" href="/support/calendar.html">Calendar</a>' +
   '</div>';
 
   document.body.insertAdjacentHTML('afterbegin', subNav);
@@ -151,8 +151,8 @@ function buildGdbPerformanceSubNav() {
   var personalActive = p.endsWith('/performance/personal.html') ? ' active' : '';
 
   var subNav = '<div class="gdb-init-subnav" id="gdb-performance-subnav">' +
-    '<a class="gdb-init-tab' + summaryActive + '" href="/gdb-ppp/performance/">Summary</a>' +
-    '<a class="gdb-init-tab' + personalActive + '" href="/gdb-ppp/performance/personal.html">Personal</a>' +
+    '<a class="gdb-init-tab' + summaryActive + '" href="/performance/">Summary</a>' +
+    '<a class="gdb-init-tab' + personalActive + '" href="/performance/personal.html">Personal</a>' +
   '</div>';
 
   document.body.insertAdjacentHTML('afterbegin', subNav);
@@ -205,7 +205,7 @@ function buildGdbHeader(opts) {
   var p = window.location.pathname;
 
   var headerHtml = '<header class="gdb-header">' +
-    '<a class="gdb-header-brand" href="/gdb-ppp/channel/">' +
+    '<a class="gdb-header-brand" href="/channel/">' +
       '<div class="gdb-logo">GDB</div>' +
       '<div><div class="gdb-brand-name">GDB Dashboard</div>' +
       '<div class="gdb-brand-sub">Product and Project Portfolio</div></div>' +
@@ -247,21 +247,21 @@ function buildGdbHeader(opts) {
   var compActive = p.endsWith('/initiative/completed.html') ? ' active' : '';
 
   /* Initiatives — single nav item; sub-tabs rendered by buildGdbInitiativeSubNav() */
-  nav += '<a class="gdb-nav-item' + initActive + '" href="/gdb-ppp/initiative/">Initiatives</a>';
+  nav += '<a class="gdb-nav-item' + initActive + '" href="/initiative/">Initiatives</a>';
 
   /* Issues */
   var issueActive = p.includes('/issue/') ? ' active' : '';
-  nav += '<a class="gdb-nav-item' + issueActive + '" href="/gdb-ppp/issue/">' +
+  nav += '<a class="gdb-nav-item' + issueActive + '" href="/issue/">' +
          'Issues</a>';
 
   /* Support */
   var suppActive = p.includes('/support/') ? ' active' : '';
-  nav += '<a class="gdb-nav-item' + suppActive + '" href="/gdb-ppp/support/">' +
+  nav += '<a class="gdb-nav-item' + suppActive + '" href="/support/">' +
          'Support Tasks</a>';
 
   /* Performance — hidden until auth confirms access */
   var perfActive = p.includes('/performance/') ? ' active' : '';
-  nav += '<a id="gdb-nav-perf" class="gdb-nav-item' + perfActive + '" href="/gdb-ppp/performance/" style="display:none">Performance</a>';
+  nav += '<a id="gdb-nav-perf" class="gdb-nav-item' + perfActive + '" href="/performance/" style="display:none">Performance</a>';
 
 
   nav += '</nav>';
@@ -553,7 +553,7 @@ function gdbAuthGuard(onUser) {
       if (_perfEl && _canPerf) {
         _perfEl.style.display = '';
         if (!gdbHasRole('super_admin') && !gdbHasRole('perf_supervisor')) {
-          _perfEl.href = '/gdb-ppp/performance/personal.html';
+          _perfEl.href = '/performance/personal.html';
         }
       }
       if (typeof onUser === 'function') onUser(fakeUser, _auth);
@@ -589,7 +589,7 @@ function gdbAuthGuard(onUser) {
         _resolved = true;
         _unsub();
         try{sessionStorage.setItem('gdb_perf_debug',JSON.stringify({src:'timer',ts:Date.now(),href:window.location.href}));}catch(e){}
-        window.location.href = '/gdb-ppp/';
+        window.location.href = '/';
       }
     }, 4000);
 
@@ -608,7 +608,7 @@ function gdbAuthGuard(onUser) {
         if(_perfEl&&_canPerf){
           _perfEl.style.display='';
           if(!gdbHasRole('super_admin')&&!gdbHasRole('perf_supervisor'))
-            _perfEl.href='/gdb-ppp/performance/personal.html';
+            _perfEl.href='/performance/personal.html';
         }
         if(typeof onUser==='function') onUser(_fbUser,_auth);
       };

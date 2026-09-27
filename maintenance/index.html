@@ -57,7 +57,7 @@ body { padding-top: 0; display: flex; align-items: flex-start; justify-content: 
         .filter(function(k) { return k.startsWith('gdb_'); })
         .forEach(function(k) { localStorage.removeItem(k); });
     } catch(e) {}
-    window.location.replace('/gdb-ppp/');
+    window.location.replace('/');
   } else {
     /* Still ON — auto-reload every 2 min so user gets redirected after next deploy */
     setTimeout(function() { window.location.reload(); }, 2 * 60 * 1000);

@@ -1041,7 +1041,7 @@ window.addEventListener('DOMContentLoaded',function(){
   gdbAuthGuard(function(user){
     var _canSum=gdbHasRole('super_admin')||gdbHasRole('perf_supervisor');
       if(!_canSum){
-      window.location.href=(gdbHasRole('perf_staff'))?'/gdb-ppp/performance/personal.html':'/gdb-ppp/';
+      window.location.href=(gdbHasRole('perf_staff'))?'/performance/personal.html':'/';
       return;
     }
     if(typeof gdbProgressStart==='function')gdbProgressStart(3);

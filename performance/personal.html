@@ -178,7 +178,7 @@ window.addEventListener('DOMContentLoaded', function() {
     var _namePrefix=gdbPerfViewerName();
     var _match=_namePrefix?_namePrefix.charAt(0).toUpperCase()+_namePrefix.slice(1):null;
     if(!_isAdmin){
-      if(!_match&&!gdbHasRole('perf_staff')){window.location.href='/gdb-ppp/';return;}
+      if(!_match&&!gdbHasRole('perf_staff')){window.location.href='/';return;}
       var _ps=document.getElementById('perf-person-select');
       if(_ps)_ps.style.display='none';
       var _pl=document.querySelectorAll('.perf-selector-label')[0];

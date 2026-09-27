@@ -273,10 +273,13 @@ function buildGdbHeader(opts) {
   var signoutBtn = document.getElementById('gdb-signout-btn');
   if (signoutBtn) {
     signoutBtn.addEventListener('click', function() {
+      var doSignout = function() {
+        window.location.href = '/cdn-cgi/access/logout';
+      };
       if (typeof firebase !== 'undefined' && firebase.auth) {
-        firebase.auth().signOut().then(function() {
-          window.location.href = '/gdb-ppp/';
-        });
+        firebase.auth().signOut().then(doSignout).catch(doSignout);
+      } else {
+        doSignout();
       }
     });
   }
@@ -538,11 +541,51 @@ function gdbAuthGuard(onUser) {
   }
   var _auth = firebase.auth();
 
-  /* ── Safari ITP fix: wait up to 4s for auth state ────────
-     Safari fires onAuthStateChanged(null) first while loading
-     session from localStorage, then fires again with user.
-     We wait for a non-null result OR 4s timeout before redirect.
-  ────────────────────────────────────────────────────────── */
+  /* ── Read email from Cloudflare Access JWT cookie ── */
+  function _getCFEmail() {
+    try {
+      var cookies = document.cookie.split(';');
+      for (var i = 0; i < cookies.length; i++) {
+        var c = cookies[i].trim();
+        if (c.indexOf('CF_Authorization=') === 0) {
+          var token = c.substring('CF_Authorization='.length);
+          var parts = token.split('.');
+          if (parts.length !== 3) return null;
+          var b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+          var payload = JSON.parse(atob(b64));
+          return payload.email || null;
+        }
+      }
+    } catch(e) {}
+    return null;
+  }
+
+  function _onReady(email) {
+    var fakeUser = { email: email, uid: email, displayName: email.split('@')[0] };
+    setGdbUser(fakeUser);
+    var favUid = email.replace(/[^a-zA-Z0-9]/g, '_');
+    _gdbFavInit(favUid);
+    if (typeof gdbStoreRoles === 'function') gdbStoreRoles(email);
+    var _perfEl = document.getElementById('gdb-nav-perf');
+    if (_perfEl && (gdbHasRole('perf_admin') || gdbHasRole('perf_viewer'))) {
+      _perfEl.style.display = '';
+      if (!gdbHasRole('perf_admin')) _perfEl.href = '/gdb-ppp/performance/personal.html';
+    }
+    if (typeof onUser === 'function') onUser(fakeUser, _auth);
+  }
+
+  var cfEmail = _getCFEmail();
+  if (cfEmail) {
+    /* CF Access verified — sign in anonymously to Firebase for Firestore access */
+    _auth.signInAnonymously().then(function() {
+      _onReady(cfEmail);
+    }).catch(function() {
+      _onReady(cfEmail); /* proceed even if anon sign-in fails */
+    });
+    return;
+  }
+
+  /* ── Fallback: normal Firebase auth (local dev / no CF cookie) ── */
   var _resolved = false;
   var _redirectTimer = setTimeout(function() {
     if (!_resolved) {
@@ -551,25 +594,21 @@ function gdbAuthGuard(onUser) {
       try{sessionStorage.setItem('gdb_perf_debug',JSON.stringify({src:'timer',ts:Date.now(),href:window.location.href}));}catch(e){}
       window.location.href = '/gdb-ppp/';
     }
-  }, 4000); /* 4s timeout — longer than Safari's ITP delay */
+  }, 4000);
 
   var _unsub = _auth.onAuthStateChanged(function(user) {
-    if (!user) return; /* Safari fires null first — ignore, wait for real state */
+    if (!user) return;
     if (_resolved) return;
     _resolved = true;
     clearTimeout(_redirectTimer);
     _unsub();
     setGdbUser(user);
     _gdbFavInit(user.uid);
-    /* Resolve and store roles — uses GDB_ROLE_CONFIG from roles.js */
     if (typeof gdbStoreRoles === 'function') gdbStoreRoles(user.email);
-    /* Show Performance nav link */
     var _perfEl=document.getElementById('gdb-nav-perf');
     if(_perfEl&&(gdbHasRole('perf_admin')||gdbHasRole('perf_viewer'))){
       _perfEl.style.display='';
-      if(!gdbHasRole('perf_admin')){
-        _perfEl.href='/gdb-ppp/performance/personal.html';
-      }
+      if(!gdbHasRole('perf_admin')) _perfEl.href='/gdb-ppp/performance/personal.html';
     }
     if (typeof onUser === 'function') onUser(user, _auth);
   });

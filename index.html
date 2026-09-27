@@ -30,6 +30,19 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script>
+/* ── Try CF Access identity first (production) ── */
+fetch('/cdn-cgi/access/get-identity', { credentials: 'same-origin' })
+  .then(function(r) { return r.ok ? r.json() : null; })
+  .then(function(identity) {
+    if (identity && identity.email) {
+      window.location.replace('/channel/');
+    } else {
+      _initFirebaseLogin();
+    }
+  })
+  .catch(function() { _initFirebaseLogin(); });
+
+function _initFirebaseLogin() {
 firebase.initializeApp({
   apiKey:'AIzaSyCaS5kLNbm5lSLRHd1rdr0sXRCS5lB_Rgc',
   authDomain:'gdb-dashboard-prod.firebaseapp.com',
@@ -41,12 +54,8 @@ firebase.initializeApp({
 
 var _auth = firebase.auth();
 
-/* ── Safari ITP fix: wait for stable auth state ──────────────
-   Safari fires onAuthStateChanged(null) then user — ignore null
-────────────────────────────────────────────────────────────── */
 _auth.onAuthStateChanged(function(user) {
-  if (user) window.location.href = 'initiative/';
-  /* null = not logged in or Safari still loading — stay on login page */
+  if (user) window.location.href = 'channel/';
 });
 
 function doLogin() {
@@ -72,6 +81,7 @@ document.getElementById('auth-login-btn').addEventListener('click', doLogin);
 document.getElementById('auth-password').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') doLogin();
 });
+} // end _initFirebaseLogin
 </script>
 </body>
 </html>

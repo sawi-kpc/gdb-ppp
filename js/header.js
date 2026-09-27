@@ -541,25 +541,7 @@ function gdbAuthGuard(onUser) {
   }
   var _auth = firebase.auth();
 
-  /* ── Read email from Cloudflare Access JWT cookie ── */
-  function _getCFEmail() {
-    try {
-      var cookies = document.cookie.split(';');
-      for (var i = 0; i < cookies.length; i++) {
-        var c = cookies[i].trim();
-        if (c.indexOf('CF_Authorization=') === 0) {
-          var token = c.substring('CF_Authorization='.length);
-          var parts = token.split('.');
-          if (parts.length !== 3) return null;
-          var b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-          var payload = JSON.parse(atob(b64));
-          return payload.email || null;
-        }
-      }
-    } catch(e) {}
-    return null;
-  }
-
+  /* ── Get identity from Cloudflare Access (HttpOnly cookie — use endpoint) ── */
   function _onReady(email) {
     var fakeUser = { email: email, uid: email, displayName: email.split('@')[0] };
     setGdbUser(fakeUser);
@@ -574,42 +556,49 @@ function gdbAuthGuard(onUser) {
     if (typeof onUser === 'function') onUser(fakeUser, _auth);
   }
 
-  var cfEmail = _getCFEmail();
-  if (cfEmail) {
-    /* CF Access verified — sign in anonymously to Firebase for Firestore access */
-    _auth.signInAnonymously().then(function() {
-      _onReady(cfEmail);
-    }).catch(function() {
-      _onReady(cfEmail); /* proceed even if anon sign-in fails */
-    });
-    return;
-  }
+  /* Try Cloudflare Access identity endpoint first */
+  fetch('/cdn-cgi/access/get-identity', { credentials: 'same-origin' })
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(identity) {
+      if (identity && identity.email) {
+        _auth.signInAnonymously().then(function() {
+          _onReady(identity.email);
+        }).catch(function() {
+          _onReady(identity.email);
+        });
+        return;
+      }
+      _fallbackFirebaseAuth();
+    })
+    .catch(function() { _fallbackFirebaseAuth(); });
 
-  /* ── Fallback: normal Firebase auth (local dev / no CF cookie) ── */
-  var _resolved = false;
-  var _redirectTimer = setTimeout(function() {
-    if (!_resolved) {
+  /* ── Fallback: normal Firebase auth (local dev / no CF session) ── */
+  function _fallbackFirebaseAuth() {
+    var _resolved = false;
+    var _redirectTimer = setTimeout(function() {
+      if (!_resolved) {
+        _resolved = true;
+        _unsub();
+        try{sessionStorage.setItem('gdb_perf_debug',JSON.stringify({src:'timer',ts:Date.now(),href:window.location.href}));}catch(e){}
+        window.location.href = '/gdb-ppp/';
+      }
+    }, 4000);
+
+    var _unsub = _auth.onAuthStateChanged(function(user) {
+      if (!user) return;
+      if (_resolved) return;
       _resolved = true;
+      clearTimeout(_redirectTimer);
       _unsub();
-      try{sessionStorage.setItem('gdb_perf_debug',JSON.stringify({src:'timer',ts:Date.now(),href:window.location.href}));}catch(e){}
-      window.location.href = '/gdb-ppp/';
-    }
-  }, 4000);
-
-  var _unsub = _auth.onAuthStateChanged(function(user) {
-    if (!user) return;
-    if (_resolved) return;
-    _resolved = true;
-    clearTimeout(_redirectTimer);
-    _unsub();
-    setGdbUser(user);
-    _gdbFavInit(user.uid);
-    if (typeof gdbStoreRoles === 'function') gdbStoreRoles(user.email);
-    var _perfEl=document.getElementById('gdb-nav-perf');
-    if(_perfEl&&(gdbHasRole('perf_admin')||gdbHasRole('perf_viewer'))){
-      _perfEl.style.display='';
-      if(!gdbHasRole('perf_admin')) _perfEl.href='/gdb-ppp/performance/personal.html';
-    }
-    if (typeof onUser === 'function') onUser(user, _auth);
-  });
+      setGdbUser(user);
+      _gdbFavInit(user.uid);
+      if (typeof gdbStoreRoles === 'function') gdbStoreRoles(user.email);
+      var _perfEl=document.getElementById('gdb-nav-perf');
+      if(_perfEl&&(gdbHasRole('perf_admin')||gdbHasRole('perf_viewer'))){
+        _perfEl.style.display='';
+        if(!gdbHasRole('perf_admin')) _perfEl.href='/gdb-ppp/performance/personal.html';
+      }
+      if (typeof onUser === 'function') onUser(user, _auth);
+    });
+  }
 }

@@ -57,7 +57,7 @@ function _showDenied(email) {
     '<div class="access-denied-title">Access Not Granted</div>' +
     '<div class="access-denied-msg">' +
       'Your account (<strong>' + email + '</strong>) does not have permission to access this dashboard.<br>' +
-      'Please contact <a href="mailto:kpcproduct@kingpower.com">kpcproduct@kingpower.com</a> to request permission.' +
+      'To get access, please contact <a href="mailto:kpcproduct@kingpower.com">kpcproduct@kingpower.com</a>.' +
     '</div>' +
     '<div class="access-denied-sub">Already have access? <a onclick="window.location.reload()">Try again</a></div>';
   card.appendChild(denied);
@@ -103,7 +103,7 @@ fetch('/cdn-cgi/access/get-identity', { credentials: 'same-origin' })
         '<div class="access-denied">' +
         '<div class="access-denied-icon">🔒</div>' +
         '<div class="access-denied-title">Permission Required</div>' +
-        '<div class="access-denied-msg">Please contact <a href="mailto:kpcproduct@kingpower.com">kpcproduct@kingpower.com</a> to request permission.</div>' +
+        '<div class="access-denied-msg">To get access, please contact <a href="mailto:kpcproduct@kingpower.com">kpcproduct@kingpower.com</a>.</div>' +
         '</div>';
     }
   })

@@ -6,18 +6,19 @@
 <title>GDB Dashboard</title>
 <link rel="stylesheet" href="css/shared.css">
 <style>
-body{padding-top:0;}
+body{padding-top:0;display:flex;align-items:flex-start;justify-content:center;min-height:100vh;padding-top:12vh;}
+.auth-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:56px;max-width:760px;width:90vw;text-align:center;}
+.auth-logo{font-size:28px;font-weight:800;color:var(--text);letter-spacing:-.02em;margin-bottom:4px;}
+.auth-sub{font-size:13px;color:var(--text3);margin-bottom:32px;}
 .auth-checking{display:flex;align-items:center;justify-content:center;gap:10px;color:var(--text3);font-size:13px;margin-top:8px;}
 .auth-spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
 @keyframes spin{to{transform:rotate(360deg)}}
 .access-denied{text-align:center;padding:8px 0 0;}
-.access-denied-icon{font-size:32px;margin-bottom:12px;}
-.access-denied-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px;}
-.access-denied-msg{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:16px;}
-.access-denied-email{display:inline-block;font-size:12px;font-weight:600;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--surface));border:1px solid color-mix(in srgb,var(--accent) 30%,var(--border));border-radius:5px;padding:6px 14px;text-decoration:none;}
-.access-denied-email:hover{opacity:.8;}
-.access-denied-sub{font-size:11px;color:var(--text3);margin-top:14px;}
-.access-denied-sub a{color:var(--text3);text-decoration:underline;cursor:pointer;}.access-denied-msg a{color:var(--accent);font-weight:600;text-decoration:none;}.access-denied-msg a:hover{text-decoration:underline;}.signin-btn{display:inline-block;margin-top:16px;padding:9px 24px;font-size:13px;font-weight:600;background:var(--accent);color:#fff;border-radius:6px;text-decoration:none;cursor:pointer;letter-spacing:.01em;}.signin-btn:hover{opacity:.85;}
+.access-denied-icon{font-size:48px;margin-bottom:20px;}
+.access-denied-title{font-size:22px;font-weight:700;color:var(--text);margin-bottom:10px;}
+.access-denied-msg{font-size:14px;color:var(--text2);line-height:1.7;margin-bottom:24px;}
+.access-denied-msg a{color:var(--accent);font-weight:600;text-decoration:none;}.access-denied-msg a:hover{text-decoration:underline;}
+.signin-btn{display:inline-block;margin-top:16px;padding:10px 28px;font-size:14px;font-weight:600;background:var(--accent);color:#fff;border-radius:6px;text-decoration:none;cursor:pointer;letter-spacing:.01em;}.signin-btn:hover{opacity:.85;}
 </style>
 <script>
 (function(){

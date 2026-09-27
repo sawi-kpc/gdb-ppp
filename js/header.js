@@ -4,17 +4,17 @@
    PPP: Initiatives (dropdown) + Issues + Support
 ══════════════════════════════════════════════ */
 
-/* ── Maintenance mode ──────────────────────────────────
-   LOCAL DEV : change GDB_MAINTENANCE_LOCAL to true/false
-   GITHUB    : controlled by MAINTENANCE_MODE repo variable
-──────────────────────────────────────────────────────── */
-var GDB_MAINTENANCE_LOCAL = false;          /* ← edit this locally */
-var GDB_MAINTENANCE       = '__MAINTENANCE_MODE__'; /* injected at deploy */
+/* ── Maintenance mode (runtime — Firestore gdb-ppp_config/app) ── */
 (function() {
-  var isOn = GDB_MAINTENANCE_LOCAL === true || GDB_MAINTENANCE === 'true';
-  if (isOn && window.location.pathname.indexOf('/maintenance') === -1) {
-    window.location.replace('/maintenance/');
-  }
+  if (window.location.pathname.indexOf('/maintenance') !== -1) return;
+  fetch('https://firestore.googleapis.com/v1/projects/gdb-dashboard-prod/databases/(default)/documents/gdb-ppp_config/app?key=AIzaSyCaS5kLNbm5lSLRHd1rdr0sXRCS5lB_Rgc')
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(doc) {
+      if (doc && doc.fields && doc.fields.maintenance && doc.fields.maintenance.booleanValue === true) {
+        window.location.replace('/maintenance/');
+      }
+    })
+    .catch(function() {});
 })();
 
 /* ── CSS for dropdown nav ────────────────── */
@@ -274,7 +274,8 @@ function buildGdbHeader(opts) {
   if (signoutBtn) {
     signoutBtn.addEventListener('click', function() {
       var doSignout = function() {
-        window.location.href = '/cdn-cgi/access/logout';
+        try { localStorage.setItem('gdb_signed_out', '1'); } catch(e) {}
+        window.location.href = '/';
       };
       if (typeof firebase !== 'undefined' && firebase.auth) {
         firebase.auth().signOut().then(doSignout).catch(doSignout);

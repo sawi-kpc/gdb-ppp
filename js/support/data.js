@@ -64,10 +64,9 @@ function _fetchSupport(onSuccess, onError, attempt) {
     if (script.parentNode) script.parentNode.removeChild(script);
     try { delete window[cbName]; } catch(e) {}
 
-    if (attempt === 1) {
-      /* Auto-retry once — Apps Script should be warm now */
-      if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('loading', 'Retrying…');
-      _fetchSupport(onSuccess, onError, 2);
+    if (attempt < 4) {
+      if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('loading', 'Retrying… (' + attempt + '/3)');
+      _fetchSupport(onSuccess, onError, attempt + 1);
     } else {
       if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('hide');
       if (typeof onError === 'function')
@@ -102,9 +101,9 @@ function _fetchSupport(onSuccess, onError, attempt) {
     if (script.parentNode) script.parentNode.removeChild(script);
     try { delete window[cbName]; } catch(e) {}
 
-    if (attempt === 1) {
-      if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('loading', 'Retrying…');
-      _fetchSupport(onSuccess, onError, 2);
+    if (attempt < 4) {
+      if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('loading', 'Retrying… (' + attempt + '/3)');
+      _fetchSupport(onSuccess, onError, attempt + 1);
     } else {
       if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('hide');
       if (typeof onError === 'function')

@@ -7,7 +7,8 @@
 /* ── Maintenance mode (runtime — Firestore gdb-ppp_config/app) ── */
 (function() {
   if (window.location.pathname.indexOf('/maintenance') !== -1) return;
-  fetch('https://firestore.googleapis.com/v1/projects/gdb-dashboard-prod/databases/(default)/documents/gdb-ppp_config/app?key=AIzaSyCaS5kLNbm5lSLRHd1rdr0sXRCS5lB_Rgc')
+  var _cfgDoc = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'app_localhost' : 'app';
+  fetch('https://firestore.googleapis.com/v1/projects/gdb-dashboard-prod/databases/(default)/documents/gdb-ppp_config/' + _cfgDoc + '?key=AIzaSyCaS5kLNbm5lSLRHd1rdr0sXRCS5lB_Rgc')
     .then(function(r) { return r.ok ? r.json() : null; })
     .then(function(doc) {
       if (doc && doc.fields && doc.fields.maintenance && doc.fields.maintenance.booleanValue === true) {

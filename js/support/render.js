@@ -46,7 +46,7 @@ var activeGroups      =[];  /* multi-select; empty = all */
 var activePriorities  =[];  /* multi-select; empty = all */
 var activeLabels      =[];  /* multi-select; empty = all */
 var activeAssignees =[];  /* multi-select array */
-var searchQ='', sortCol='Due', sortAsc=false, showOverdueOnly=false;
+var searchQ='', sortCol='Due', sortAsc=false, showOverdueOnly=false, hideArchived=true;
 
 /* ── Filter state persistence (localStorage) ─────────────── */
 var _supportFiltersLoaded=false;
@@ -56,7 +56,7 @@ function _saveSupportFilters(){
     activePriorities:activePriorities, activeLabels:activeLabels,
     activeAssignees:activeAssignees,
     searchQ:searchQ, sortCol:sortCol, sortAsc:sortAsc, _taskPage:_taskPage,
-    showOverdueOnly:showOverdueOnly
+    showOverdueOnly:showOverdueOnly, hideArchived:hideArchived
   });
 }
 function _loadSupportFilters(){
@@ -73,10 +73,11 @@ function _loadSupportFilters(){
   if(typeof f.sortAsc==='boolean')       sortAsc=f.sortAsc;
   if(f._taskPage>0)                      _taskPage=f._taskPage;
   if(typeof f.showOverdueOnly==='boolean') showOverdueOnly=f.showOverdueOnly;
+  if(typeof f.hideArchived==='boolean') hideArchived=f.hideArchived;
 }
 function resetSupportFilters(){
   activeStatuses=[]; activeGroups=[]; activePriorities=[]; activeLabels=[];
-  activeAssignees=[]; searchQ=''; showOverdueOnly=false; _taskPage=1;
+  activeAssignees=[]; searchQ=''; showOverdueOnly=false; hideArchived=true; _taskPage=1;
   var si=document.getElementById('support-search'); if(si)si.value='';
   GDB.saveFilters('gdb_filter_support_list',{});
   applyFilters();
@@ -344,7 +345,8 @@ function getFiltered(){
     var okSearch = !q||d.Key.toLowerCase().includes(q)||d.Summary.toLowerCase().includes(q)||
                    (d.Assignee||'').toLowerCase().includes(q);
     var okOverdue = !showOverdueOnly || isOverdue(d.Due, d.Status);
-    return okStatus&&okGroup&&okPriority&&okLabels&&okAssignee&&okSearch&&okOverdue;
+    var okHideArchived = !hideArchived || !d.FixVersion || d.FixVersion.trim() === '';
+    return okStatus&&okGroup&&okPriority&&okLabels&&okAssignee&&okSearch&&okOverdue&&okHideArchived;
   }).sort(function(a,b){
     /* Date columns: parse to timestamp so "Mar 2026" sorts correctly */
     if(sortCol==='Due'||sortCol==='Created'||sortCol==='Updated'){
@@ -367,6 +369,14 @@ function toggleOverdueOnly(){
   showOverdueOnly=!showOverdueOnly;
   var btn=document.getElementById('btn-overdue-only');
   if(btn) btn.classList.toggle('active', showOverdueOnly);
+  var btnHA=document.getElementById('btn-hide-archived');
+  if(btnHA) btnHA.classList.toggle('active', hideArchived);
+  applyFilters();
+}
+function toggleHideArchived(){
+  hideArchived=!hideArchived;
+  var btn=document.getElementById('btn-hide-archived');
+  if(btn) btn.classList.toggle('active', hideArchived);
   applyFilters();
 }
 function applyFilters(){
@@ -376,6 +386,8 @@ function applyFilters(){
   /* sync overdue button state (e.g. after filter restore) */
   var btn=document.getElementById('btn-overdue-only');
   if(btn) btn.classList.toggle('active', showOverdueOnly);
+  var btnHA=document.getElementById('btn-hide-archived');
+  if(btnHA) btnHA.classList.toggle('active', hideArchived);
   var filtered = getFiltered();
   buildTaskTable(filtered);
   /* Chart always shows full dataset — not filtered */

@@ -63,6 +63,10 @@ function _showDenied(email) {
 }
 
 function _checkRoles(email) {
+  if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+    window.location.replace('/initiative/');
+    return;
+  }
   var url = 'https://firestore.googleapis.com/v1/projects/' + GDB_PROJECT_ID +
             '/databases/(default)/documents/team_members/' + _docId(email) +
             '?key=' + GDB_API_KEY;
@@ -125,7 +129,8 @@ function _startAuth() {
   }
 }
 
-fetch('https://firestore.googleapis.com/v1/projects/' + GDB_PROJECT_ID + '/databases/(default)/documents/gdb-ppp_config/app?key=' + GDB_API_KEY)
+var _cfgDoc = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'app_localhost' : 'app';
+fetch('https://firestore.googleapis.com/v1/projects/' + GDB_PROJECT_ID + '/databases/(default)/documents/gdb-ppp_config/' + _cfgDoc + '?key=' + GDB_API_KEY)
   .then(function(r) { return r.ok ? r.json() : null; })
   .then(function(doc) {
     if (doc && doc.fields && doc.fields.maintenance && doc.fields.maintenance.booleanValue === true) {

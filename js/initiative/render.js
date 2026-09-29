@@ -2235,8 +2235,8 @@ function _rmChip(d){
   var roadmapStatus=(d['Roadmap Status']||'').trim();
   var monStatus=(d['Project Monitoring Status']||'').trim();
   var href=CONFIG.JIRA_BASE+key;
-  var tStart=fmtMonYear(d['Target Project Start']||'');
-  var tEnd  =fmtMonYear(d['Target Project End']||'');
+  var tStart=fmtMonYear(getStart(d['Target Project Start']||'')||'');
+  var tEnd  =fmtMonYear(getEnd(d['Target Project End']||'')||'');
   var timeline=(tStart!=='—'||tEnd!=='—') ? tStart+' → '+tEnd : 'No target date set';
   var badges='';
   if(status)       badges+=_rmBadge(status,       SC[status]||'#8b949e');

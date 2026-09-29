@@ -3,9 +3,11 @@
    Spreadsheet: PPP_Jira-Product-Discovery
    ID: 1dEBSAcmkT5tQmzaQDQEieex3WMCyPBi1JjQdOpVH8Nc
    Routes:
-     (no param)              → initiatives { data:[...], count, updated }
-     ?sheet=issues&callback= → issues JSONP { issues:[...], _meta }
-     ?sheet=supports&callback→ supports JSONP{ supports:[...], _meta }
+     (no param)                        → initiatives { data:[...], count, updated }
+     ?sheet=issues&callback=           → issues JSONP { issues:[...], _meta }
+     ?sheet=supports&callback=         → all supports JSONP { supports:[...], _meta }
+     ?sheet=supports&filter=active     → no FixVersion (not archived)
+     ?sheet=supports&filter=archived   → has FixVersion (archived)
 ══════════════════════════════════════════════════════════════ */
 
 var SPREADSHEET_ID = '1dEBSAcmkT5tQmzaQDQEieex3WMCyPBi1JjQdOpVH8Nc';
@@ -28,10 +30,10 @@ function doGet(e) {
   var sheet    = (params.sheet || 'initiatives').toLowerCase();
   var callback = params.callback || null;
   try {
-    var result = sheet === 'issues'   ? getIssues()   :
-                 sheet === 'supports' ? getSupports() :
-                 sheet === 'projects' ? getProjects() :
-                 sheet === 'debug'    ? getDebugInfo():
+    var result = sheet === 'issues'   ? getIssues()                        :
+                 sheet === 'supports' ? getSupports(params.filter || '')   :
+                 sheet === 'projects' ? getProjects()                      :
+                 sheet === 'debug'    ? getDebugInfo()                     :
                                         getInitiatives();
     return _respond(result, callback);
   } catch(err) {
@@ -207,7 +209,12 @@ function getIssues() {
 }
 
 /* ── SUPPORTS ────────────────────────────────────────────── */
-function getSupports() {
+/*   filter param:
+ *     ''         → all rows (default, backward-compatible)
+ *     'active'   → FixVersion is empty  (not archived)
+ *     'archived' → FixVersion has value (archived)
+ */
+function getSupports(filter) {
   var ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
   var sheet = ss.getSheetByName('supports') || ss.getSheetByName('Supports') ||
               ss.getSheetByName('Support')  || _sheetByGid(ss, GID_SUPPORTS);
@@ -256,14 +263,22 @@ function getSupports() {
       };
     });
 
+  /* ── Apply filter ── */
+  if (filter === 'active') {
+    supports = supports.filter(function(s) { return !s.FixVersion; });
+  } else if (filter === 'archived') {
+    supports = supports.filter(function(s) { return !!s.FixVersion; });
+  }
+  /* no filter → return all (backward-compatible) */
+
   return {
     supports: supports,
     _meta: {
       generated: new Date().toISOString(),
       count:     supports.length,
+      filter:    filter || 'all',
       sheet:     'supports',
       headers:   headers,
     }
   };
-
 }

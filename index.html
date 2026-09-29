@@ -129,7 +129,7 @@ function _startAuth() {
   }
 }
 
-var _cfgDoc = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'app_localhost' : 'app';
+var _cfgDoc = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'app_localhost' : 'app_prod';
 fetch('https://firestore.googleapis.com/v1/projects/' + GDB_PROJECT_ID + '/databases/(default)/documents/gdb-ppp_config/' + _cfgDoc + '?key=' + GDB_API_KEY)
   .then(function(r) { return r.ok ? r.json() : null; })
   .then(function(doc) {

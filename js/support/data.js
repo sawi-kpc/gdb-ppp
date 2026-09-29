@@ -48,22 +48,10 @@ function getSupportCacheAge() {
   } catch(e) { return null; }
 }
 
-/* ── JSONP fetch ────────────────────────────────────────────── */
-function loadSupportData(onSuccess, onError, _bgRevalidate) {
-  /* 1. SWR: serve from cache immediately, revalidate in background */
-  var cached = _supCacheGet();
-  if (cached && !_bgRevalidate) {
-    supportData = cached.data;
-    var age = getSupportCacheAge();
-    if (typeof gdbSetCacheBadge === 'function')
-      gdbSetCacheBadge('cached', age ? '⚡ Cached · ' + age.label : '⚡ Cached');
-    if (typeof onSuccess === 'function') onSuccess(supportData);
-    setTimeout(function(){ loadSupportData(onSuccess, null, true); }, 0);
-    return;
-  }
-
-  /* 2. Fetch live */
-  if (!_bgRevalidate && typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('loading', 'Loading…');
+/* ── JSONP fetch (with auto-retry on cold start) ────────────── */
+function _fetchSupport(onSuccess, onError, attempt) {
+  attempt = attempt || 1;
+  var TIMEOUT_MS = 20000; /* 20s covers Apps Script cold start */
 
   var cbName = '_gdbSupCb_' + Date.now();
   var script = document.createElement('script');
@@ -75,10 +63,17 @@ function loadSupportData(onSuccess, onError, _bgRevalidate) {
     done = true;
     if (script.parentNode) script.parentNode.removeChild(script);
     try { delete window[cbName]; } catch(e) {}
-    if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('hide');
-    if (typeof onError === 'function')
-      onError('Request timed out. Please check your network connection or try again later.');
-  }, 8000);
+
+    if (attempt === 1) {
+      /* Auto-retry once — Apps Script should be warm now */
+      if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('loading', 'Retrying…');
+      _fetchSupport(onSuccess, onError, 2);
+    } else {
+      if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('hide');
+      if (typeof onError === 'function')
+        onError('Request timed out. Please check your network connection or try again later.');
+    }
+  }, TIMEOUT_MS);
 
   window[cbName] = function(json) {
     if (done) return;
@@ -106,11 +101,35 @@ function loadSupportData(onSuccess, onError, _bgRevalidate) {
     clearTimeout(timer);
     if (script.parentNode) script.parentNode.removeChild(script);
     try { delete window[cbName]; } catch(e) {}
-    if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('hide');
-    if (typeof onError === 'function')
-      onError('Data source is currently unavailable. Please try again later or contact the dashboard administrator.');
+
+    if (attempt === 1) {
+      if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('loading', 'Retrying…');
+      _fetchSupport(onSuccess, onError, 2);
+    } else {
+      if (typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('hide');
+      if (typeof onError === 'function')
+        onError('Data source is currently unavailable. Please try again later or contact the dashboard administrator.');
+    }
   };
 
   script.src = SUPPORT_APPS_SCRIPT_URL + '?sheet=supports&callback=' + cbName;
   document.head.appendChild(script);
+}
+
+function loadSupportData(onSuccess, onError, _bgRevalidate) {
+  /* 1. SWR: serve from cache immediately, revalidate in background */
+  var cached = _supCacheGet();
+  if (cached && !_bgRevalidate) {
+    supportData = cached.data;
+    var age = getSupportCacheAge();
+    if (typeof gdbSetCacheBadge === 'function')
+      gdbSetCacheBadge('cached', age ? '⚡ Cached · ' + age.label : '⚡ Cached');
+    if (typeof onSuccess === 'function') onSuccess(supportData);
+    setTimeout(function(){ loadSupportData(onSuccess, null, true); }, 0);
+    return;
+  }
+
+  /* 2. Fetch live (with auto-retry) */
+  if (!_bgRevalidate && typeof gdbSetCacheBadge === 'function') gdbSetCacheBadge('loading', 'Loading…');
+  _fetchSupport(onSuccess, onError, 1);
 }

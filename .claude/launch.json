@@ -4,7 +4,9 @@
     {
       "name": "gdb-ppp",
       "runtimeExecutable": "/usr/bin/python3",
-      "runtimeArgs": ["-m", "http.server", "8000", "--directory", "/Users/sawitreejakkrawannit/Documents/_code"],
+      "runtimeArgs": [
+        "/tmp/serve_gdb.py"
+      ],
       "port": 8000
     }
   ]

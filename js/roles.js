@@ -16,6 +16,11 @@ var GDB_FIREBASE_CONFIG = {
 
 /* ── Fetch roles from Firestore REST API (no SDK needed) ── */
 function gdbFetchAndStoreRoles(email) {
+  if (!email) {
+    window._gdbRoles = [];
+    window._gdbNamePrefix = null;
+    return Promise.resolve([]);
+  }
   var docId = email.toLowerCase().replace(/[^a-z0-9]/g, '_');
   var url = 'https://firestore.googleapis.com/v1/projects/' + GDB_FIREBASE_CONFIG.projectId +
             '/databases/(default)/documents/team_members/' + docId +

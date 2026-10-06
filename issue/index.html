@@ -11,6 +11,8 @@
 <body class="has-init-subnav">
 <div id="gdb-error"></div>
 
+<div id="gdb-loading"><div class="gdb-spinner"></div><div class="gdb-loading-text">Loading…</div></div>
+
 <div class="gdb-page" id="main-content" style="display:none">
 <div class="issue-content">
 
@@ -166,6 +168,7 @@ window.addEventListener('DOMContentLoaded', function() {
   buildGdbHeader({ showRefresh: true });
   buildGdbIssueSubNav();
   gdbAuthGuard(function() {
+    document.getElementById('gdb-loading').style.display = 'none';
     document.getElementById('main-content').style.display = 'block';
     _activeView = 'board';
     initIssueBoard();

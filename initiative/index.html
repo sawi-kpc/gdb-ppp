@@ -136,7 +136,7 @@
 window.onDataReady = function(data) {
   document.getElementById('gdb-loading').style.display = 'none';
   document.getElementById('init-content').style.display = 'block';
-  renderSummary();
+  renderSummary(); /* replaces skeleton tiles with real data */
   
   /* Update header time from data.js refresh-time span */
   var rtEl = document.getElementById('refresh-time');
@@ -149,14 +149,16 @@ window.addEventListener('DOMContentLoaded', function() {
   buildGdbHeader({ showRefresh: true });
   buildGdbInitiativeSubNav();
   gdbAuthGuard(function(user) {
-    /* loadData() is async and calls renderAll() + window.onDataReady() when done */
+    /* Show skeleton tiles immediately so the page isn't blank while data loads */
+    buildMetricsSkeleton('sum-metrics');
+    document.getElementById('gdb-loading').style.display = 'none';
+    document.getElementById('init-content').style.display = 'block';
     loadData();
   });
   /* Wire refresh button to reload data */
   document.addEventListener('click', function(e) {
     if (e.target && e.target.id === 'gdb-refresh-btn') {
-      document.getElementById('gdb-loading').style.display = 'flex';
-      document.getElementById('init-content').style.display = 'none';
+      buildMetricsSkeleton('sum-metrics');
       loadData();
     }
   });

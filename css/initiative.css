@@ -28,6 +28,15 @@
 .m-value { font-size: 28px; font-weight: 700; color: var(--accent); line-height: 1; margin: 4px 0; }
 .m-sub   { font-size: 11px; color: var(--text3); }
 
+/* ── Skeleton loading ───────────────────── */
+@keyframes gdb-pulse {
+  0%,100% { opacity: 1; }
+  50%      { opacity: .4; }
+}
+.m-skel-label { height: 10px; border-radius: 3px; background: var(--border); margin: 0 auto 8px; width: 60%; animation: gdb-pulse 1.4s ease-in-out infinite; }
+.m-skel-value { height: 28px; border-radius: 4px; background: var(--border); margin: 4px auto; width: 40%; animation: gdb-pulse 1.4s ease-in-out infinite .15s; }
+.m-skel-sub   { height: 10px; border-radius: 3px; background: var(--border); margin: 6px auto 0; width: 70%; animation: gdb-pulse 1.4s ease-in-out infinite .3s; }
+
 /* ── Timeline / section ─────────────────── */
 .section { margin-bottom: 24px; }
 .sec-title {

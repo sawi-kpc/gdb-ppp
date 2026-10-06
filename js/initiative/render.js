@@ -4,9 +4,9 @@
 ══════════════════════════════════════════════ */
 
 var charts={};
-var sumYearFilter=['ROADMAP_2026'],initYearFilter=['ROADMAP_2026'],sumStageFilter=[],hideNoDate=false,sumSearchQuery='';
+var sumYearFilter=['ROADMAP_'+new Date().getFullYear()],initYearFilter=['ROADMAP_'+new Date().getFullYear()],sumStageFilter=[],hideNoDate=false,sumSearchQuery='';
 var sumRoadmapFilter=[], sumAssigneeFilter=[];
-var listYearFilter=['ROADMAP_2026'];
+var listYearFilter=['ROADMAP_'+new Date().getFullYear()];
 var listAssigneeFilter=[];
 var listSearchQuery='';
 var listRoadmapFilter=[];
@@ -151,7 +151,7 @@ function _loadInitFilters(){
 }
 
 function resetSumFilters(){
-  sumYearFilter=['ROADMAP_2026']; sumStageFilter=[]; sumRoadmapFilter=[];
+  sumYearFilter=['ROADMAP_'+new Date().getFullYear()]; sumStageFilter=[]; sumRoadmapFilter=[];
   sumComponentFilter=[]; sumDepFilter=[]; sumPMRoleFilter=[]; sumAssigneeFilter=[]; sumAssigneeRoleMode='any'; sumSearchQuery='';
   _syncRoleToggle('sum');
   var si=document.getElementById('sum-search'); if(si)si.value='';
@@ -159,7 +159,7 @@ function resetSumFilters(){
   renderSummary();
 }
 function resetListFilters(){
-  listYearFilter=['ROADMAP_2026']; listStatusFilter=[]; listRoadmapFilter=[];
+  listYearFilter=['ROADMAP_'+new Date().getFullYear()]; listStatusFilter=[]; listRoadmapFilter=[];
   listComponentFilter=[]; listDepFilter=[]; listPMRoleFilter=[];
   listAssigneeFilter=[]; listAssigneeRoleMode='any'; listSearchQuery=''; listHideWontDo=false;
   _syncRoleToggle('list');
@@ -168,13 +168,15 @@ function resetListFilters(){
   renderList();
 }
 function resetInitFilters(){
-  initYearFilter=['ROADMAP_2026'];
+  initYearFilter=['ROADMAP_'+new Date().getFullYear()];
   GDB.saveFilters('gdb_filter_initiative_dash',{});
   renderInitiatives();
 }
 var STAGES=['Parking Lot','Budget Approval','Discovery','Ready for Delivery','Delivery','Done'];
 var SC={'Parking Lot':'#9E9890','Budget Approval':'#E07878','Discovery':'#D4A850','Ready for Delivery':'#9B8FE0','Delivery':'#6BAED4','Done':'#6DBF9A'};
 var RC={'New':'#6BAED4','Next':'#D4A850','Now':'#82B8D8','Later':'#C8A84A',"Won't do":'#9E9E9E','Completed':'#88C470','Completed With':'#6DBF9A'};
+var RS_COLORS={'New':'var(--text2)','Next':'var(--teal)','Now':'var(--accent)','Later':'var(--amber)',"Won't do":'var(--text3)','Completed':'var(--up)','Completed With':'var(--teal)'};
+var RS_ORDER=['New','Next','Now','Later',"Won't do",'Completed','Completed With'];
 var GC={'Increase Revenue':'#88C470','Improve Internal Operation':'#6BAED4','Improve Customer Experience':'#9B8FE0','Improve Customer Engagement':'#D97890','Strategic Direction':'#D4A850'};
 var TC={'Strategic':'#9B8FE0','BAU':'#6BAED4'};
 var AC=['#6BAED4','#6DBF9A','#D4A850','#9B8FE0','#E07878','#88C470','#D97890','#D4B85A','#9E9890'];
@@ -280,6 +282,14 @@ function buildMetrics(data,id){
   }).join('');
 }
 
+
+function buildMetricsSkeleton(id){
+  var el=document.getElementById(id); if(!el)return;
+  var labels=['Total','Parking Lot','Budget Approval','Discovery','Ready for Delivery','Delivery','Done'];
+  el.innerHTML=labels.map(function(){
+    return'<div class="m-card"><div class="m-skel-label"></div><div class="m-skel-value"></div><div class="m-skel-sub"></div></div>';
+  }).join('');
+}
 /* Timeline render */
 function renderTimeline(data){
   _initTlRange();
@@ -576,8 +586,6 @@ function renderSummary(){
   GDB.buildCheckDropdown({wrapperId:'stage-dropdown-wrap', btnLabelId:'stage-btn-label', listId:'stage-checkbox-list', values:STAGES, activeArr:sumStageFilter, colorMap:SC, toggleFn:'onSumStageToggle'});
 
   /* Roadmap Status dropdown */
-  var RS_COLORS={'New':'var(--text2)','Next':'var(--teal)','Now':'var(--accent)','Later':'var(--amber)',"Won't do":'var(--text3)','Completed':'var(--up)'};
-  var RS_ORDER=['New','Next','Now','Later',"Won't do",'Completed'];
   GDB.buildCheckDropdown({wrapperId:'rs-tl-dropdown-wrap', btnLabelId:'rs-tl-btn-label', listId:'rs-tl-checkbox-list', values:RS_ORDER, activeArr:sumRoadmapFilter, colorMap:RS_COLORS, toggleFn:'onSumRoadmapToggle'});
 
   /* Component dropdown — grouped */
@@ -939,7 +947,7 @@ function _syncRoleToggle(prefix){
 }
 
 /* ── Done initiatives list ────────────────── */
-var doneYearFilter=['all'];
+var doneYearFilter=['ROADMAP_'+new Date().getFullYear()];
 var doneBUFilter=[];
 var doneSearchQuery='';
 
@@ -1919,10 +1927,7 @@ function renderList(){
   GDB.buildCheckDropdown({wrapperId:'list-pm-dropdown-wrap', btnLabelId:'list-pm-btn-label', listId:'list-pm-checkbox-list', values:listPMVals, activeArr:listPMRoleFilter, colorMap:null, toggleFn:'onListPMToggle'});
 
   /* Roadmap status dropdown checkboxes */
-  var rsVals=[];
-  allData.forEach(function(d){ var v=d['Roadmap Status']||''; if(v&&rsVals.indexOf(v)<0)rsVals.push(v); });
-  rsVals.sort();
-  GDB.buildCheckDropdown({wrapperId:'rs-dropdown-wrap', btnLabelId:'rs-btn-label', listId:'rs-checkbox-list', values:rsVals, activeArr:listRoadmapFilter, colorMap:RC, toggleFn:'onListRoadmapToggle'});
+  GDB.buildCheckDropdown({wrapperId:'rs-dropdown-wrap', btnLabelId:'rs-btn-label', listId:'rs-checkbox-list', values:RS_ORDER, activeArr:listRoadmapFilter, colorMap:RS_COLORS, toggleFn:'onListRoadmapToggle'});
 
   /* Sync search box value */
   var searchEl=document.getElementById('list-search');
@@ -2146,7 +2151,7 @@ function onListRoadmapToggle(val){
    ROADMAP VIEW — group by Project Goal, Q1–Q4 columns
 ══════════════════════════════════════════════════════════════ */
 
-var rmYearFilter=2026;
+var rmYearFilter=new Date().getFullYear();
 var rmComponentFilter=[];
 var rmDepFilter=[];
 var rmPMRoleFilter=[];
@@ -2422,7 +2427,7 @@ function resetRoadmapFilters(){
   renderRoadmap();
 }
 function resetCompletedFilters(){
-  doneYearFilter=['all']; doneComponentFilter=[]; donePMRoleFilter=[]; doneSearchQuery='';
+  doneYearFilter=['ROADMAP_'+new Date().getFullYear()]; doneComponentFilter=[]; donePMRoleFilter=[]; doneSearchQuery='';
   var si=document.getElementById('done-search'); if(si)si.value='';
   renderCompleted();
 }

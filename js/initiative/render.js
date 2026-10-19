@@ -1372,9 +1372,10 @@ function _buildPipeline(data) {
     return null;
   }
 
-  var items = data.filter(function(d) {
-    if ((d['Roadmap Status']||'') === "Won't do") return false;
-    return d.Status === 'Delivery' || d.Status === 'Budget Approval' || _missingComp(d);
+  /* Show all Now/Next items regardless of lifecycle status */
+  var items = allData.filter(function(d) {
+    var rs = (d['Roadmap Status']||'').trim();
+    return rs === 'Now' || rs === 'Next';
   });
 
   var STATUS_STYLE = {
@@ -1411,14 +1412,14 @@ function _buildPipeline(data) {
 
   var budgetItems  = items.filter(function(d){ return d.Status==='Budget Approval'; });
   var delayedItems = items.filter(function(d){
-    return d.Status==='Delivery' && (d['Project Monitoring Status']||'').toLowerCase().includes('delay');
+    return (d['Project Monitoring Status']||'').toLowerCase().includes('delay');
   });
   var atRiskItems  = items.filter(function(d){
     var mon=(d['Project Monitoring Status']||'').toLowerCase();
-    return d.Status==='Delivery' && (mon.includes('risk') || _missingComp(d));
+    return !mon.includes('delay') && (mon.includes('risk') || _missingComp(d));
   });
   var onTrackItems = items.filter(function(d){
-    if (d.Status!=='Delivery') return false;
+    if (d.Status==='Budget Approval') return false;
     var mon=(d['Project Monitoring Status']||'').toLowerCase();
     return !mon.includes('delay') && !mon.includes('risk') && !_missingComp(d);
   });

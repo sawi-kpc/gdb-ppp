@@ -14,9 +14,11 @@ var listStatusFilter=[];
 var sumComponentFilter=[];
 var sumDepFilter=[];
 var sumPMRoleFilter=[];
+var sumMonFilter=[];
 var listComponentFilter=[];
 var listDepFilter=[];
 var listPMRoleFilter=[];
+var listMonFilter=[];
 var _listPage=1, _listPageSize=20, _lastListFiltered=[], listHideWontDo=false;
 var sumAssigneeRoleMode='any';  /* 'lead' | 'any' | 'support' */
 var listAssigneeRoleMode='any';
@@ -119,7 +121,7 @@ function _saveSumFilters(){
     sumYearFilter:sumYearFilter, sumStageFilter:sumStageFilter,
     sumRoadmapFilter:sumRoadmapFilter, sumAssigneeFilter:sumAssigneeFilter, sumAssigneeRoleMode:sumAssigneeRoleMode,
     sumComponentFilter:sumComponentFilter,
-    sumDepFilter:sumDepFilter, sumPMRoleFilter:sumPMRoleFilter,
+    sumDepFilter:sumDepFilter, sumPMRoleFilter:sumPMRoleFilter, sumMonFilter:sumMonFilter,
     sumSearchQuery:sumSearchQuery, hideNoDate:hideNoDate,
     _tlStart:_tlStart, _tlEnd:_tlEnd
   });
@@ -135,6 +137,7 @@ function _loadSumFilters(){
   if(Array.isArray(f.sumComponentFilter)) sumComponentFilter=f.sumComponentFilter;
   if(Array.isArray(f.sumDepFilter))       sumDepFilter=f.sumDepFilter;
   if(Array.isArray(f.sumPMRoleFilter))    sumPMRoleFilter=f.sumPMRoleFilter;
+  if(Array.isArray(f.sumMonFilter))       sumMonFilter=f.sumMonFilter;
   if(f.sumSearchQuery)                    sumSearchQuery=f.sumSearchQuery;
   if(typeof f.hideNoDate==='boolean')     hideNoDate=f.hideNoDate;
   if(f._tlStart)                          _tlStart=f._tlStart;
@@ -152,7 +155,7 @@ function _loadInitFilters(){
 
 function resetSumFilters(){
   sumYearFilter=['ROADMAP_'+new Date().getFullYear()]; sumStageFilter=[]; sumRoadmapFilter=[];
-  sumComponentFilter=[]; sumDepFilter=[]; sumPMRoleFilter=[]; sumAssigneeFilter=[]; sumAssigneeRoleMode='any'; sumSearchQuery='';
+  sumComponentFilter=[]; sumDepFilter=[]; sumPMRoleFilter=[]; sumMonFilter=[]; sumAssigneeFilter=[]; sumAssigneeRoleMode='any'; sumSearchQuery='';
   _syncRoleToggle('sum');
   var si=document.getElementById('sum-search'); if(si)si.value='';
   GDB.saveFilters('gdb_filter_initiative_timeline',{});
@@ -160,7 +163,7 @@ function resetSumFilters(){
 }
 function resetListFilters(){
   listYearFilter=['ROADMAP_'+new Date().getFullYear()]; listStatusFilter=[]; listRoadmapFilter=[];
-  listComponentFilter=[]; listDepFilter=[]; listPMRoleFilter=[];
+  listComponentFilter=[]; listDepFilter=[]; listPMRoleFilter=[]; listMonFilter=[];
   listAssigneeFilter=[]; listAssigneeRoleMode='any'; listSearchQuery=''; listHideWontDo=false;
   _syncRoleToggle('list');
   var li=document.getElementById('list-search'); if(li)li.value='';
@@ -175,6 +178,8 @@ function resetInitFilters(){
 var STAGES=['Parking Lot','Budget Approval','Discovery','Ready for Delivery','Delivery','Done'];
 var SC={'Parking Lot':'#9E9890','Budget Approval':'#E07878','Discovery':'#D4A850','Ready for Delivery':'#9B8FE0','Delivery':'#6BAED4','Done':'#6DBF9A'};
 var RC={'New':'#6BAED4','Next':'#D4A850','Now':'#82B8D8','Later':'#C8A84A',"Won't do":'#9E9E9E','Completed':'#88C470','Completed With':'#6DBF9A'};
+var MON_ORDER=['On track','At risk','Delayed'];
+var MON_COLORS={'On track':'var(--up)','At risk':'var(--amber)','Delayed':'var(--down)'};
 var RS_COLORS={'New':'var(--text2)','Next':'var(--teal)','Now':'var(--accent)','Later':'var(--amber)',"Won't do":'var(--text3)','Completed':'var(--up)','Completed With':'var(--teal)'};
 var RS_ORDER=['New','Next','Now','Later',"Won't do",'Completed','Completed With'];
 var GC={'Increase Revenue':'#88C470','Improve Internal Operation':'#6BAED4','Improve Customer Experience':'#9B8FE0','Improve Customer Engagement':'#D97890','Strategic Direction':'#D4A850'};
@@ -542,6 +547,7 @@ function loadFilterPreset(i){
   if(Array.isArray(f.sumComponentFilter)) sumComponentFilter=f.sumComponentFilter;
   if(Array.isArray(f.sumDepFilter))       sumDepFilter=f.sumDepFilter;
   if(Array.isArray(f.sumPMRoleFilter))    sumPMRoleFilter=f.sumPMRoleFilter;
+  if(Array.isArray(f.sumMonFilter))       sumMonFilter=f.sumMonFilter;
   if(typeof f.sumSearchQuery==='string')  sumSearchQuery=f.sumSearchQuery;
   if(typeof f.hideNoDate==='boolean')     hideNoDate=f.hideNoDate;
   if(f._tlStart)                          _tlStart=f._tlStart;
@@ -608,6 +614,7 @@ function renderSummary(){
   allData.forEach(function(d){ var v=(d['PM Role']||'').trim(); if(v&&sumPMVals.indexOf(v)<0)sumPMVals.push(v); });
   sumPMVals.sort();
   GDB.buildCheckDropdown({wrapperId:'sum-pm-dropdown-wrap', btnLabelId:'sum-pm-btn-label', listId:'sum-pm-checkbox-list', values:sumPMVals, activeArr:sumPMRoleFilter, colorMap:null, toggleFn:'onSumPMToggle'});
+  GDB.buildCheckDropdown({wrapperId:'sum-mon-dropdown-wrap', btnLabelId:'sum-mon-btn-label', listId:'sum-mon-checkbox-list', values:MON_ORDER, activeArr:sumMonFilter, colorMap:MON_COLORS, toggleFn:'onSumMonToggle'});
 
   /* Assignee dropdown */
   var sumAssignees=new Set();
@@ -645,6 +652,17 @@ function renderSummary(){
   }
   if(sumPMRoleFilter.length>0){
     filtered=filtered.filter(function(d){ return sumPMRoleFilter.indexOf((d['PM Role']||'').trim())>=0; });
+  }
+  if(sumMonFilter.length>0){
+    filtered=filtered.filter(function(d){
+      var m=(d['Project Monitoring Status']||'').toLowerCase();
+      return sumMonFilter.some(function(f){
+        if(f==='On track')return m.includes('track');
+        if(f==='At risk') return m.includes('risk');
+        if(f==='Delayed') return m.includes('delay');
+        return false;
+      });
+    });
   }
   if(sumAssigneeFilter.length>0){
     filtered=filtered.filter(function(d){
@@ -919,6 +937,8 @@ function onSumPMToggle(val){
   var panel=document.getElementById('sum-pm-dropdown-panel'); if(panel)panel.style.display='block';
 }
 function clearSumPMFilter(){ sumPMRoleFilter=[]; document.getElementById('sum-pm-dropdown-panel').style.display='none'; renderSummary(); }
+function onSumMonToggle(val){ var i=sumMonFilter.indexOf(val); if(i>=0)sumMonFilter.splice(i,1); else sumMonFilter.push(val); renderSummary(); var p=document.getElementById('sum-mon-dropdown-panel'); if(p)p.style.display='block'; }
+function clearSumMonFilter(){ sumMonFilter=[]; document.getElementById('sum-mon-dropdown-panel').style.display='none'; renderSummary(); }
 function onSumAssigneeToggle(val){
   var i=sumAssigneeFilter.indexOf(val); if(i>=0)sumAssigneeFilter.splice(i,1); else sumAssigneeFilter.push(val);
   renderSummary();
@@ -1989,7 +2009,7 @@ function saveListFilterPreset(){
   var filters={
     listYearFilter:listYearFilter.slice(),listStatusFilter:listStatusFilter.slice(),
     listRoadmapFilter:listRoadmapFilter.slice(),listComponentFilter:listComponentFilter.slice(),
-    listDepFilter:listDepFilter.slice(),listPMRoleFilter:listPMRoleFilter.slice(),
+    listDepFilter:listDepFilter.slice(),listPMRoleFilter:listPMRoleFilter.slice(),listMonFilter:listMonFilter.slice(),
     listAssigneeFilter:listAssigneeFilter.slice(),listAssigneeRoleMode:listAssigneeRoleMode,
     listSearchQuery:listSearchQuery,listHideWontDo:listHideWontDo
   };
@@ -2007,6 +2027,7 @@ function loadListFilterPreset(i){
   if(Array.isArray(f.listComponentFilter))  listComponentFilter=f.listComponentFilter;
   if(Array.isArray(f.listDepFilter))        listDepFilter=f.listDepFilter;
   if(Array.isArray(f.listPMRoleFilter))     listPMRoleFilter=f.listPMRoleFilter;
+  if(Array.isArray(f.listMonFilter))        listMonFilter=f.listMonFilter;
   if(Array.isArray(f.listAssigneeFilter))   listAssigneeFilter=f.listAssigneeFilter;
   if(f.listAssigneeRoleMode)                listAssigneeRoleMode=f.listAssigneeRoleMode;
   if(typeof f.listSearchQuery==='string')  listSearchQuery=f.listSearchQuery;
@@ -2090,6 +2111,7 @@ function renderList(){
   allData.forEach(function(d){ var v=(d['PM Role']||'').trim(); if(v&&listPMVals.indexOf(v)<0)listPMVals.push(v); });
   listPMVals.sort();
   GDB.buildCheckDropdown({wrapperId:'list-pm-dropdown-wrap', btnLabelId:'list-pm-btn-label', listId:'list-pm-checkbox-list', values:listPMVals, activeArr:listPMRoleFilter, colorMap:null, toggleFn:'onListPMToggle'});
+  GDB.buildCheckDropdown({wrapperId:'list-mon-dropdown-wrap', btnLabelId:'list-mon-btn-label', listId:'list-mon-checkbox-list', values:MON_ORDER, activeArr:listMonFilter, colorMap:MON_COLORS, toggleFn:'onListMonToggle'});
 
   /* Roadmap status dropdown checkboxes */
   GDB.buildCheckDropdown({wrapperId:'rs-dropdown-wrap', btnLabelId:'rs-btn-label', listId:'rs-checkbox-list', values:RS_ORDER, activeArr:listRoadmapFilter, colorMap:RS_COLORS, toggleFn:'onListRoadmapToggle'});
@@ -2129,6 +2151,17 @@ function renderList(){
   }
   if(listPMRoleFilter.length>0){
     filtered=filtered.filter(function(d){ return listPMRoleFilter.indexOf((d['PM Role']||'').trim())>=0; });
+  }
+  if(listMonFilter.length>0){
+    filtered=filtered.filter(function(d){
+      var m=(d['Project Monitoring Status']||'').toLowerCase();
+      return listMonFilter.some(function(f){
+        if(f==='On track')return m.includes('track');
+        if(f==='At risk') return m.includes('risk');
+        if(f==='Delayed') return m.includes('delay');
+        return false;
+      });
+    });
   }
   /* Roadmap status filter */
   if(listRoadmapFilter.length>0){
@@ -2301,6 +2334,8 @@ function onListPMToggle(val){
   var panel=document.getElementById('list-pm-dropdown-panel'); if(panel)panel.style.display='block';
 }
 function clearListPMFilter(){ listPMRoleFilter=[]; document.getElementById('list-pm-dropdown-panel').style.display='none'; renderList(); }
+function onListMonToggle(val){ var i=listMonFilter.indexOf(val); if(i>=0)listMonFilter.splice(i,1); else listMonFilter.push(val); renderList(); var p=document.getElementById('list-mon-dropdown-panel'); if(p)p.style.display='block'; }
+function clearListMonFilter(){ listMonFilter=[]; document.getElementById('list-mon-dropdown-panel').style.display='none'; renderList(); }
 function onListSearchChange(val){ listSearchQuery=val||''; renderList(); }
 function toggleListHideWontDo(){ listHideWontDo=!listHideWontDo; renderList(); }
 function onListRoadmapToggle(val){

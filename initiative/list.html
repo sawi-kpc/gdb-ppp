@@ -92,7 +92,19 @@
         </div>
       </div>
     </div>
-    <div style="position:relative" id="ini-assignee-dropdown-wrap">
+    <div style="position:relative" id="list-mon-dropdown-wrap">
+      <button onclick="toggleDropdown('list-mon-dropdown-panel')"
+        style="height:26px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);font-size:11.5px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap">
+        <span id="list-mon-btn-label" data-empty="Monitoring Status">Monitoring Status</span><span style="font-size:9px;color:var(--text3)">▾</span>
+      </button>
+      <div id="list-mon-dropdown-panel" style="display:none;position:absolute;top:30px;left:0;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.18);padding:8px 0;min-width:170px">
+        <div id="list-mon-checkbox-list"></div>
+        <div style="border-top:1px solid var(--border);margin-top:6px;padding:6px 12px 2px">
+          <button onclick="clearListMonFilter()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Clear all</button>
+        </div>
+      </div>
+    </div>
+        <div style="position:relative" id="ini-assignee-dropdown-wrap">
       <button onclick="toggleDropdown('ini-assignee-dropdown-panel')" style="height:26px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);font-size:11.5px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap">
         <span id="ini-assignee-btn-label" data-empty="All Assignees">All Assignees</span>
         <span style="font-size:9px;color:var(--text3)">▾</span>
@@ -195,7 +207,7 @@ function clearRsFilter() {
 }
 /* Close dropdowns when clicking outside */
 document.addEventListener('click', function(e) {
-  ['rs-dropdown-wrap', 'comp-list-dropdown-wrap', 'dep-list-dropdown-wrap', 'list-status-dropdown-wrap', 'list-pm-dropdown-wrap', 'ini-assignee-dropdown-wrap'].forEach(function(wrapId) {
+  ['rs-dropdown-wrap', 'comp-list-dropdown-wrap', 'dep-list-dropdown-wrap', 'list-status-dropdown-wrap', 'list-pm-dropdown-wrap', 'list-mon-dropdown-wrap', 'ini-assignee-dropdown-wrap'].forEach(function(wrapId) {
     var wrap = document.getElementById(wrapId);
     if (wrap && !wrap.contains(e.target)) {
       var panel = wrap.querySelector('[id$="-dropdown-panel"]');

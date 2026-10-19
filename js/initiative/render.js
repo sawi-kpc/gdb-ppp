@@ -1383,37 +1383,31 @@ function _buildPipeline(data) {
   };
   var RS_COLOR = {'Now':'var(--up)', 'Next':'var(--accent)', 'Later':'var(--text3)'};
 
+  var _COL = 'display:inline-flex;align-items:center;justify-content:flex-end;flex-shrink:0;overflow:hidden;';
+
   function _buildRow(d) {
     var st = STATUS_STYLE[d.Status] || {bg:'var(--text3)',text:'var(--text3)'};
-    var statusChip = '<span style="font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;background:'+st.bg+'1a;color:'+st.text+';white-space:nowrap;flex-shrink:0">'+d.Status+'</span>';
-
     var rs = (d['Roadmap Status']||'').trim();
     var rsColor = RS_COLOR[rs] || 'var(--text3)';
-    var rsChip = rs && rs !== "Won't do"
-      ? '<span style="font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;background:'+rsColor+'1a;color:'+rsColor+';white-space:nowrap;flex-shrink:0">'+rs+'</span>'
-      : '';
-
     var tS = getStart(d['Target Project Start']||'');
     var tE = getEnd(d['Target Project End']||'');
-    var dateHtml = (tS || tE)
-      ? '<span style="font-size:9px;color:var(--text2);white-space:nowrap;flex-shrink:0">'+
-          '<span style="color:var(--accent);font-weight:600">Target</span> '+
-          fmtMonYear(tS)+' → '+fmtMonYear(tE)+
-        '</span>'
-      : '';
-
     var glDate = getStart(d['Go-live Date']||'');
-    var glHtml = glDate
-      ? '<span style="font-size:9px;color:var(--purple);font-weight:600;white-space:nowrap;flex-shrink:0">◆ '+fmtFullDate(glDate)+'</span>'
-      : '';
 
-    return '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding:7px 0;border-bottom:1px solid var(--border);min-width:0">'+
+    return '<div style="display:flex;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid var(--border);min-width:0">'+
       '<a href="'+CONFIG.JIRA_BASE+d.Key+'" target="_blank" style="font-size:10px;font-weight:700;color:var(--accent);text-decoration:none;white-space:nowrap;flex-shrink:0">'+d.Key+' ↗</a>'+
-      '<span style="font-size:11px;color:var(--text);flex:1;min-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+d.Summary+'">'+d.Summary+'</span>'+
-      statusChip+
-      rsChip+
-      dateHtml+
-      glHtml+
+      '<span style="font-size:11px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+d.Summary+'">'+d.Summary+'</span>'+
+      '<span style="'+_COL+'width:148px">'+
+        '<span style="font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;background:'+st.bg+'1a;color:'+st.text+'">'+d.Status+'</span>'+
+      '</span>'+
+      '<span style="'+_COL+'width:46px;justify-content:center">'+
+        (rs && rs!=="Won't do" ? '<span style="font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;background:'+rsColor+'1a;color:'+rsColor+'">'+rs+'</span>' : '')+
+      '</span>'+
+      '<span style="'+_COL+'width:170px">'+
+        ((tS||tE) ? '<span style="font-size:9px;color:var(--text2)"><span style="color:var(--accent);font-weight:600">Target</span> '+fmtMonYear(tS)+' → '+fmtMonYear(tE)+'</span>' : '')+
+      '</span>'+
+      '<span style="'+_COL+'width:96px">'+
+        (glDate ? '<span style="font-size:9px;color:var(--purple);font-weight:600">◆ '+fmtFullDate(glDate)+'</span>' : '')+
+      '</span>'+
     '</div>';
   }
 
@@ -1508,27 +1502,22 @@ function gdbDlTab(tabId) {
 /* ── Section 2A-2: Next up (Roadmap Status = "Next" only) ── */
 function _buildNextPipeline(data) {
   var el = document.getElementById('dash-next'); if (!el) return;
+  var _COL = 'display:inline-flex;align-items:center;justify-content:flex-end;flex-shrink:0;overflow:hidden;';
+
   function _buildRow(d) {
     var tS = getStart(d['Target Project Start']||'');
     var tE = getEnd(d['Target Project End']||'');
-    var dateHtml = (tS || tE)
-      ? '<span style="font-size:9px;color:var(--text2);white-space:nowrap;flex-shrink:0">'+
-          '<span style="color:var(--accent);font-weight:600">Target</span> '+
-          fmtMonYear(tS)+' → '+fmtMonYear(tE)+
-        '</span>'
-      : '';
-
     var glDate = getStart(d['Go-live Date']||'');
-    var glHtml = glDate
-      ? '<span style="font-size:9px;color:var(--purple);font-weight:600;white-space:nowrap;flex-shrink:0">'+
-        '◆ '+fmtFullDate(glDate)+'</span>'
-      : '';
 
-    return '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding:7px 0;border-bottom:1px solid var(--border);min-width:0">'+
+    return '<div style="display:flex;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid var(--border);min-width:0">'+
       '<a href="'+CONFIG.JIRA_BASE+d.Key+'" target="_blank" style="font-size:10px;font-weight:700;color:var(--accent);text-decoration:none;white-space:nowrap;flex-shrink:0">'+d.Key+' ↗</a>'+
-      '<span style="font-size:11px;color:var(--text);flex:1;min-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+d.Summary+'">'+d.Summary+'</span>'+
-      dateHtml+
-      glHtml+
+      '<span style="font-size:11px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+d.Summary+'">'+d.Summary+'</span>'+
+      '<span style="'+_COL+'width:170px">'+
+        ((tS||tE) ? '<span style="font-size:9px;color:var(--text2)"><span style="color:var(--accent);font-weight:600">Target</span> '+fmtMonYear(tS)+' → '+fmtMonYear(tE)+'</span>' : '')+
+      '</span>'+
+      '<span style="'+_COL+'width:96px">'+
+        (glDate ? '<span style="font-size:9px;color:var(--purple);font-weight:600">◆ '+fmtFullDate(glDate)+'</span>' : '')+
+      '</span>'+
     '</div>';
   }
 

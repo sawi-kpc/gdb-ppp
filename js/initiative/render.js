@@ -1354,9 +1354,25 @@ function _buildPlatformMatrix(data) {
 function _buildPipeline(data) {
   var el = document.getElementById('dash-delivery'); if (!el) return;
 
+  function _missingComp(d) {
+    var NEED_COMP = ['Ready for Delivery', 'Delivery', 'Done'];
+    if (NEED_COMP.indexOf(d.Status) < 0) return false;
+    var comps = (d['Components']||'').split(';').map(function(c){return c.trim();}).filter(Boolean);
+    return comps.length === 0;
+  }
+
+  function _actionFor(d) {
+    if (_missingComp(d)) return {label:'Specify component',color:'var(--amber)'};
+    var mon = (d['Project Monitoring Status']||'').toLowerCase();
+    if (mon.includes('delay')) return {label:'Provide revised plan & mitigation',color:'var(--down)'};
+    if (mon.includes('risk'))  return {label:'Identify blockers',color:'var(--amber)'};
+    if (d.Status === 'Budget Approval') return {label:'Pending budget approval',color:'var(--accent)'};
+    return null;
+  }
+
   var items = data.filter(function(d) {
     if ((d['Roadmap Status']||'') === "Won't do") return false;
-    return d.Status === 'Delivery' || d.Status === 'Budget Approval';
+    return d.Status === 'Delivery' || d.Status === 'Budget Approval' || _missingComp(d);
   });
 
   var STATUS_STYLE = {
@@ -1368,6 +1384,11 @@ function _buildPipeline(data) {
   var RS_COLOR = {'Now':'var(--up)', 'Next':'var(--accent)', 'Later':'var(--text3)'};
 
   function _buildRow(d) {
+    var action = _actionFor(d);
+    var actionChip = action
+      ? '<span style="font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;background:'+action.color+'22;color:'+action.color+';white-space:nowrap;flex-shrink:0">'+action.label+'</span>'
+      : '';
+
     var st = STATUS_STYLE[d.Status] || {bg:'var(--text3)',text:'var(--text3)'};
     var statusChip = '<span style="font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;background:'+st.bg+'1a;color:'+st.text+';white-space:nowrap;flex-shrink:0">'+d.Status+'</span>';
 
@@ -1385,6 +1406,7 @@ function _buildPipeline(data) {
     return '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding:7px 0;border-bottom:1px solid var(--border);min-width:0">'+
       '<a href="'+CONFIG.JIRA_BASE+d.Key+'" target="_blank" style="font-size:10px;font-weight:700;color:var(--accent);text-decoration:none;white-space:nowrap;flex-shrink:0">'+d.Key+' ↗</a>'+
       '<span style="font-size:11px;color:var(--text);flex:1;min-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+d.Summary+'">'+d.Summary+'</span>'+
+      actionChip+
       statusChip+
       rsChip+
       glHtml+

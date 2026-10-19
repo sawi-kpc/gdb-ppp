@@ -1421,11 +1421,22 @@ function _buildPipeline(data) {
     return !mon.includes('delay') && !mon.includes('risk') && !_missingComp(d);
   });
 
+  function _tlSort(arr) {
+    return arr.slice().sort(function(a, b) {
+      var as=getStart(a['Target Project Start']||''), bs=getStart(b['Target Project Start']||'');
+      if(!as&&!bs) {} else { if(!as) return 1; if(!bs) return -1; var sd=new Date(as)-new Date(bs); if(sd!==0) return sd; }
+      var ae=getEnd(a['Target Project End']||''),   be=getEnd(b['Target Project End']||'');
+      if(!ae&&!be) {} else { if(!ae) return 1; if(!be) return -1; var ed=new Date(ae)-new Date(be); if(ed!==0) return ed; }
+      var ag=getStart(a['Go-live Date']||''),        bg=getStart(b['Go-live Date']||'');
+      if(!ag&&!bg) {} else { if(!ag) return 1; if(!bg) return -1; var gd=new Date(ag)-new Date(bg); if(gd!==0) return gd; }
+      return (a['Summary']||'').localeCompare(b['Summary']||'');
+    });
+  }
   var _DL_TABS = [
-    {id:'delayed', label:'🆘 Delayed',       color:'var(--down)',   items:delayedItems, empty:'🎉 No delayed items'},
-    {id:'atrisk',  label:'⚠️ At risk',        color:'var(--amber)',  items:atRiskItems,  empty:'No items flagged at risk'},
-    {id:'ontrack', label:'✅ On track',        color:'var(--up)',     items:onTrackItems, empty:'No items currently on track'},
-    {id:'budget',  label:'⏳ Budget Approval', color:'var(--accent)', items:budgetItems,  empty:'No items pending budget approval'}
+    {id:'delayed', label:'🆘 Delayed',       color:'var(--down)',   items:_tlSort(delayedItems), empty:'🎉 No delayed items'},
+    {id:'atrisk',  label:'⚠️ At risk',        color:'var(--amber)',  items:_tlSort(atRiskItems),  empty:'No items flagged at risk'},
+    {id:'ontrack', label:'✅ On track',        color:'var(--up)',     items:_tlSort(onTrackItems), empty:'No items currently on track'},
+    {id:'budget',  label:'⏳ Budget Approval', color:'var(--accent)', items:_tlSort(budgetItems),  empty:'No items pending budget approval'}
   ];
 
   var total = items.length;
@@ -1507,7 +1518,18 @@ function _buildNextPipeline(data) {
     '</div>';
   }
 
-  /* Filter: Roadmap Status = "Next" only, exclude Won't do */
+  function _tlSort(arr) {
+    return arr.slice().sort(function(a, b) {
+      var as=getStart(a['Target Project Start']||''), bs=getStart(b['Target Project Start']||'');
+      if(!as&&!bs) {} else { if(!as) return 1; if(!bs) return -1; var sd=new Date(as)-new Date(bs); if(sd!==0) return sd; }
+      var ae=getEnd(a['Target Project End']||''),   be=getEnd(b['Target Project End']||'');
+      if(!ae&&!be) {} else { if(!ae) return 1; if(!be) return -1; var ed=new Date(ae)-new Date(be); if(ed!==0) return ed; }
+      var ag=getStart(a['Go-live Date']||''),        bg=getStart(b['Go-live Date']||'');
+      if(!ag&&!bg) {} else { if(!ag) return 1; if(!bg) return -1; var gd=new Date(ag)-new Date(bg); if(gd!==0) return gd; }
+      return (a['Summary']||'').localeCompare(b['Summary']||'');
+    });
+  }
+  /* Filter: Roadmap Status = "Next" only */
   var rfdItems = data.filter(function(d){
     return d.Status === 'Ready for Delivery' && (d['Roadmap Status']||'').trim() === 'Next';
   });
@@ -1516,8 +1538,8 @@ function _buildNextPipeline(data) {
   });
 
   var _NU_TABS = [
-    {id:'rfd',       label:'🚀 Ready for Delivery', color:'#9b7fe8',      items:rfdItems,       empty:'No items ready for delivery'},
-    {id:'discovery', label:'🔭 Discovery',           color:'var(--amber)', items:discoveryItems, empty:'Nothing in discovery yet'}
+    {id:'rfd',       label:'🚀 Ready for Delivery', color:'#9b7fe8',      items:_tlSort(rfdItems),       empty:'No items ready for delivery'},
+    {id:'discovery', label:'🔭 Discovery',           color:'var(--amber)', items:_tlSort(discoveryItems), empty:'Nothing in discovery yet'}
   ];
 
   var total = rfdItems.length + discoveryItems.length;

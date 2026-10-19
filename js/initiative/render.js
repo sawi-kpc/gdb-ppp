@@ -1486,24 +1486,14 @@ function gdbDlTab(tabId) {
 function _buildNextPipeline(data) {
   var el = document.getElementById('dash-next'); if (!el) return;
 
-  var STATUS_STYLE = {
-    'Ready for Delivery': {bg:'#9b7fe8', text:'#9b7fe8'},
-    'Discovery':          {bg:'var(--amber)', text:'var(--amber)'},
-    'Delivery':           {bg:'var(--accent)', text:'var(--accent)'}
-  };
-  var RS_COLOR = {'Now':'var(--up)', 'Next':'var(--accent)', 'Later':'var(--text3)'};
-
   function _buildRow(d) {
-    var st = STATUS_STYLE[d.Status] || {bg:'var(--text3)', text:'var(--text3)'};
-    var statusChip =
-      '<span style="font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;'+
-      'background:'+st.bg+'1a;color:'+st.text+';white-space:nowrap;flex-shrink:0">'+d.Status+'</span>';
-
-    var rs = (d['Roadmap Status']||'').trim();
-    var rsColor = RS_COLOR[rs] || 'var(--text3)';
-    var rsChip = rs && rs !== "Won't do"
-      ? '<span style="font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;'+
-        'background:'+rsColor+'1a;color:'+rsColor+';white-space:nowrap;flex-shrink:0">'+rs+'</span>'
+    var tS = getStart(d['Target Project Start']||'');
+    var tE = getEnd(d['Target Project End']||'');
+    var dateHtml = (tS || tE)
+      ? '<span style="font-size:9px;color:var(--text2);white-space:nowrap;flex-shrink:0">'+
+          '<span style="color:var(--accent);font-weight:600">Target</span> '+
+          fmtMonYear(tS)+' → '+fmtMonYear(tE)+
+        '</span>'
       : '';
 
     var glDate = getStart(d['Go-live Date']||'');
@@ -1515,8 +1505,7 @@ function _buildNextPipeline(data) {
     return '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding:7px 0;border-bottom:1px solid var(--border);min-width:0">'+
       '<a href="'+CONFIG.JIRA_BASE+d.Key+'" target="_blank" style="font-size:10px;font-weight:700;color:var(--accent);text-decoration:none;white-space:nowrap;flex-shrink:0">'+d.Key+' ↗</a>'+
       '<span style="font-size:11px;color:var(--text);flex:1;min-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+d.Summary+'">'+d.Summary+'</span>'+
-      statusChip+
-      rsChip+
+      dateHtml+
       glHtml+
     '</div>';
   }

@@ -579,9 +579,19 @@ function gdbAuthGuard(onUser) {
         });
         return;
       }
+      if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+        _onReady('dev@localhost');
+        return;
+      }
       _fallbackFirebaseAuth();
     })
-    .catch(function() { _fallbackFirebaseAuth(); });
+    .catch(function() {
+      if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+        _onReady('dev@localhost');
+        return;
+      }
+      _fallbackFirebaseAuth();
+    });
 
   /* ── Fallback: normal Firebase auth (local dev / no CF session) ── */
   function _fallbackFirebaseAuth() {

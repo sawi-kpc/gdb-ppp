@@ -1482,88 +1482,105 @@ function gdbDlTab(tabId) {
 }
 
 
-/* ── Section 2A-2: Next up (Ready for Delivery → Discovery) ── */
+/* ── Section 2A-2: Next up (Roadmap Status = "Next" only) ── */
 function _buildNextPipeline(data) {
   var el = document.getElementById('dash-next'); if (!el) return;
 
-  /* Avatar color map */
-  var AVATAR_COLORS = ['#40b8a8','#b088e0','#d4a040','#4a9e5c','#e06050','#5bb8d4','#e07080'];
-  var colorMap = {}, colorIdx = 0;
-  data.forEach(function(d) {
-    var n1   = (d['Assignee']&&d['Assignee'].displayName)||d['Assignee.displayName']||'';
-    var n2raw = (d['Assignee (2nd)']&&d['Assignee (2nd)'].displayName)||d['Assignee (2nd).displayName']||'';
-    if (n1 && !colorMap[n1]) colorMap[n1] = AVATAR_COLORS[colorIdx++%AVATAR_COLORS.length];
-    n2raw.split(';').forEach(function(n2){ n2=n2.trim(); if(n2&&!colorMap[n2]) colorMap[n2]=AVATAR_COLORS[colorIdx++%AVATAR_COLORS.length]; });
-  });
-  function _avatar(name) {
-    if (!name) return '';
-    return '<span style="width:20px;height:20px;border-radius:50%;background:'+(colorMap[name]||'#6b5c48')+';color:#fff;font-size:8px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0" title="'+name+'">'+_initials(name)+'</span>';
-  }
+  var STATUS_STYLE = {
+    'Ready for Delivery': {bg:'#9b7fe8', text:'#9b7fe8'},
+    'Discovery':          {bg:'var(--amber)', text:'var(--amber)'},
+    'Delivery':           {bg:'var(--accent)', text:'var(--accent)'}
+  };
+  var RS_COLOR = {'Now':'var(--up)', 'Next':'var(--accent)', 'Later':'var(--text3)'};
 
   function _buildRow(d) {
-    var rsLabel = d['Roadmap Status'] || '';
-    var rsBadge = rsLabel ? '<span style="font-size:9px;font-weight:600;padding:1px 6px;border-radius:3px;background:var(--surface2);border:1px solid var(--border);color:var(--text3);white-space:nowrap;flex-shrink:0">'+rsLabel+'</span>' : '';
-    var compRaw = (d['Components']||'').split(';').map(function(c){return c.trim();}).filter(Boolean);
-    var compChip = compRaw.length
-      ? '<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(55,138,221,.1);color:#185FA5;border:1px solid rgba(55,138,221,.2);white-space:nowrap;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;max-width:120px">'+compRaw[0]+(compRaw.length>1?' +'+( compRaw.length-1):'')+'</span>'
+    var st = STATUS_STYLE[d.Status] || {bg:'var(--text3)', text:'var(--text3)'};
+    var statusChip =
+      '<span style="font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;'+
+      'background:'+st.bg+'1a;color:'+st.text+';white-space:nowrap;flex-shrink:0">'+d.Status+'</span>';
+
+    var rs = (d['Roadmap Status']||'').trim();
+    var rsColor = RS_COLOR[rs] || 'var(--text3)';
+    var rsChip = rs && rs !== "Won't do"
+      ? '<span style="font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;'+
+        'background:'+rsColor+'1a;color:'+rsColor+';white-space:nowrap;flex-shrink:0">'+rs+'</span>'
       : '';
-    var a1 = (d['Assignee']&&d['Assignee'].displayName)||d['Assignee.displayName']||'';
-    var a2s = ((d['Assignee (2nd)']&&d['Assignee (2nd)'].displayName)||d['Assignee (2nd).displayName']||'').split(';').map(function(n){return n.trim();}).filter(Boolean);
-    return '<div style="display:flex;align-items:center;gap:7px;padding:6px 0;border-bottom:1px solid var(--border);min-width:0">'+
+
+    var glDate = getStart(d['Go-live Date']||'');
+    var glHtml = glDate
+      ? '<span style="font-size:9px;color:var(--purple);font-weight:600;white-space:nowrap;flex-shrink:0">'+
+        '◆ '+fmtFullDate(glDate)+'</span>'
+      : '';
+
+    return '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding:7px 0;border-bottom:1px solid var(--border);min-width:0">'+
       '<a href="'+CONFIG.JIRA_BASE+d.Key+'" target="_blank" style="font-size:10px;font-weight:700;color:var(--accent);text-decoration:none;white-space:nowrap;flex-shrink:0">'+d.Key+' ↗</a>'+
-      '<span style="font-size:11px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+d.Summary+'">'+d.Summary+'</span>'+
-      compChip+
-      rsBadge+
-      a2s.map(_avatar).join('')+
-      _avatar(a1)+
+      '<span style="font-size:11px;color:var(--text);flex:1;min-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+d.Summary+'">'+d.Summary+'</span>'+
+      statusChip+
+      rsChip+
+      glHtml+
     '</div>';
   }
 
-  function _buildGroup(label, color, icon, groupItems) {
-    if (!groupItems.length) return '';
-    return '<div style="margin-bottom:2px">'+
-      '<div style="display:flex;align-items:center;gap:6px;padding:8px 0 3px">'+
-        '<span style="font-size:12px">'+icon+'</span>'+
-        '<span style="font-size:11px;font-weight:700;color:'+color+'">'+label+'</span>'+
-        '<span style="font-size:10px;color:var(--text3)">('+groupItems.length+')</span>'+
-        '<div style="flex:1;height:1px;background:'+color+'33;margin-left:4px"></div>'+
-      '</div>'+
-      groupItems.map(_buildRow).join('')+
-    '</div>';
-  }
-
-  /* Filter: Ready for Delivery + Discovery only, exclude Won't do */
+  /* Filter: Roadmap Status = "Next" only, exclude Won't do */
   var rfdItems = data.filter(function(d){
-    return d.Status==='Ready for Delivery' && (d['Roadmap Status']||'')!=="Won't do";
+    return d.Status === 'Ready for Delivery' && (d['Roadmap Status']||'').trim() === 'Next';
   });
   var discoveryItems = data.filter(function(d){
-    return d.Status==='Discovery' && (d['Roadmap Status']||'')!=="Won't do";
+    return d.Status === 'Discovery' && (d['Roadmap Status']||'').trim() === 'Next';
   });
 
-  /* Sort each group by roadmap status label (Next → Later → blank) for useful ordering */
-  function _rsOrder(d) {
-    var rs = (d['Roadmap Status']||'').toLowerCase();
-    if (rs==='next') return 0;
-    if (rs==='now')  return 1;
-    if (rs==='later') return 2;
-    return 3;
-  }
-  rfdItems       = rfdItems.slice().sort(function(a,b){ return _rsOrder(a)-_rsOrder(b); });
-  discoveryItems = discoveryItems.slice().sort(function(a,b){ return _rsOrder(a)-_rsOrder(b); });
-
-  var bodyHtml =
-    _buildGroup('Ready for Delivery', 'var(--purple)', '🚀', rfdItems) +
-    _buildGroup('Discovery',          'var(--amber)',  '🔭', discoveryItems);
+  var _NU_TABS = [
+    {id:'rfd',       label:'🚀 Ready for Delivery', color:'#9b7fe8',       items:rfdItems},
+    {id:'discovery', label:'🔭 Discovery',           color:'var(--amber)',   items:discoveryItems}
+  ];
 
   var total = rfdItems.length + discoveryItems.length;
+
+  var tabBarHtml = '<div style="display:flex;border-bottom:1px solid var(--border);margin:-14px -16px 12px;overflow-x:auto">';
+  _NU_TABS.forEach(function(t) {
+    var active = t.id === 'rfd';
+    tabBarHtml +=
+      '<button id="nu-tabn-'+t.id+'" onclick="gdbNuTab(\''+t.id+'\')" style="'+
+        'padding:8px 12px;font-size:11px;font-weight:600;border:none;background:none;cursor:pointer;'+
+        'white-space:nowrap;border-bottom:2px solid '+(active?t.color:'transparent')+';'+
+        'color:'+(active?t.color:'var(--text3)')+';flex-shrink:0'+
+      '">'+t.label+' <span style="font-size:10px;opacity:.7">('+t.items.length+')</span></button>';
+  });
+  tabBarHtml += '</div>';
+
+  var panesHtml = '';
+  _NU_TABS.forEach(function(t) {
+    var rows = t.items.map(_buildRow).join('');
+    panesHtml += '<div id="nu-tabp-'+t.id+'" style="display:'+(t.id==='rfd'?'block':'none')+'">'+
+      (rows || '<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">No items</div>')+
+    '</div>';
+  });
+
   el.innerHTML =
     '<div class="panel-head"><div>'+
       '<div class="panel-title">Next up</div>'+
-      '<div class="panel-sub">Pipeline — '+total+' items, by lifecycle status</div>'+
+      '<div class="panel-sub">Roadmap status: Next — '+total+' items</div>'+
     '</div></div>'+
-    '<div class="panel-body">'+(bodyHtml||'<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">No items</div>')+'</div>';
+    '<div class="panel-body">'+tabBarHtml+panesHtml+'</div>';
+
   _makePanelCollapsible('dash-next');
 }
+
+/* Tab switcher for Next up panel */
+function gdbNuTab(tabId) {
+  var TAB_COLORS = {rfd:'#9b7fe8', discovery:'var(--amber)'};
+  ['rfd','discovery'].forEach(function(id) {
+    var btn  = document.getElementById('nu-tabn-'+id);
+    var pane = document.getElementById('nu-tabp-'+id);
+    var active = id === tabId;
+    if (btn) {
+      btn.style.color        = active ? TAB_COLORS[id] : 'var(--text3)';
+      btn.style.borderBottom = active ? '2px solid '+TAB_COLORS[id] : '2px solid transparent';
+    }
+    if (pane) pane.style.display = active ? 'block' : 'none';
+  });
+}
+
 
 /* ── Section 2B: Health Matrix ── */
 function _buildHealthMatrix(data) {

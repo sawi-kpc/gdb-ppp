@@ -1353,9 +1353,6 @@ function _buildPlatformMatrix(data) {
 /* ── Section 2A: Delivery & action required (grouped by monitoring status) ── */
 function _buildPipeline(data) {
   var el = document.getElementById('dash-delivery'); if (!el) return;
-  /* Use allData so year filter does not hide active delivery items */
-  var data = allData;
-
   function _missingComp(d) {
     var NEED_COMP = ['Ready for Delivery', 'Delivery', 'Done'];
     if (NEED_COMP.indexOf(d.Status) < 0) return false;
@@ -1372,8 +1369,8 @@ function _buildPipeline(data) {
     return null;
   }
 
-  /* Show all Now/Next items regardless of lifecycle status */
-  var items = allData.filter(function(d) {
+  /* data is already year-filtered; further narrow to Now/Next */
+  var items = data.filter(function(d) {
     var rs = (d['Roadmap Status']||'').trim();
     return rs === 'Now' || rs === 'Next';
   });
@@ -1425,10 +1422,10 @@ function _buildPipeline(data) {
   });
 
   var _DL_TABS = [
-    {id:'delayed', label:'🆘 Delayed',       color:'var(--down)',   items:delayedItems},
-    {id:'atrisk',  label:'⚠️ At risk',        color:'var(--amber)',  items:atRiskItems},
-    {id:'ontrack', label:'✅ On track',        color:'var(--up)',     items:onTrackItems},
-    {id:'budget',  label:'⏳ Budget Approval', color:'var(--accent)', items:budgetItems}
+    {id:'delayed', label:'🆘 Delayed',       color:'var(--down)',   items:delayedItems, empty:'🎉 No delayed items'},
+    {id:'atrisk',  label:'⚠️ At risk',        color:'var(--amber)',  items:atRiskItems,  empty:'No items flagged at risk'},
+    {id:'ontrack', label:'✅ On track',        color:'var(--up)',     items:onTrackItems, empty:'No items currently on track'},
+    {id:'budget',  label:'⏳ Budget Approval', color:'var(--accent)', items:budgetItems,  empty:'No items pending budget approval'}
   ];
 
   var total = items.length;
@@ -1449,16 +1446,20 @@ function _buildPipeline(data) {
   _DL_TABS.forEach(function(t) {
     var rows = t.items.map(_buildRow).join('');
     panesHtml += '<div id="dl-tabp-'+t.id+'" style="display:'+(t.id==='delayed'?'block':'none')+'">'+
-      (rows || '<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">No items</div>')+
+      (rows || '<div style="padding:24px 0;text-align:center;color:var(--text3);font-size:12px">'+t.empty+'</div>')+
     '</div>';
   });
+
+  var bodyHtml = total === 0
+    ? '<div style="padding:32px 0;text-align:center;color:var(--text3);font-size:12px">No Now/Next items for the selected year</div>'
+    : tabBarHtml + panesHtml;
 
   el.innerHTML =
     '<div class="panel-head"><div>'+
       '<div class="panel-title">Delivery & action required</div>'+
-      '<div class="panel-sub">Active delivery · budget — '+total+' items</div>'+
+      '<div class="panel-sub">Roadmap: Now · Next — '+total+' items</div>'+
     '</div></div>'+
-    '<div class="panel-body">'+tabBarHtml+panesHtml+'</div>';
+    '<div class="panel-body">'+bodyHtml+'</div>';
 
   _makePanelCollapsible('dash-delivery');
 }
@@ -1482,9 +1483,6 @@ function gdbDlTab(tabId) {
 /* ── Section 2A-2: Next up (Roadmap Status = "Next" only) ── */
 function _buildNextPipeline(data) {
   var el = document.getElementById('dash-next'); if (!el) return;
-  /* Use allData so year filter does not hide next-up items */
-  var data = allData;
-
   function _buildRow(d) {
     var tS = getStart(d['Target Project Start']||'');
     var tE = getEnd(d['Target Project End']||'');
@@ -1518,8 +1516,8 @@ function _buildNextPipeline(data) {
   });
 
   var _NU_TABS = [
-    {id:'rfd',       label:'🚀 Ready for Delivery', color:'#9b7fe8',       items:rfdItems},
-    {id:'discovery', label:'🔭 Discovery',           color:'var(--amber)',   items:discoveryItems}
+    {id:'rfd',       label:'🚀 Ready for Delivery', color:'#9b7fe8',      items:rfdItems,       empty:'No items ready for delivery'},
+    {id:'discovery', label:'🔭 Discovery',           color:'var(--amber)', items:discoveryItems, empty:'Nothing in discovery yet'}
   ];
 
   var total = rfdItems.length + discoveryItems.length;
@@ -1540,16 +1538,20 @@ function _buildNextPipeline(data) {
   _NU_TABS.forEach(function(t) {
     var rows = t.items.map(_buildRow).join('');
     panesHtml += '<div id="nu-tabp-'+t.id+'" style="display:'+(t.id==='rfd'?'block':'none')+'">'+
-      (rows || '<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">No items</div>')+
+      (rows || '<div style="padding:24px 0;text-align:center;color:var(--text3);font-size:12px">'+t.empty+'</div>')+
     '</div>';
   });
+
+  var bodyHtml = total === 0
+    ? '<div style="padding:32px 0;text-align:center;color:var(--text3);font-size:12px">Nothing queued up for the selected year</div>'
+    : tabBarHtml + panesHtml;
 
   el.innerHTML =
     '<div class="panel-head"><div>'+
       '<div class="panel-title">Next up</div>'+
-      '<div class="panel-sub">Roadmap status: Next — '+total+' items</div>'+
+      '<div class="panel-sub">Roadmap: Next — '+total+' items</div>'+
     '</div></div>'+
-    '<div class="panel-body">'+tabBarHtml+panesHtml+'</div>';
+    '<div class="panel-body">'+bodyHtml+'</div>';
 
   _makePanelCollapsible('dash-next');
 }

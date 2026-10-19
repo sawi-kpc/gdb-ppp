@@ -1362,7 +1362,7 @@ function _buildPipeline(data) {
   }
 
   function _actionFor(d) {
-    if (_missingComp(d)) return {label:'Specify component (related platform)',color:'var(--amber)'};
+    if (_missingComp(d)) return {label:'Specify component',color:'var(--amber)'};
     var mon = (d['Project Monitoring Status']||'').toLowerCase();
     if (mon.includes('delay')) return {label:'Provide revised plan & mitigation',color:'var(--down)'};
     if (mon.includes('risk'))  return {label:'Identify blockers',color:'var(--amber)'};
@@ -1370,89 +1370,117 @@ function _buildPipeline(data) {
     return null;
   }
 
-  /* Items: Delivery + Budget Approval; also missing-comp for data quality */
   var items = data.filter(function(d) {
     if ((d['Roadmap Status']||'') === "Won't do") return false;
     return d.Status === 'Delivery' || d.Status === 'Budget Approval' || _missingComp(d);
   });
 
-  /* Avatar color map */
-  var AVATAR_COLORS = ['#40b8a8','#b088e0','#d4a040','#4a9e5c','#e06050','#5bb8d4','#e07080'];
-  var colorMap = {}, colorIdx = 0;
-  data.forEach(function(d) {
-    var n1   = (d['Assignee'] && d['Assignee'].displayName) || d['Assignee.displayName'] || '';
-    var n2raw = (d['Assignee (2nd)'] && d['Assignee (2nd)'].displayName) || d['Assignee (2nd).displayName'] || '';
-    if (n1 && !colorMap[n1]) colorMap[n1] = AVATAR_COLORS[colorIdx++ % AVATAR_COLORS.length];
-    n2raw.split(';').forEach(function(n2){ n2=n2.trim(); if(n2&&!colorMap[n2]) colorMap[n2]=AVATAR_COLORS[colorIdx++%AVATAR_COLORS.length]; });
-  });
-  function _avatar(name) {
-    if (!name) return '';
-    return '<span style="width:22px;height:22px;border-radius:50%;background:'+(colorMap[name]||'#6b5c48')+';color:#fff;font-size:9px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0" title="'+name+'">'+_initials(name)+'</span>';
-  }
+  var STATUS_STYLE = {
+    'Delivery':        {bg:'var(--accent)',  text:'var(--accent)'},
+    'Budget Approval': {bg:'var(--amber)',   text:'var(--amber)'},
+    'Ready for Delivery': {bg:'#9b7fe8',     text:'#9b7fe8'},
+    'Discovery':       {bg:'var(--amber)',   text:'var(--amber)'}
+  };
+  var RS_COLOR = {'Now':'var(--up)', 'Next':'var(--accent)', 'Later':'var(--text3)'};
 
   function _buildRow(d) {
     var action = _actionFor(d);
-    var a1 = (d['Assignee']&&d['Assignee'].displayName)||d['Assignee.displayName']||'';
-    var a2s = ((d['Assignee (2nd)']&&d['Assignee (2nd)'].displayName)||d['Assignee (2nd).displayName']||'').split(';').map(function(n){return n.trim();}).filter(Boolean);
     var actionChip = action
       ? '<span style="font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;background:'+action.color+'22;color:'+action.color+';white-space:nowrap;flex-shrink:0">'+action.label+'</span>'
       : '';
-    return '<div style="display:flex;align-items:center;gap:7px;padding:7px 0;border-bottom:1px solid var(--border);min-width:0">'+
+
+    var st = STATUS_STYLE[d.Status] || {bg:'var(--text3)',text:'var(--text3)'};
+    var statusChip = '<span style="font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;background:'+st.bg+'1a;color:'+st.text+';white-space:nowrap;flex-shrink:0">'+d.Status+'</span>';
+
+    var rs = (d['Roadmap Status']||'').trim();
+    var rsColor = RS_COLOR[rs] || 'var(--text3)';
+    var rsChip = rs && rs !== "Won't do"
+      ? '<span style="font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;background:'+rsColor+'1a;color:'+rsColor+';white-space:nowrap;flex-shrink:0">'+rs+'</span>'
+      : '';
+
+    var glDate = getStart(d['Go-live Date']||'');
+    var glHtml = glDate
+      ? '<span style="font-size:9px;color:var(--purple);font-weight:600;white-space:nowrap;flex-shrink:0">◆ '+fmtFullDate(glDate)+'</span>'
+      : '';
+
+    return '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding:7px 0;border-bottom:1px solid var(--border);min-width:0">'+
       '<a href="'+CONFIG.JIRA_BASE+d.Key+'" target="_blank" style="font-size:10px;font-weight:700;color:var(--accent);text-decoration:none;white-space:nowrap;flex-shrink:0">'+d.Key+' ↗</a>'+
-      '<span style="font-size:11px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+d.Summary+'">'+d.Summary+'</span>'+
+      '<span style="font-size:11px;color:var(--text);flex:1;min-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+d.Summary+'">'+d.Summary+'</span>'+
       actionChip+
-      a2s.map(_avatar).join('')+
-      _avatar(a1)+
+      statusChip+
+      rsChip+
+      glHtml+
     '</div>';
   }
 
-  function _buildGroup(label, color, icon, groupItems) {
-    if (!groupItems.length) return '';
-    return '<div style="margin-bottom:2px">'+
-      '<div style="display:flex;align-items:center;gap:6px;padding:8px 0 3px">'+
-        '<span style="font-size:12px">'+icon+'</span>'+
-        '<span style="font-size:11px;font-weight:700;color:'+color+'">'+label+'</span>'+
-        '<span style="font-size:10px;color:var(--text3)">('+groupItems.length+')</span>'+
-        '<div style="flex:1;height:1px;background:'+color+'33;margin-left:4px"></div>'+
-      '</div>'+
-      groupItems.map(_buildRow).join('')+
-    '</div>';
-  }
-
-  /* Group by monitoring status */
   var budgetItems  = items.filter(function(d){ return d.Status==='Budget Approval'; });
   var delayedItems = items.filter(function(d){
     return d.Status==='Delivery' && (d['Project Monitoring Status']||'').toLowerCase().includes('delay');
   });
   var atRiskItems  = items.filter(function(d){
-    return d.Status==='Delivery' && (d['Project Monitoring Status']||'').toLowerCase().includes('risk');
+    var mon=(d['Project Monitoring Status']||'').toLowerCase();
+    return d.Status==='Delivery' && (mon.includes('risk') || _missingComp(d));
   });
   var onTrackItems = items.filter(function(d){
     if (d.Status!=='Delivery') return false;
     var mon=(d['Project Monitoring Status']||'').toLowerCase();
-    return !mon.includes('delay') && !mon.includes('risk');
-  });
-  /* Missing-comp items outside Delivery (data quality) */
-  var missingItems = items.filter(function(d){
-    return d.Status!=='Delivery' && d.Status!=='Budget Approval' && _missingComp(d);
+    return !mon.includes('delay') && !mon.includes('risk') && !_missingComp(d);
   });
 
-  var bodyHtml =
-    _buildGroup('Budget Approval', 'var(--accent)', '⏳', budgetItems) +
-    _buildGroup('Delayed',         'var(--down)',   '🆘', delayedItems) +
-    _buildGroup('At risk',         'var(--amber)',  '⚠️', atRiskItems) +
-    _buildGroup('On track',        'var(--up)',     '✅', onTrackItems) +
-    (missingItems.length ? _buildGroup('Missing component', 'var(--amber)', '⚡', missingItems) : '');
+  var _DL_TABS = [
+    {id:'delayed', label:'🆘 Delayed',       color:'var(--down)',   items:delayedItems},
+    {id:'atrisk',  label:'⚠️ At risk',        color:'var(--amber)',  items:atRiskItems},
+    {id:'ontrack', label:'✅ On track',        color:'var(--up)',     items:onTrackItems},
+    {id:'budget',  label:'⏳ Budget Approval', color:'var(--accent)', items:budgetItems}
+  ];
 
-  var total = budgetItems.length + delayedItems.length + atRiskItems.length + onTrackItems.length + missingItems.length;
+  var total = items.length;
+
+  var tabBarHtml = '<div style="display:flex;border-bottom:1px solid var(--border);margin:-14px -16px 12px;overflow-x:auto">';
+  _DL_TABS.forEach(function(t) {
+    var active = t.id === 'delayed';
+    tabBarHtml +=
+      '<button id="dl-tabn-'+t.id+'" onclick="gdbDlTab(\''+t.id+'\')" style="'+
+        'padding:8px 12px;font-size:11px;font-weight:600;border:none;background:none;cursor:pointer;'+
+        'white-space:nowrap;border-bottom:2px solid '+(active?t.color:'transparent')+';'+
+        'color:'+(active?t.color:'var(--text3)')+';flex-shrink:0'+
+      '">'+t.label+' <span style="font-size:10px;opacity:.7">('+t.items.length+')</span></button>';
+  });
+  tabBarHtml += '</div>';
+
+  var panesHtml = '';
+  _DL_TABS.forEach(function(t) {
+    var rows = t.items.map(_buildRow).join('');
+    panesHtml += '<div id="dl-tabp-'+t.id+'" style="display:'+(t.id==='delayed'?'block':'none')+'">'+
+      (rows || '<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">No items</div>')+
+    '</div>';
+  });
+
   el.innerHTML =
     '<div class="panel-head"><div>'+
       '<div class="panel-title">Delivery & action required</div>'+
-      '<div class="panel-sub">Active delivery · budget — '+total+' items, grouped by monitoring status</div>'+
+      '<div class="panel-sub">Active delivery · budget — '+total+' items</div>'+
     '</div></div>'+
-    '<div class="panel-body">'+(bodyHtml||'<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">No active items</div>')+'</div>';
+    '<div class="panel-body">'+tabBarHtml+panesHtml+'</div>';
+
   _makePanelCollapsible('dash-delivery');
 }
+
+/* Tab switcher for Delivery panel */
+function gdbDlTab(tabId) {
+  var TAB_COLORS = {delayed:'var(--down)', atrisk:'var(--amber)', ontrack:'var(--up)', budget:'var(--accent)'};
+  ['delayed','atrisk','ontrack','budget'].forEach(function(id) {
+    var btn  = document.getElementById('dl-tabn-'+id);
+    var pane = document.getElementById('dl-tabp-'+id);
+    var active = id === tabId;
+    if (btn) {
+      btn.style.color        = active ? TAB_COLORS[id] : 'var(--text3)';
+      btn.style.borderBottom = active ? '2px solid '+TAB_COLORS[id] : '2px solid transparent';
+    }
+    if (pane) pane.style.display = active ? 'block' : 'none';
+  });
+}
+
 
 /* ── Section 2A-2: Next up (Ready for Delivery → Discovery) ── */
 function _buildNextPipeline(data) {

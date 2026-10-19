@@ -1393,6 +1393,15 @@ function _buildPipeline(data) {
       ? '<span style="font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;background:'+rsColor+'1a;color:'+rsColor+';white-space:nowrap;flex-shrink:0">'+rs+'</span>'
       : '';
 
+    var tS = getStart(d['Target Project Start']||'');
+    var tE = getEnd(d['Target Project End']||'');
+    var dateHtml = (tS || tE)
+      ? '<span style="font-size:9px;color:var(--text2);white-space:nowrap;flex-shrink:0">'+
+          '<span style="color:var(--accent);font-weight:600">Target</span> '+
+          fmtMonYear(tS)+' → '+fmtMonYear(tE)+
+        '</span>'
+      : '';
+
     var glDate = getStart(d['Go-live Date']||'');
     var glHtml = glDate
       ? '<span style="font-size:9px;color:var(--purple);font-weight:600;white-space:nowrap;flex-shrink:0">◆ '+fmtFullDate(glDate)+'</span>'
@@ -1403,6 +1412,7 @@ function _buildPipeline(data) {
       '<span style="font-size:11px;color:var(--text);flex:1;min-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+d.Summary+'">'+d.Summary+'</span>'+
       statusChip+
       rsChip+
+      dateHtml+
       glHtml+
     '</div>';
   }
@@ -1422,6 +1432,8 @@ function _buildPipeline(data) {
   });
 
   function _tlSort(arr) {
+    var RS_ORD = {'Now':0,'Next':1,'Later':2};
+    var ST_ORD = {'Delivery':0,'Budget Approval':1,'Ready for Delivery':2,'Discovery':3};
     return arr.slice().sort(function(a, b) {
       var as=getStart(a['Target Project Start']||''), bs=getStart(b['Target Project Start']||'');
       if(!as&&!bs) {} else { if(!as) return 1; if(!bs) return -1; var sd=new Date(as)-new Date(bs); if(sd!==0) return sd; }
@@ -1429,6 +1441,8 @@ function _buildPipeline(data) {
       if(!ae&&!be) {} else { if(!ae) return 1; if(!be) return -1; var ed=new Date(ae)-new Date(be); if(ed!==0) return ed; }
       var ag=getStart(a['Go-live Date']||''),        bg=getStart(b['Go-live Date']||'');
       if(!ag&&!bg) {} else { if(!ag) return 1; if(!bg) return -1; var gd=new Date(ag)-new Date(bg); if(gd!==0) return gd; }
+      var ro=(RS_ORD[(a['Roadmap Status']||'').trim()]??9)-(RS_ORD[(b['Roadmap Status']||'').trim()]??9); if(ro!==0) return ro;
+      var so=(ST_ORD[a.Status||'']??9)-(ST_ORD[b.Status||'']??9); if(so!==0) return so;
       return (a['Summary']||'').localeCompare(b['Summary']||'');
     });
   }
@@ -1519,6 +1533,8 @@ function _buildNextPipeline(data) {
   }
 
   function _tlSort(arr) {
+    var RS_ORD = {'Now':0,'Next':1,'Later':2};
+    var ST_ORD = {'Delivery':0,'Budget Approval':1,'Ready for Delivery':2,'Discovery':3};
     return arr.slice().sort(function(a, b) {
       var as=getStart(a['Target Project Start']||''), bs=getStart(b['Target Project Start']||'');
       if(!as&&!bs) {} else { if(!as) return 1; if(!bs) return -1; var sd=new Date(as)-new Date(bs); if(sd!==0) return sd; }
@@ -1526,6 +1542,8 @@ function _buildNextPipeline(data) {
       if(!ae&&!be) {} else { if(!ae) return 1; if(!be) return -1; var ed=new Date(ae)-new Date(be); if(ed!==0) return ed; }
       var ag=getStart(a['Go-live Date']||''),        bg=getStart(b['Go-live Date']||'');
       if(!ag&&!bg) {} else { if(!ag) return 1; if(!bg) return -1; var gd=new Date(ag)-new Date(bg); if(gd!==0) return gd; }
+      var ro=(RS_ORD[(a['Roadmap Status']||'').trim()]??9)-(RS_ORD[(b['Roadmap Status']||'').trim()]??9); if(ro!==0) return ro;
+      var so=(ST_ORD[a.Status||'']??9)-(ST_ORD[b.Status||'']??9); if(so!==0) return so;
       return (a['Summary']||'').localeCompare(b['Summary']||'');
     });
   }

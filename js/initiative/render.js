@@ -1384,11 +1384,6 @@ function _buildPipeline(data) {
   var RS_COLOR = {'Now':'var(--up)', 'Next':'var(--accent)', 'Later':'var(--text3)'};
 
   function _buildRow(d) {
-    var action = _actionFor(d);
-    var actionChip = action
-      ? '<span style="font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;background:'+action.color+'22;color:'+action.color+';white-space:nowrap;flex-shrink:0">'+action.label+'</span>'
-      : '';
-
     var st = STATUS_STYLE[d.Status] || {bg:'var(--text3)',text:'var(--text3)'};
     var statusChip = '<span style="font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;background:'+st.bg+'1a;color:'+st.text+';white-space:nowrap;flex-shrink:0">'+d.Status+'</span>';
 
@@ -1406,7 +1401,6 @@ function _buildPipeline(data) {
     return '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding:7px 0;border-bottom:1px solid var(--border);min-width:0">'+
       '<a href="'+CONFIG.JIRA_BASE+d.Key+'" target="_blank" style="font-size:10px;font-weight:700;color:var(--accent);text-decoration:none;white-space:nowrap;flex-shrink:0">'+d.Key+' ↗</a>'+
       '<span style="font-size:11px;color:var(--text);flex:1;min-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+d.Summary+'">'+d.Summary+'</span>'+
-      actionChip+
       statusChip+
       rsChip+
       glHtml+

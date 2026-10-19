@@ -1353,6 +1353,8 @@ function _buildPlatformMatrix(data) {
 /* ── Section 2A: Delivery & action required (grouped by monitoring status) ── */
 function _buildPipeline(data) {
   var el = document.getElementById('dash-delivery'); if (!el) return;
+  /* Use allData so year filter does not hide active delivery items */
+  var data = allData;
 
   function _missingComp(d) {
     var NEED_COMP = ['Ready for Delivery', 'Delivery', 'Done'];
@@ -1479,6 +1481,8 @@ function gdbDlTab(tabId) {
 /* ── Section 2A-2: Next up (Roadmap Status = "Next" only) ── */
 function _buildNextPipeline(data) {
   var el = document.getElementById('dash-next'); if (!el) return;
+  /* Use allData so year filter does not hide next-up items */
+  var data = allData;
 
   function _buildRow(d) {
     var tS = getStart(d['Target Project Start']||'');

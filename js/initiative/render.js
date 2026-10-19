@@ -1182,6 +1182,7 @@ function buildDashboard(filtered) {
   _buildKPI(filtered);
   _buildPlatformMatrix(filtered);
   _buildPipeline(filtered);
+  _buildNextPipeline(filtered);
   _buildHealthMatrix(filtered);
   _buildScatter(filtered);
   _buildConfHeatmap(filtered);
@@ -1349,91 +1350,191 @@ function _buildPlatformMatrix(data) {
   _makePanelCollapsible('dash-platform-matrix');
 }
 
-/* ── Section 2A: Unified Delivery & Action panel ── */
+/* ── Section 2A: Delivery & action required (grouped by monitoring status) ── */
 function _buildPipeline(data) {
   var el = document.getElementById('dash-delivery'); if (!el) return;
 
-  /* Helper: component missing (empty only) */
   function _missingComp(d) {
     var NEED_COMP = ['Ready for Delivery', 'Delivery', 'Done'];
     if (NEED_COMP.indexOf(d.Status) < 0) return false;
-    var comps = (d['Components'] || '').split(';').map(function(c) { return c.trim(); }).filter(function(c) { return c; });
+    var comps = (d['Components']||'').split(';').map(function(c){return c.trim();}).filter(Boolean);
     return comps.length === 0;
   }
 
-  /* Items to show:
-     - Delivery + Budget Approval + Ready for Delivery (active pipeline)
-     - Done / Ready / Delivery items missing component (data quality)
-     - Exclude Roadmap Status = "Won't do" */
-  var items = data.filter(function(d) {
-    if ((d['Roadmap Status'] || '') === "Won't do") return false;
-    var isActive = d.Status === 'Delivery' || d.Status === 'Budget Approval' || d.Status === 'Ready for Delivery';
-    return isActive || _missingComp(d);
-  });
-
-  /* Build action map per key */
   function _actionFor(d) {
-    if (_missingComp(d)) return { label: 'Specify component (related platform)', color: 'var(--amber)' };
-    var mon = (d['Project Monitoring Status'] || '').toLowerCase();
-    if (mon.includes('delay')) return { label: 'Provide revised plan & mitigation', color: 'var(--down)' };
-    if (mon.includes('risk'))  return { label: 'Identify blockers', color: 'var(--amber)' };
-    if (d.Status === 'Budget Approval')     return { label: 'Pending budget approval', color: 'var(--accent)' };
-    if (d.Status === 'Ready for Delivery')  return { label: 'Confirm sprint kick-off', color: 'var(--teal)' };
+    if (_missingComp(d)) return {label:'Specify component (related platform)',color:'var(--amber)'};
+    var mon = (d['Project Monitoring Status']||'').toLowerCase();
+    if (mon.includes('delay')) return {label:'Provide revised plan & mitigation',color:'var(--down)'};
+    if (mon.includes('risk'))  return {label:'Identify blockers',color:'var(--amber)'};
+    if (d.Status === 'Budget Approval') return {label:'Pending budget approval',color:'var(--accent)'};
     return null;
   }
 
-  /* Sort: budget approval → delivery delayed → delivery at risk → delivery on track → ready for delivery */
-  function _sortOrder(d) {
-    if (d.Status === 'Budget Approval') return 0;
-    var mon = (d['Project Monitoring Status'] || '').toLowerCase();
-    if (d.Status === 'Delivery' && mon.includes('delay')) return 1;
-    if (d.Status === 'Delivery' && mon.includes('risk'))  return 2;
-    if (d.Status === 'Delivery') return 3;
-    if (d.Status === 'Ready for Delivery') return 4;
-    return 5;
-  }
-  items = items.slice().sort(function(a, b) { return _sortOrder(a) - _sortOrder(b); });
+  /* Items: Delivery + Budget Approval; also missing-comp for data quality */
+  var items = data.filter(function(d) {
+    if ((d['Roadmap Status']||'') === "Won't do") return false;
+    return d.Status === 'Delivery' || d.Status === 'Budget Approval' || _missingComp(d);
+  });
 
   /* Avatar color map */
   var AVATAR_COLORS = ['#40b8a8','#b088e0','#d4a040','#4a9e5c','#e06050','#5bb8d4','#e07080'];
-  var colorMap = {};
-  var colorIdx = 0;
+  var colorMap = {}, colorIdx = 0;
   data.forEach(function(d) {
-    var n1 = (d['Assignee'] && d['Assignee'].displayName) || d['Assignee.displayName'] || '';
+    var n1   = (d['Assignee'] && d['Assignee'].displayName) || d['Assignee.displayName'] || '';
     var n2raw = (d['Assignee (2nd)'] && d['Assignee (2nd)'].displayName) || d['Assignee (2nd).displayName'] || '';
     if (n1 && !colorMap[n1]) colorMap[n1] = AVATAR_COLORS[colorIdx++ % AVATAR_COLORS.length];
-    n2raw.split(';').forEach(function(n2){ n2=n2.trim(); if(n2 && !colorMap[n2]) colorMap[n2]=AVATAR_COLORS[colorIdx++%AVATAR_COLORS.length]; });
+    n2raw.split(';').forEach(function(n2){ n2=n2.trim(); if(n2&&!colorMap[n2]) colorMap[n2]=AVATAR_COLORS[colorIdx++%AVATAR_COLORS.length]; });
   });
-
   function _avatar(name) {
     if (!name) return '';
     return '<span style="width:22px;height:22px;border-radius:50%;background:'+(colorMap[name]||'#6b5c48')+';color:#fff;font-size:9px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0" title="'+name+'">'+_initials(name)+'</span>';
   }
 
-  var rows = items.map(function(d) {
-    var mon = d['Project Monitoring Status'] || '';
-    var monCol = _monColor(mon);
-    var monTxt = d.Status === 'Delivery' ? (mon || 'On track') : d.Status;
+  function _buildRow(d) {
     var action = _actionFor(d);
-    var a1 = (d['Assignee'] && d['Assignee'].displayName) || d['Assignee.displayName'] || '';
-    var a2s = ((d['Assignee (2nd)'] && d['Assignee (2nd)'].displayName) || d['Assignee (2nd).displayName'] || '').split(';').map(function(n){return n.trim();}).filter(Boolean);
+    var a1 = (d['Assignee']&&d['Assignee'].displayName)||d['Assignee.displayName']||'';
+    var a2s = ((d['Assignee (2nd)']&&d['Assignee (2nd)'].displayName)||d['Assignee (2nd).displayName']||'').split(';').map(function(n){return n.trim();}).filter(Boolean);
     var actionChip = action
       ? '<span style="font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;background:'+action.color+'22;color:'+action.color+';white-space:nowrap;flex-shrink:0">'+action.label+'</span>'
       : '';
     return '<div style="display:flex;align-items:center;gap:7px;padding:7px 0;border-bottom:1px solid var(--border);min-width:0">'+
-      '<span style="width:7px;height:7px;border-radius:50%;background:'+monCol+';flex-shrink:0"></span>'+
-      '<span style="font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;background:'+monCol+'22;color:'+monCol+';white-space:nowrap;flex-shrink:0;min-width:54px;text-align:center">'+monTxt+'</span>'+
       '<a href="'+CONFIG.JIRA_BASE+d.Key+'" target="_blank" style="font-size:10px;font-weight:700;color:var(--accent);text-decoration:none;white-space:nowrap;flex-shrink:0">'+d.Key+' ↗</a>'+
       '<span style="font-size:11px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+d.Summary+'">'+d.Summary+'</span>'+
       actionChip+
       a2s.map(_avatar).join('')+
       _avatar(a1)+
     '</div>';
-  }).join('');
+  }
 
-  el.innerHTML = '<div class="panel-head"><div><div class="panel-title">Delivery & action required</div><div class="panel-sub">Active delivery · budget · pipeline — sorted by urgency</div></div></div>'+
-    '<div class="panel-body">'+(rows||'<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">No active items</div>')+'</div>';
+  function _buildGroup(label, color, icon, groupItems) {
+    if (!groupItems.length) return '';
+    return '<div style="margin-bottom:2px">'+
+      '<div style="display:flex;align-items:center;gap:6px;padding:8px 0 3px">'+
+        '<span style="font-size:12px">'+icon+'</span>'+
+        '<span style="font-size:11px;font-weight:700;color:'+color+'">'+label+'</span>'+
+        '<span style="font-size:10px;color:var(--text3)">('+groupItems.length+')</span>'+
+        '<div style="flex:1;height:1px;background:'+color+'33;margin-left:4px"></div>'+
+      '</div>'+
+      groupItems.map(_buildRow).join('')+
+    '</div>';
+  }
+
+  /* Group by monitoring status */
+  var budgetItems  = items.filter(function(d){ return d.Status==='Budget Approval'; });
+  var delayedItems = items.filter(function(d){
+    return d.Status==='Delivery' && (d['Project Monitoring Status']||'').toLowerCase().includes('delay');
+  });
+  var atRiskItems  = items.filter(function(d){
+    return d.Status==='Delivery' && (d['Project Monitoring Status']||'').toLowerCase().includes('risk');
+  });
+  var onTrackItems = items.filter(function(d){
+    if (d.Status!=='Delivery') return false;
+    var mon=(d['Project Monitoring Status']||'').toLowerCase();
+    return !mon.includes('delay') && !mon.includes('risk');
+  });
+  /* Missing-comp items outside Delivery (data quality) */
+  var missingItems = items.filter(function(d){
+    return d.Status!=='Delivery' && d.Status!=='Budget Approval' && _missingComp(d);
+  });
+
+  var bodyHtml =
+    _buildGroup('Budget Approval', 'var(--accent)', '⏳', budgetItems) +
+    _buildGroup('Delayed',         'var(--down)',   '🆘', delayedItems) +
+    _buildGroup('At risk',         'var(--amber)',  '⚠️', atRiskItems) +
+    _buildGroup('On track',        'var(--up)',     '✅', onTrackItems) +
+    (missingItems.length ? _buildGroup('Missing component', 'var(--amber)', '⚡', missingItems) : '');
+
+  var total = budgetItems.length + delayedItems.length + atRiskItems.length + onTrackItems.length + missingItems.length;
+  el.innerHTML =
+    '<div class="panel-head"><div>'+
+      '<div class="panel-title">Delivery & action required</div>'+
+      '<div class="panel-sub">Active delivery · budget — '+total+' items, grouped by monitoring status</div>'+
+    '</div></div>'+
+    '<div class="panel-body">'+(bodyHtml||'<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">No active items</div>')+'</div>';
   _makePanelCollapsible('dash-delivery');
+}
+
+/* ── Section 2A-2: Next up (Ready for Delivery → Discovery) ── */
+function _buildNextPipeline(data) {
+  var el = document.getElementById('dash-next'); if (!el) return;
+
+  /* Avatar color map */
+  var AVATAR_COLORS = ['#40b8a8','#b088e0','#d4a040','#4a9e5c','#e06050','#5bb8d4','#e07080'];
+  var colorMap = {}, colorIdx = 0;
+  data.forEach(function(d) {
+    var n1   = (d['Assignee']&&d['Assignee'].displayName)||d['Assignee.displayName']||'';
+    var n2raw = (d['Assignee (2nd)']&&d['Assignee (2nd)'].displayName)||d['Assignee (2nd).displayName']||'';
+    if (n1 && !colorMap[n1]) colorMap[n1] = AVATAR_COLORS[colorIdx++%AVATAR_COLORS.length];
+    n2raw.split(';').forEach(function(n2){ n2=n2.trim(); if(n2&&!colorMap[n2]) colorMap[n2]=AVATAR_COLORS[colorIdx++%AVATAR_COLORS.length]; });
+  });
+  function _avatar(name) {
+    if (!name) return '';
+    return '<span style="width:20px;height:20px;border-radius:50%;background:'+(colorMap[name]||'#6b5c48')+';color:#fff;font-size:8px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0" title="'+name+'">'+_initials(name)+'</span>';
+  }
+
+  function _buildRow(d) {
+    var rsLabel = d['Roadmap Status'] || '';
+    var rsBadge = rsLabel ? '<span style="font-size:9px;font-weight:600;padding:1px 6px;border-radius:3px;background:var(--surface2);border:1px solid var(--border);color:var(--text3);white-space:nowrap;flex-shrink:0">'+rsLabel+'</span>' : '';
+    var compRaw = (d['Components']||'').split(';').map(function(c){return c.trim();}).filter(Boolean);
+    var compChip = compRaw.length
+      ? '<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(55,138,221,.1);color:#185FA5;border:1px solid rgba(55,138,221,.2);white-space:nowrap;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;max-width:120px">'+compRaw[0]+(compRaw.length>1?' +'+( compRaw.length-1):'')+'</span>'
+      : '';
+    var a1 = (d['Assignee']&&d['Assignee'].displayName)||d['Assignee.displayName']||'';
+    var a2s = ((d['Assignee (2nd)']&&d['Assignee (2nd)'].displayName)||d['Assignee (2nd).displayName']||'').split(';').map(function(n){return n.trim();}).filter(Boolean);
+    return '<div style="display:flex;align-items:center;gap:7px;padding:6px 0;border-bottom:1px solid var(--border);min-width:0">'+
+      '<a href="'+CONFIG.JIRA_BASE+d.Key+'" target="_blank" style="font-size:10px;font-weight:700;color:var(--accent);text-decoration:none;white-space:nowrap;flex-shrink:0">'+d.Key+' ↗</a>'+
+      '<span style="font-size:11px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+d.Summary+'">'+d.Summary+'</span>'+
+      compChip+
+      rsBadge+
+      a2s.map(_avatar).join('')+
+      _avatar(a1)+
+    '</div>';
+  }
+
+  function _buildGroup(label, color, icon, groupItems) {
+    if (!groupItems.length) return '';
+    return '<div style="margin-bottom:2px">'+
+      '<div style="display:flex;align-items:center;gap:6px;padding:8px 0 3px">'+
+        '<span style="font-size:12px">'+icon+'</span>'+
+        '<span style="font-size:11px;font-weight:700;color:'+color+'">'+label+'</span>'+
+        '<span style="font-size:10px;color:var(--text3)">('+groupItems.length+')</span>'+
+        '<div style="flex:1;height:1px;background:'+color+'33;margin-left:4px"></div>'+
+      '</div>'+
+      groupItems.map(_buildRow).join('')+
+    '</div>';
+  }
+
+  /* Filter: Ready for Delivery + Discovery only, exclude Won't do */
+  var rfdItems = data.filter(function(d){
+    return d.Status==='Ready for Delivery' && (d['Roadmap Status']||'')!=="Won't do";
+  });
+  var discoveryItems = data.filter(function(d){
+    return d.Status==='Discovery' && (d['Roadmap Status']||'')!=="Won't do";
+  });
+
+  /* Sort each group by roadmap status label (Next → Later → blank) for useful ordering */
+  function _rsOrder(d) {
+    var rs = (d['Roadmap Status']||'').toLowerCase();
+    if (rs==='next') return 0;
+    if (rs==='now')  return 1;
+    if (rs==='later') return 2;
+    return 3;
+  }
+  rfdItems       = rfdItems.slice().sort(function(a,b){ return _rsOrder(a)-_rsOrder(b); });
+  discoveryItems = discoveryItems.slice().sort(function(a,b){ return _rsOrder(a)-_rsOrder(b); });
+
+  var bodyHtml =
+    _buildGroup('Ready for Delivery', 'var(--purple)', '🚀', rfdItems) +
+    _buildGroup('Discovery',          'var(--amber)',  '🔭', discoveryItems);
+
+  var total = rfdItems.length + discoveryItems.length;
+  el.innerHTML =
+    '<div class="panel-head"><div>'+
+      '<div class="panel-title">Next up</div>'+
+      '<div class="panel-sub">Pipeline — '+total+' items, by lifecycle status</div>'+
+    '</div></div>'+
+    '<div class="panel-body">'+(bodyHtml||'<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">No items</div>')+'</div>';
+  _makePanelCollapsible('dash-next');
 }
 
 /* ── Section 2B: Health Matrix ── */

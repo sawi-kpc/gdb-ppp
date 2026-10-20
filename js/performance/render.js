@@ -475,7 +475,7 @@ function _buildPerfQuarterChart(myI1,myI2,year){
   var hasData=ptI1.some(function(p){return p.total>0;})||ptI2.some(function(p){return p.total>0;});
   if(!hasData){el.innerHTML='';return;}
   var leg='<div style="padding:9px 14px;display:flex;align-items:center;gap:16px;border-bottom:1px solid var(--border);flex-wrap:wrap">';
-  leg+='<span style="font-size:12px;font-weight:700;color:var(--text)">Completion Rate by Quarter</span>';
+  leg+='<span style="font-size:12px;font-weight:700;color:var(--text)">Deliverable On-Time Rate by Quarter</span>';
   leg+='<span style="margin-left:auto;display:flex;gap:12px;flex-wrap:wrap">';
   [{l:'Lead',c:'--accent'},{l:'Support',c:'--teal'}].forEach(function(s){
     leg+='<span style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2)"><span style="display:inline-block;width:16px;height:2px;background:var('+s.c+');border-radius:2px;flex-shrink:0"></span>'+s.l+'</span>';

@@ -145,6 +145,19 @@
         </div>
       </div>
 
+      <!-- Chart 1b: Heatmap by Project Goal -->
+      <div class="sum-panel" style="margin-bottom:12px">
+        <div class="sum-panel-head">
+          <span class="sum-panel-title">Goal Heatmap</span>
+          <span class="sum-panel-sub">count per project goal × status — lead / support / total</span>
+        </div>
+        <div class="sum-panel-body">
+          <div class="stbl-wrap">
+            <table class="stbl" id="init-goal-hm-tbl"></table>
+          </div>
+        </div>
+      </div>
+
       <!-- Chart 2 + 3: Bar charts -->
       <div class="grid-2">
         <div class="sum-panel">
@@ -220,7 +233,20 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="../js/initiative/config.js"></script>
-<script src="../js/roles.js"></script>
+<script src="../js/roles.js?v=2"></script>
+<script>
+/* localhost dev bypass: override gdbFetchAndStoreRoles before header.js runs */
+if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+  gdbFetchAndStoreRoles = function(email) {
+    var r = ['super_admin'];
+    window._gdbRoles = r;
+    window._gdbNamePrefix = 'Dev';
+    try { sessionStorage.setItem('gdb_roles', JSON.stringify(r)); } catch(e) {}
+    try { sessionStorage.setItem('gdb_perf_name', 'Dev'); } catch(e) {}
+    return Promise.resolve(r);
+  };
+}
+</script>
 <script src="../js/header.js"></script>
 <script src="../js/initiative/data.js"></script>
 <script src="../js/issue/config.js"></script>
@@ -335,6 +361,7 @@ function _sumMarkReady(src){
     _renderInitKpi(initY);
     _renderInitOverall(initY);
     _renderInitHeatmap(initY);
+    _renderInitGoalHeatmap(initY);
     _renderInitBars(initY);
   }
   if(_sum.ready.sup){
@@ -400,6 +427,7 @@ function _render(){
   _renderInitKpi(initY);
   _renderInitOverall(initY);
   _renderInitHeatmap(initY);
+  _renderInitGoalHeatmap(initY);
   _renderInitBars(initY);
   _renderSupMonthTable(supY);
   _renderIssueTable(issY);
@@ -810,6 +838,120 @@ function _renderInitHeatmap(data){
   var ftd='style="font-weight:700;font-size:11px;color:var(--text);background:var(--surface2);border-top:2px solid var(--border);text-align:center;padding:5px 8px"';
   html+='</tbody><tfoot><tr>'+
     '<td class="col-person" style="border-top:2px solid var(--border);font-weight:700;font-size:11px;color:var(--text3)">Total</td>';
+  INIT_STS.forEach(function(s){html+='<td '+ftd+'>'+colL[s]+'</td>';});
+  html+='<td '+ftd+' style="font-weight:700;font-size:11px;color:var(--text);background:var(--surface2);border-top:2px solid var(--border);text-align:center;padding:5px 8px;border-right:2px solid var(--border)">'+totL+'</td>';
+  INIT_STS.forEach(function(s){html+='<td '+ftd+'>'+colS[s]+'</td>';});
+  html+='<td '+ftd+' style="font-weight:700;font-size:11px;color:var(--text);background:var(--surface2);border-top:2px solid var(--border);text-align:center;padding:5px 8px;border-right:2px solid var(--border)">'+totS+'</td>';
+  INIT_STS.forEach(function(s,j){html+='<td '+ftd+' style="font-weight:700;font-size:11px;color:var(--text);background:var(--surface2);border-top:2px solid var(--border);text-align:center;padding:5px 8px;border-left:'+(j===0?'2px':'0')+'solid var(--border)">'+colC[s]+'</td>';});
+  html+='<td '+ftd+'>'+totG+'</td></tr></tfoot>';
+
+  tbl.innerHTML=html;
+}
+
+/* ── 1b: Initiative Heatmap by Project Goal ── */
+function _renderInitGoalHeatmap(data){
+  var GOAL_COLORS_LOCAL={
+    'Increase Revenue':'var(--accent)',
+    'Improve Customer Experience':'var(--purple)',
+    'Improve Customer Engagement':'var(--up)',
+    'Improve Internal Operation':'var(--teal)',
+    'Strategic Direction':'var(--amber)'
+  };
+  /* Collect goals from data, known order first */
+  var goalSet={};
+  data.forEach(function(d){var g=(d['Project Goal']||'').trim();if(g)goalSet[g]=true;});
+  var known=Object.keys(GOAL_COLORS_LOCAL);
+  var goals=known.filter(function(g){return goalSet[g];});
+  Object.keys(goalSet).forEach(function(g){if(goals.indexOf(g)<0)goals.push(g);});
+
+  var tbl=document.getElementById('init-goal-hm-tbl');
+  if(!tbl)return;
+  if(!goals.length){tbl.closest('.sum-panel').style.display='none';return;}
+
+  /* counts[goal][role][status] */
+  var counts={};
+  goals.forEach(function(g){
+    counts[g]={lead:{},sup:{}};
+    INIT_STS.forEach(function(s){counts[g].lead[s]=0;counts[g].sup[s]=0;});
+  });
+  data.forEach(function(d){
+    if((d['Roadmap Status']||"")==="Won't do")return;
+    var g=(d['Project Goal']||'').trim();
+    if(!counts[g])return;
+    var st=_initStExact(d);
+    var lead=_fn(d['Assignee.displayName']);
+    if(SUM_PEOPLE.indexOf(lead)>=0)counts[g].lead[st]++;
+    var a2=(d['Assignee (2nd).displayName']||'');
+    a2.split(';').forEach(function(n){var fn=_fn(n);if(SUM_PEOPLE.indexOf(fn)>=0)counts[g].sup[st]++;});
+  });
+
+  var allVals=[];
+  goals.forEach(function(g){INIT_STS.forEach(function(s){allVals.push(counts[g].lead[s],counts[g].sup[s]);});});
+  var maxV=Math.max.apply(null,allVals)||1;
+
+  function hmBg2(val,status,role){
+    if(!val)return null;
+    var a=0.15+0.72*(val/maxV);
+    if(status==='Done')return _rgba(_css('--chart-green'),a);
+    if(status==='Delivery'||status==='Ready for Delivery')return _rgba(_css(role==='lead'?'--chart-blue':'--chart-teal'),a);
+    if(status==='Parking Lot')return _rgba(_css('--chart-dim'),Math.min(a,0.55));
+    return _rgba(_css('--chart-amber'),a);
+  }
+  function hmCell2(val,status,role){
+    var bg=hmBg2(val,status,role);
+    if(!bg)return '<span class="hm hm-0">—</span>';
+    return '<span class="hm" style="background:'+bg+';color:#fff">'+val+'</span>';
+  }
+
+  var N=INIT_STS.length;
+  var colL={},colS={},colC={};
+  INIT_STS.forEach(function(s){colL[s]=0;colS[s]=0;colC[s]=0;});
+  goals.forEach(function(g){INIT_STS.forEach(function(s){colL[s]+=counts[g].lead[s];colS[s]+=counts[g].sup[s];colC[s]+=counts[g].lead[s]+counts[g].sup[s];});});
+  var totL=INIT_STS.reduce(function(s,k){return s+colL[k];},0);
+  var totS=INIT_STS.reduce(function(s,k){return s+colS[k];},0);
+  var totG=totL+totS;
+  var maxC=Math.max.apply(null,INIT_STS.map(function(s){return colC[s];}))||1;
+  function hmCellComb2(val,status){
+    if(!val)return '<span class="hm hm-0">—</span>';
+    var a=0.15+0.72*(val/maxC);
+    var bg;
+    if(status==='Done')bg=_rgba(_css('--chart-green'),a);
+    else if(status==='Delivery'||status==='Ready for Delivery')bg=_rgba(_css('--chart-blue'),a);
+    else if(status==='Parking Lot')bg=_rgba(_css('--chart-dim'),Math.min(a,0.55));
+    else bg=_rgba(_css('--chart-amber'),a);
+    return '<span class="hm" style="background:'+bg+';color:#fff">'+val+'</span>';
+  }
+
+  var html='<thead><tr>'+
+    '<th class="col-person" rowspan="2" style="border-bottom:2px solid var(--border)">Project Goal</th>'+
+    '<th colspan="'+(N+1)+'" class="cg-head cg-lead sep">Lead Initiative</th>'+
+    '<th colspan="'+(N+1)+'" class="cg-head cg-sup sep">Support Initiative</th>'+
+    '<th colspan="'+(N+1)+'" class="cg-head" style="background:rgba(100,100,100,.07);border-left:2px solid var(--border)">Grand Total (Lead + Support)</th>'+
+    '</tr><tr>';
+  INIT_STS_ABBR.forEach(function(s){html+='<th>'+s+'</th>';});
+  html+='<th class="sep" style="color:var(--text)">Total</th>';
+  INIT_STS_ABBR.forEach(function(s){html+='<th>'+s+'</th>';});
+  html+='<th class="sep" style="color:var(--text)">Total</th>';
+  INIT_STS_ABBR.forEach(function(s,j){html+='<th style="border-left:'+(j===0?'2px':'0')+'solid var(--border)">'+s+'</th>';});
+  html+='<th style="color:var(--text)">Total</th></tr></thead><tbody>';
+
+  goals.forEach(function(g){
+    var c=counts[g];
+    var lt=INIT_STS.reduce(function(s,k){return s+c.lead[k];},0);
+    var st=INIT_STS.reduce(function(s,k){return s+c.sup[k];},0);
+    var gt=lt+st;
+    var dot=GOAL_COLORS_LOCAL[g]||'var(--text3)';
+    html+='<tr><td class="col-person"><span class="p-dot" style="background:'+dot+'"></span>'+g+'</td>';
+    INIT_STS.forEach(function(s){html+='<td>'+hmCell2(c.lead[s],s,'lead')+'</td>';});
+    html+='<td class="sep col-total">'+lt+'</td>';
+    INIT_STS.forEach(function(s){html+='<td>'+hmCell2(c.sup[s],s,'sup')+'</td>';});
+    html+='<td class="sep col-total">'+st+'</td>';
+    INIT_STS.forEach(function(s,j){html+='<td style="border-left:'+(j===0?'2px':'0')+'solid var(--border)">'+hmCellComb2(c.lead[s]+c.sup[s],s)+'</td>';});
+    html+='<td class="col-total">'+gt+'</td></tr>';
+  });
+
+  var ftd='style="font-weight:700;font-size:11px;color:var(--text);background:var(--surface2);border-top:2px solid var(--border);text-align:center;padding:5px 8px"';
+  html+='</tbody><tfoot><tr><td class="col-person" style="border-top:2px solid var(--border);font-weight:700;font-size:11px;color:var(--text3)">Total</td>';
   INIT_STS.forEach(function(s){html+='<td '+ftd+'>'+colL[s]+'</td>';});
   html+='<td '+ftd+' style="font-weight:700;font-size:11px;color:var(--text);background:var(--surface2);border-top:2px solid var(--border);text-align:center;padding:5px 8px;border-right:2px solid var(--border)">'+totL+'</td>';
   INIT_STS.forEach(function(s){html+='<td '+ftd+'>'+colS[s]+'</td>';});

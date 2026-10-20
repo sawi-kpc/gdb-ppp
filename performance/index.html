@@ -848,7 +848,7 @@ function _renderInitHeatmap(data){
   tbl.innerHTML=html;
 }
 
-/* ── 1b: Initiative Heatmap by Project Goal ── */
+/* ── 1b: Initiative Heatmap by Project Goal — 2 logic scopes ── */
 function _renderInitGoalHeatmap(data){
   var GOAL_COLORS_LOCAL={
     'Increase Revenue':'var(--accent)',
@@ -857,7 +857,6 @@ function _renderInitGoalHeatmap(data){
     'Improve Internal Operation':'var(--teal)',
     'Strategic Direction':'var(--amber)'
   };
-  /* Collect goals from data, known order first */
   var goalSet={};
   data.forEach(function(d){var g=(d['Project Goal']||'').trim();if(g)goalSet[g]=true;});
   var known=Object.keys(GOAL_COLORS_LOCAL);
@@ -868,96 +867,91 @@ function _renderInitGoalHeatmap(data){
   if(!tbl)return;
   if(!goals.length){tbl.closest('.sum-panel').style.display='none';return;}
 
-  /* counts[goal][role][status] */
-  var counts={};
-  goals.forEach(function(g){
-    counts[g]={lead:{},sup:{}};
-    INIT_STS.forEach(function(s){counts[g].lead[s]=0;counts[g].sup[s]=0;});
-  });
-  data.forEach(function(d){
-    if((d['Roadmap Status']||"")==="Won't do")return;
-    var g=(d['Project Goal']||'').trim();
-    if(!counts[g])return;
-    var st=_initStExact(d);
+  /* Logic A: Full Roadmap — exclude Won't do */
+  var dataA=data.filter(function(d){return (d['Roadmap Status']||'')!=="Won't do";});
+  /* Logic B: Active Commitment — exclude Won't do + Later + Observer role; only SUM_PEOPLE leads */
+  var dataB=data.filter(function(d){
+    var rs=(d['Roadmap Status']||'').trim();
+    var pmRole=(d['PM Role']||'').trim();
     var lead=_fn(d['Assignee.displayName']);
-    if(SUM_PEOPLE.indexOf(lead)>=0)counts[g].lead[st]++;
-    var a2=(d['Assignee (2nd).displayName']||'');
-    a2.split(';').forEach(function(n){var fn=_fn(n);if(SUM_PEOPLE.indexOf(fn)>=0)counts[g].sup[st]++;});
+    return rs!=="Won't do" && rs.toLowerCase()!=='later' && pmRole!=='Observer' && SUM_PEOPLE.indexOf(lead)>=0;
   });
+
+  function buildGoalCounts(filteredData){
+    var c={};
+    goals.forEach(function(g){c[g]={};INIT_STS.forEach(function(s){c[g][s]=0;});});
+    filteredData.forEach(function(d){
+      var g=(d['Project Goal']||'').trim();
+      if(!c[g])return;
+      var st=_initStExact(d);
+      c[g][st]++;
+    });
+    return c;
+  }
+  var cA=buildGoalCounts(dataA);
+  var cB=buildGoalCounts(dataB);
 
   var allVals=[];
-  goals.forEach(function(g){INIT_STS.forEach(function(s){allVals.push(counts[g].lead[s],counts[g].sup[s]);});});
+  goals.forEach(function(g){INIT_STS.forEach(function(s){allVals.push(cA[g][s],cB[g][s]);});});
   var maxV=Math.max.apply(null,allVals)||1;
 
-  function hmBg2(val,status,role){
+  function hmBgG(val,status,isB){
     if(!val)return null;
     var a=0.15+0.72*(val/maxV);
     if(status==='Done')return _rgba(_css('--chart-green'),a);
-    if(status==='Delivery'||status==='Ready for Delivery')return _rgba(_css(role==='lead'?'--chart-blue':'--chart-teal'),a);
+    if(status==='Delivery'||status==='Ready for Delivery')return _rgba(_css(isB?'--chart-teal':'--chart-blue'),a);
     if(status==='Parking Lot')return _rgba(_css('--chart-dim'),Math.min(a,0.55));
     return _rgba(_css('--chart-amber'),a);
   }
-  function hmCell2(val,status,role){
-    var bg=hmBg2(val,status,role);
+  function hmCellG(val,status,isB){
+    var bg=hmBgG(val,status,isB);
     if(!bg)return '<span class="hm hm-0">—</span>';
     return '<span class="hm" style="background:'+bg+';color:#fff">'+val+'</span>';
   }
 
   var N=INIT_STS.length;
-  var colL={},colS={},colC={};
-  INIT_STS.forEach(function(s){colL[s]=0;colS[s]=0;colC[s]=0;});
-  goals.forEach(function(g){INIT_STS.forEach(function(s){colL[s]+=counts[g].lead[s];colS[s]+=counts[g].sup[s];colC[s]+=counts[g].lead[s]+counts[g].sup[s];});});
-  var totL=INIT_STS.reduce(function(s,k){return s+colL[k];},0);
-  var totS=INIT_STS.reduce(function(s,k){return s+colS[k];},0);
-  var totG=totL+totS;
-  var maxC=Math.max.apply(null,INIT_STS.map(function(s){return colC[s];}))||1;
-  function hmCellComb2(val,status){
-    if(!val)return '<span class="hm hm-0">—</span>';
-    var a=0.15+0.72*(val/maxC);
-    var bg;
-    if(status==='Done')bg=_rgba(_css('--chart-green'),a);
-    else if(status==='Delivery'||status==='Ready for Delivery')bg=_rgba(_css('--chart-blue'),a);
-    else if(status==='Parking Lot')bg=_rgba(_css('--chart-dim'),Math.min(a,0.55));
-    else bg=_rgba(_css('--chart-amber'),a);
-    return '<span class="hm" style="background:'+bg+';color:#fff">'+val+'</span>';
-  }
+  var colA={},colB={};
+  INIT_STS.forEach(function(s){colA[s]=0;colB[s]=0;});
+  goals.forEach(function(g){INIT_STS.forEach(function(s){colA[s]+=cA[g][s];colB[s]+=cB[g][s];});});
+  var totA=INIT_STS.reduce(function(s,k){return s+colA[k];},0);
+  var totB=INIT_STS.reduce(function(s,k){return s+colB[k];},0);
 
-  var html='<thead><tr>'+
-    '<th class="col-person" rowspan="2" style="border-bottom:2px solid var(--border)">Project Goal</th>'+
-    '<th colspan="'+(N+1)+'" class="cg-head cg-lead sep">Lead Initiative</th>'+
-    '<th colspan="'+(N+1)+'" class="cg-head cg-sup sep">Support Initiative</th>'+
-    '<th colspan="'+(N+1)+'" class="cg-head" style="background:rgba(100,100,100,.07);border-left:2px solid var(--border)">Grand Total (Lead + Support)</th>'+
+  var subSt='font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);text-align:left;padding:4px 10px;border-bottom:1px solid var(--border);background:var(--surface2)';
+  var lblA="☰ Full Roadmap Scope — ยกเว้นเฉพาะ Won't Do";
+  var lblB="🎯 Active Commitment — ยกเว้น Won't Do · Later · Observer role";
+
+  var html='<thead>'+
+    '<tr>'+
+      '<th class="col-person" rowspan="3" style="border-bottom:2px solid var(--border)">Project Goal</th>'+
+      '<th colspan="'+(N+1)+'" class="cg-head cg-lead sep">Full Roadmap Scope</th>'+
+      '<th colspan="'+(N+1)+'" class="cg-head cg-sup">Active Commitment</th>'+
+    '</tr><tr>'+
+      '<td colspan="'+(N+1)+'" style="'+subSt+';border-right:2px solid var(--border)">'+lblA+'</td>'+
+      '<td colspan="'+(N+1)+'" style="'+subSt+'">'+lblB+'</td>'+
     '</tr><tr>';
   INIT_STS_ABBR.forEach(function(s){html+='<th>'+s+'</th>';});
   html+='<th class="sep" style="color:var(--text)">Total</th>';
   INIT_STS_ABBR.forEach(function(s){html+='<th>'+s+'</th>';});
-  html+='<th class="sep" style="color:var(--text)">Total</th>';
-  INIT_STS_ABBR.forEach(function(s,j){html+='<th style="border-left:'+(j===0?'2px':'0')+'solid var(--border)">'+s+'</th>';});
-  html+='<th style="color:var(--text)">Total</th></tr></thead><tbody>';
+  html+='<th style="color:var(--text)">Total</th>';
+  html+='</tr></thead><tbody>';
 
   goals.forEach(function(g){
-    var c=counts[g];
-    var lt=INIT_STS.reduce(function(s,k){return s+c.lead[k];},0);
-    var st=INIT_STS.reduce(function(s,k){return s+c.sup[k];},0);
-    var gt=lt+st;
+    var tA=INIT_STS.reduce(function(s,k){return s+cA[g][k];},0);
+    var tB=INIT_STS.reduce(function(s,k){return s+cB[g][k];},0);
     var dot=GOAL_COLORS_LOCAL[g]||'var(--text3)';
     html+='<tr><td class="col-person"><span class="p-dot" style="background:'+dot+'"></span>'+g+'</td>';
-    INIT_STS.forEach(function(s){html+='<td>'+hmCell2(c.lead[s],s,'lead')+'</td>';});
-    html+='<td class="sep col-total">'+lt+'</td>';
-    INIT_STS.forEach(function(s){html+='<td>'+hmCell2(c.sup[s],s,'sup')+'</td>';});
-    html+='<td class="sep col-total">'+st+'</td>';
-    INIT_STS.forEach(function(s,j){html+='<td style="border-left:'+(j===0?'2px':'0')+'solid var(--border)">'+hmCellComb2(c.lead[s]+c.sup[s],s)+'</td>';});
-    html+='<td class="col-total">'+gt+'</td></tr>';
+    INIT_STS.forEach(function(s){html+='<td>'+hmCellG(cA[g][s],s,false)+'</td>';});
+    html+='<td class="sep col-total">'+tA+'</td>';
+    INIT_STS.forEach(function(s){html+='<td>'+hmCellG(cB[g][s],s,true)+'</td>';});
+    html+='<td class="col-total">'+tB+'</td></tr>';
   });
 
   var ftd='style="font-weight:700;font-size:11px;color:var(--text);background:var(--surface2);border-top:2px solid var(--border);text-align:center;padding:5px 8px"';
   html+='</tbody><tfoot><tr><td class="col-person" style="border-top:2px solid var(--border);font-weight:700;font-size:11px;color:var(--text3)">Total</td>';
-  INIT_STS.forEach(function(s){html+='<td '+ftd+'>'+colL[s]+'</td>';});
-  html+='<td '+ftd+' style="font-weight:700;font-size:11px;color:var(--text);background:var(--surface2);border-top:2px solid var(--border);text-align:center;padding:5px 8px;border-right:2px solid var(--border)">'+totL+'</td>';
-  INIT_STS.forEach(function(s){html+='<td '+ftd+'>'+colS[s]+'</td>';});
-  html+='<td '+ftd+' style="font-weight:700;font-size:11px;color:var(--text);background:var(--surface2);border-top:2px solid var(--border);text-align:center;padding:5px 8px;border-right:2px solid var(--border)">'+totS+'</td>';
-  INIT_STS.forEach(function(s,j){html+='<td '+ftd+' style="font-weight:700;font-size:11px;color:var(--text);background:var(--surface2);border-top:2px solid var(--border);text-align:center;padding:5px 8px;border-left:'+(j===0?'2px':'0')+'solid var(--border)">'+colC[s]+'</td>';});
-  html+='<td '+ftd+'>'+totG+'</td></tr></tfoot>';
+  INIT_STS.forEach(function(s){html+='<td '+ftd+'>'+colA[s]+'</td>';});
+  html+='<td '+ftd+' style="font-weight:700;font-size:11px;color:var(--text);background:var(--surface2);border-top:2px solid var(--border);text-align:center;padding:5px 8px;border-right:2px solid var(--border)">'+totA+'</td>';
+  INIT_STS.forEach(function(s){html+='<td '+ftd+'>'+colB[s]+'</td>';});
+  html+='<td '+ftd+'>'+totB+'</td></tr></tfoot>';
 
   tbl.innerHTML=html;
 }

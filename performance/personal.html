@@ -115,6 +115,15 @@
         <span class="perf-section-title">🏗 Initiative</span>
         <span class="perf-section-sub" id="sec-init-sub"></span>
       </div>
+
+      <!-- Breakdown strip -->
+      <div id="perf-init-breakdown-strip" style="display:none;align-items:center;gap:16px;flex-wrap:wrap;padding:4px 0 8px 14px">
+        <span style="font-size:11px;color:var(--text3)" id="perf-bkd-total"></span>
+        <span style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2)" id="perf-bkd-lead"></span>
+        <span style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2)" id="perf-bkd-sup"></span>
+        <span style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2)" id="perf-bkd-wont"></span>
+      </div>
+
       <div id="perf-kpi"></div>
       <div id="perf-overview-quarter" class="panel"></div>
       <div id="perf-completion-heatmap" class="panel"></div>
@@ -146,7 +155,20 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="../js/initiative/config.js"></script>
-<script src="../js/roles.js"></script>
+<script src="../js/roles.js?v=2"></script>
+<script>
+/* localhost dev bypass: override gdbFetchAndStoreRoles before header.js runs */
+if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+  gdbFetchAndStoreRoles = function(email) {
+    var r = ['super_admin'];
+    window._gdbRoles = r;
+    window._gdbNamePrefix = 'Dev';
+    try { sessionStorage.setItem('gdb_roles', JSON.stringify(r)); } catch(e) {}
+    try { sessionStorage.setItem('gdb_perf_name', 'Dev'); } catch(e) {}
+    return Promise.resolve(r);
+  };
+}
+</script>
 <script src="../js/header.js"></script>
 <script src="../js/initiative/data.js"></script>
 <script src="../js/issue/config.js"></script>

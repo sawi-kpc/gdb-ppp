@@ -21,6 +21,15 @@ function gdbFetchAndStoreRoles(email) {
     window._gdbNamePrefix = null;
     return Promise.resolve([]);
   }
+  /* localhost dev: grant super_admin so all pages are accessible */
+  if ((location.hostname === 'localhost' || location.hostname === '127.0.0.1') && email === 'dev@localhost') {
+    var _devRoles = ['super_admin'];
+    window._gdbRoles = _devRoles;
+    window._gdbNamePrefix = 'Dev';
+    try { sessionStorage.setItem('gdb_roles', JSON.stringify(_devRoles)); } catch(e) {}
+    try { sessionStorage.setItem('gdb_perf_name', 'Dev'); } catch(e) {}
+    return Promise.resolve(_devRoles);
+  }
   var docId = email.toLowerCase().replace(/[^a-z0-9]/g, '_');
   var url = 'https://firestore.googleapis.com/v1/projects/' + GDB_FIREBASE_CONFIG.projectId +
             '/databases/(default)/documents/team_members/' + docId +

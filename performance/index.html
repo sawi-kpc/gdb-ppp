@@ -109,6 +109,14 @@
     <div id="sum-sec-initiative" class="sum-section-group">
       <div class="sum-section-title">🎯 Initiative</div>
 
+      <!-- Breakdown strip -->
+      <div id="sum-init-breakdown-strip" style="display:none;align-items:center;gap:16px;flex-wrap:wrap;padding:4px 0 8px 14px">
+        <span style="font-size:11px;color:var(--text3)" id="sum-bkd-total"></span>
+        <span style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2)" id="sum-bkd-team"></span>
+        <span style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2)" id="sum-bkd-other"></span>
+        <span style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2)" id="sum-bkd-wont"></span>
+      </div>
+
       <!-- KPI Strip -->
       <div id="sum-init-kpi" style="margin-bottom:12px"><div class="gdb-skel-wrap"><div class="gdb-skel gdb-skel-row" style="width:100%;height:13px"></div><div class="gdb-skel gdb-skel-row" style="width:82%;height:13px"></div><div class="gdb-skel gdb-skel-row" style="width:65%;height:13px"></div></div></div>
 
@@ -421,6 +429,22 @@ function _render(){
 
   /* Update section nav counts */
   var sniI=document.getElementById('sum-snav-count-init');   if(sniI)sniI.textContent=initY.length;
+
+  /* Breakdown strip */
+  (function(){
+    var wont=initY.filter(function(d){return (d['Roadmap Status']||'').trim()==="Won't do";}).length;
+    var team=initY.filter(function(d){
+      return SUM_PEOPLE.indexOf(_fn(d['Assignee.displayName']))>=0 && (d['Roadmap Status']||'').trim()!=="Won't do";
+    }).length;
+    var other=initY.length-team-wont;
+    var dot=function(c){return '<span style="width:6px;height:6px;border-radius:50%;background:'+c+';display:inline-block;flex-shrink:0"></span>';};
+    var t=document.getElementById('sum-bkd-total');   if(t)t.textContent=initY.length+' total';
+    var tm=document.getElementById('sum-bkd-team');   if(tm)tm.innerHTML=dot('var(--accent)')+team+' team scope';
+    var ot=document.getElementById('sum-bkd-other');  if(ot)ot.innerHTML=dot('var(--text3)')+other+' not team';
+    var wt=document.getElementById('sum-bkd-wont');   if(wt)wt.innerHTML=dot('var(--down)')+wont+" won’t do";
+    var strip=document.getElementById('sum-init-breakdown-strip');
+    if(strip)strip.style.display='flex';
+  })();
   var sniS=document.getElementById('sum-snav-count-sup');    if(sniS)sniS.textContent=supY.length;
   var sniQ=document.getElementById('sum-snav-count-issue');  if(sniQ)sniQ.textContent=issY.length;
 

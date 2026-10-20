@@ -159,6 +159,18 @@ function _perfRender() {
   var snavInit = document.getElementById('snav-count-init');
   if (snavInit) snavInit.textContent = myAll.length;
 
+  /* Breakdown strip */
+  (function(){
+    var wont=myAll.filter(function(d){return (d['Roadmap Status']||'').trim()==="Won't do";}).length;
+    var dot=function(c){return '<span style="width:6px;height:6px;border-radius:50%;background:'+c+';display:inline-block;flex-shrink:0"></span>';};
+    var t=document.getElementById('perf-bkd-total'); if(t)t.textContent=myAll.length+' total';
+    var l=document.getElementById('perf-bkd-lead');  if(l)l.innerHTML=dot('var(--accent)')+myI1.length+' lead';
+    var s=document.getElementById('perf-bkd-sup');   if(s)s.innerHTML=dot('var(--teal)')+myI2.length+' support';
+    var w=document.getElementById('perf-bkd-wont');  if(w)w.innerHTML=dot('var(--down)')+wont+" won’t do";
+    var strip=document.getElementById('perf-init-breakdown-strip');
+    if(strip)strip.style.display=myAll.length?'flex':'none';
+  })();
+
   _buildPerfKpi(myI1, myI2, cy);
   _buildPerfOverviewByQuarter(myAll, myI1, myI2, cy);
   _buildPerfCompletionHeatmap(myAll, myI1, myI2, cy);

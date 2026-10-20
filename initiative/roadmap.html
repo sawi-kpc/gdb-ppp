@@ -81,6 +81,34 @@
       </div>
     </div>
 
+    <!-- Roadmap Status -->
+    <div style="position:relative" id="rm-rs-wrap">
+      <button class="rm-dd-btn" onclick="toggleDropdown('rm-rs-panel')">
+        <span id="rm-rs-lbl" data-empty="All Roadmap Status">All Roadmap Status</span>
+        <span class="arr">▾</span>
+      </button>
+      <div id="rm-rs-panel" style="display:none;position:absolute;top:30px;left:0;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 6px 20px rgba(0,0,0,.25);padding:8px 0;min-width:185px">
+        <div id="rm-rs-list"></div>
+        <div style="border-top:1px solid var(--border);margin-top:6px;padding:5px 12px 2px">
+          <button onclick="clearRmRsFilter()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Clear all</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Monitoring Status -->
+    <div style="position:relative" id="rm-mon-wrap">
+      <button class="rm-dd-btn" onclick="toggleDropdown('rm-mon-panel')">
+        <span id="rm-mon-lbl" data-empty="Monitoring Status">Monitoring Status</span>
+        <span class="arr">▾</span>
+      </button>
+      <div id="rm-mon-panel" style="display:none;position:absolute;top:30px;left:0;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 6px 20px rgba(0,0,0,.25);padding:8px 0;min-width:170px">
+        <div id="rm-mon-list"></div>
+        <div style="border-top:1px solid var(--border);margin-top:6px;padding:5px 12px 2px">
+          <button onclick="clearRmMonFilter()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0">Clear all</button>
+        </div>
+      </div>
+    </div>
+
     <div style="flex:1"></div>
 
     <!-- Hide no-date toggle -->
@@ -241,16 +269,16 @@ function toggleDropdown(panelId) {
   if (!panel) return;
   var isOpen = panel.style.display !== 'none';
   document.querySelectorAll('.rm-dd-panel').forEach(function(p) { p.style.display = 'none'; });
-  ['rm-comp-panel','rm-pm-panel','rm-status-panel'].forEach(function(id) {
+  ['rm-comp-panel','rm-pm-panel','rm-status-panel','rm-rs-panel','rm-mon-panel'].forEach(function(id) {
     var p = document.getElementById(id); if (p) p.style.display = 'none';
   });
   panel.style.display = isOpen ? 'none' : 'block';
 }
 document.addEventListener('click', function(e) {
-  ['rm-status-wrap','rm-comp-wrap','rm-dep-wrap','rm-pm-wrap'].forEach(function(id) {
+  ['rm-status-wrap','rm-comp-wrap','rm-dep-wrap','rm-pm-wrap','rm-rs-wrap','rm-mon-wrap'].forEach(function(id) {
     var wrap = document.getElementById(id);
     if (wrap && !wrap.contains(e.target)) {
-      ['rm-comp-panel','rm-pm-panel','rm-status-panel'].forEach(function(pid) {
+      ['rm-comp-panel','rm-pm-panel','rm-status-panel','rm-rs-panel','rm-mon-panel'].forEach(function(pid) {
         if (wrap.querySelector('#' + pid)) {
           var p = document.getElementById(pid); if (p) p.style.display = 'none';
         }

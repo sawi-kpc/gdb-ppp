@@ -342,7 +342,7 @@ function _buildPerfOverviewByQuarter(myAll, myI1, myI2, year) {
 
   el.innerHTML =
     '<div style="padding:9px 14px;display:flex;align-items:center;border-bottom:1px solid var(--border)">'+
-      '<span style="font-size:12px;font-weight:700;color:var(--text)">Overview by Quarter</span>'+
+      '<span style="font-size:12px;font-weight:700;color:var(--text)">Deliverable Overview by Quarter</span>'+
       '<span style="font-size:11px;color:var(--text3);margin-left:auto">completion rate × on time delivery</span>'+
     '</div>'+
     _perfSection('Lead Assignee',    'var(--accent)', myI1, year)+

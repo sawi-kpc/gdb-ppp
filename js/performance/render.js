@@ -366,7 +366,7 @@ function _buildPerfOverviewByQuarter(myAll, myI1, myI2, year) {
 function _buildQChartSVG(container,series,labels){
   /* chart = trend visual only; numbers go in the HTML summary row below */
   var W=Math.max(container?container.offsetWidth-32:0,320);
-  var H=86,ml=6,mr=6,mt=10,mb=18,pw=W-ml-mr,ph=H-mt-mb,n=labels.length;
+  var H=86,ml=28,mr=28,mt=10,mb=18,pw=W-ml-mr,ph=H-mt-mb,n=labels.length;
   if(!n)return '';
   var xp=function(i){return ml+(n<=1?pw/2:i/(n-1)*pw);};
   var yp=function(r){return mt+ph*(1-r/100);};
@@ -385,7 +385,7 @@ function _buildQChartSVG(container,series,labels){
       if(!p.total)return;
       var bh=maxBarH*(p.total/maxT);
       s+='<rect x="'+(xp(i)+off)+'" y="'+(mt+ph-bh)+'" width="'+barW+'" height="'+bh+'"'
-        +' fill="'+col+'" rx="2" opacity="0.25"/>';
+        +' fill="'+col+'" rx="2" opacity="0.4"/>';
     });
   });
 

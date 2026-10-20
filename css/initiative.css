@@ -480,10 +480,9 @@ table.dt td:first-child { white-space: nowrap; }
   margin-bottom: 2px;
 }
 .rm-chip-golive {
-  display: block;
   font-size: 9px; font-weight: 600;
   color: var(--purple);
-  margin-bottom: 4px;
+  margin-left: 6px;
 }
 .rm-chip-badges {
   display: flex; flex-wrap: wrap; gap: 3px;
@@ -519,6 +518,23 @@ table.dt td:first-child { white-space: nowrap; }
 .rm-parking   .rm-chip-key { color: #8b949e; }
 .rm-parking   .rm-chip-name { color: var(--text2); }
 .rm-parking:hover            { background: rgba(72,79,88,.2); }
+
+/* monitoring-status–based card colors */
+.rm-mon-done     { border-left-color: #6BAED4; background: rgba(107,174,212,.12); }
+.rm-mon-done     .rm-chip-key { color: #6BAED4; }
+.rm-mon-done:hover             { background: rgba(107,174,212,.2); }
+
+.rm-mon-delayed  { border-left-color: #f85149; background: rgba(248,81,73,.10); }
+.rm-mon-delayed  .rm-chip-key { color: #f85149; }
+.rm-mon-delayed:hover          { background: rgba(248,81,73,.18); }
+
+.rm-mon-atrisk   { border-left-color: #f59e0b; background: rgba(245,158,11,.10); }
+.rm-mon-atrisk   .rm-chip-key { color: #d97706; }
+.rm-mon-atrisk:hover           { background: rgba(245,158,11,.18); }
+
+.rm-mon-ontrack  { border-left-color: #3fb950; background: rgba(63,185,80,.08); }
+.rm-mon-ontrack  .rm-chip-key { color: #3fb950; }
+.rm-mon-ontrack:hover          { background: rgba(63,185,80,.16); }
 
 /* ── Legend ───────────────────────────────────────────────── */
 .rm-legend {

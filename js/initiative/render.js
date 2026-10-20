@@ -2436,9 +2436,21 @@ function _rmBadge(label,color){
   var bg=color+'22'; // ~13% opacity hex
   return '<span class="rm-badge" style="color:'+color+';background:'+bg+';border:1px solid '+color+'44">'+_rmEsc(label)+'</span>';
 }
+function _rmCardCls(d,nodate){
+  var status=(d['Status']||'').trim();
+  var isDone=status==='Done'||status==='Completed'||status==='Completed With';
+  if(isDone) return 'rm-mon-done';
+  if(nodate) return 'rm-parking';
+  var mon=(d['Project Monitoring Status']||'').toLowerCase();
+  if(mon.includes('delay')) return 'rm-mon-delayed';
+  if(mon.includes('risk'))  return 'rm-mon-atrisk';
+  if(mon.includes('track')) return 'rm-mon-ontrack';
+  return _rmStatusCls(status);
+}
 function _rmChip(d,nodate){
   var status=(d['Status']||'').trim();
-  var cls=nodate?'rm-parking':_rmStatusCls(status);
+  var isDone=status==='Done'||status==='Completed'||status==='Completed With';
+  var cls=_rmCardCls(d,nodate);
   var summary=(d['Summary']||'').trim();
   var key=(d['Key']||'').trim();
   var roadmapStatus=(d['Roadmap Status']||'').trim();
@@ -2448,18 +2460,18 @@ function _rmChip(d,nodate){
   var tEnd  =fmtMonYear(getEnd(d['Target Project End']||'')||'');
   var timeline=(tStart!=='—'||tEnd!=='—') ? tStart+' → '+tEnd : 'No target date set';
   var goLive=getStart(d['Go-live Date']||'');
-  var glLine=goLive?'<span class="rm-chip-golive">◆ Go-live: '+_rmEsc(fmtFullDate(goLive))+'</span>':'';
+  var glSpan=goLive?' <span class="rm-chip-golive">◆ Go-live: '+_rmEsc(fmtFullDate(goLive))+'</span>':'';
   var badges='';
-  if(status)       badges+=_rmBadge(status,       SC[status]||'#8b949e');
+  var statusColor=isDone?'#6BAED4':(SC[status]||'#8b949e');
+  if(status)       badges+=_rmBadge(status,       statusColor);
   if(roadmapStatus)badges+=_rmBadge(roadmapStatus, RC[roadmapStatus]||'#8b949e');
   if(monStatus)    badges+=_rmBadge(monStatus,     _RM_MON_COLOR[monStatus]||'#8b949e');
   return '<a class="rm-chip '+cls+'" href="'+href+'" target="_blank" title="'+_rmEsc(key+' · '+summary)+'">' +
-    '<span class="rm-chip-key">'+_rmEsc(key)+' ↗</span>' +
+    '<span class="rm-chip-key">'+_rmEsc(key)+' ↗'+glSpan+'</span>' +
     '<span class="rm-chip-name">'+_rmEsc(summary)+'</span>' +
     (timeline==='No target date set'
       ?'<span class="rm-chip-owner" style="color:#f85149;font-style:italic">'+timeline+'</span>'
       :'<span class="rm-chip-owner">'+_rmEsc(timeline)+'</span>') +
-    glLine +
     (badges?'<span class="rm-chip-badges">'+badges+'</span>':'') +
     '</a>';
 }

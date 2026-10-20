@@ -1056,51 +1056,76 @@ function _renderInitBars(data){
 
 /* ── 1d: Quarterly Completion Rate Chart ── */
 function _buildQChartSVG(container,series,labels){
-  /* use actual container px so font-size values are true CSS pixels — no viewBox scaling */
+  /* chart = trend visual only; numbers go in the HTML summary row below */
   var W=Math.max(container?container.offsetWidth-32:0,320);
-  var H=110,ml=14,mr=36,mt=20,mb=26,pw=W-ml-mr,ph=H-mt-mb,n=labels.length;
+  var H=86,ml=6,mr=6,mt=10,mb=18,pw=W-ml-mr,ph=H-mt-mb,n=labels.length;
   if(!n)return '';
   var xp=function(i){return ml+(n<=1?pw/2:i/(n-1)*pw);};
   var yp=function(r){return mt+ph*(1-r/100);};
-  var s='<svg viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" xmlns="http://www.w3.org/2000/svg" style="display:block;max-width:100%">';
+
+  /* volume bars — fill 40% of chart height max, no label (shown in summary row) */
+  var maxT=1;
+  series[0].points.forEach(function(p){if(p.total>maxT)maxT=p.total;});
+  var barW=Math.max(Math.min(pw/(n*1.8),48),14);
+  var maxBarH=ph*0.38;
+
+  var s='<svg viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'"'
+      +' xmlns="http://www.w3.org/2000/svg" overflow="visible" style="display:block;max-width:100%">';
+
+  series[0].points.forEach(function(p,i){
+    if(!p.total)return;
+    var bh=maxBarH*(p.total/maxT);
+    s+='<rect x="'+(xp(i)-barW/2)+'" y="'+(mt+ph-bh)+'" width="'+barW+'" height="'+bh+'"'
+      +' fill="var(--text3)" rx="2" opacity="0.1"/>';
+  });
+
+  /* baseline */
   s+='<line x1="'+ml+'" y1="'+(mt+ph)+'" x2="'+(ml+pw)+'" y2="'+(mt+ph)+'" stroke="var(--border)" stroke-width="1"/>';
-  s+='<line x1="'+ml+'" y1="'+yp(50)+'" x2="'+(ml+pw)+'" y2="'+yp(50)+'" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="4,3"/>';
-  s+='<text x="'+(ml+pw+4)+'" y="'+(yp(50)+3.5)+'" font-size="9" fill="var(--text3)">50%</text>';
+  /* 50% guide */
+  s+='<line x1="'+ml+'" y1="'+yp(50)+'" x2="'+(ml+pw)+'" y2="'+yp(50)+'"'
+    +' stroke="var(--border)" stroke-width="0.4" stroke-dasharray="3,3"/>';
+
+  /* lines + dots */
   series.forEach(function(ser,si){
-    var pts=ser.points,col='var('+ser.colorVar+')',dash=si===1?'6,3':'none';
-    var vi=[];pts.forEach(function(p,i){if(p.rate!==null)vi.push(i);});
-    if(vi.length>=2){
-      var ap='M '+xp(vi[0])+','+(mt+ph);
-      vi.forEach(function(i){ap+=' L '+xp(i)+','+yp(pts[i].rate);});
-      ap+=' L '+xp(vi[vi.length-1])+','+(mt+ph)+' Z';
-      s+='<path d="'+ap+'" fill="'+col+'" opacity="0.07"/>';
-    }
-    var lp='';pts.forEach(function(p,i){if(p.rate===null)return;lp+=(lp?'L ':'M ')+xp(i)+','+yp(p.rate)+' ';});
-    if(lp)s+='<path d="'+lp+'" fill="none" stroke="'+col+'" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"'+(dash!=='none'?' stroke-dasharray="'+dash+'"':'')+'/>';
+    var pts=ser.points,col='var('+ser.colorVar+')',dash=si===1?'5,3':'none';
+    var lp='';
+    pts.forEach(function(p,i){if(p.total)lp+=(lp?'L ':'M ')+xp(i)+','+yp(p.rate)+' ';});
+    if(lp)s+='<path d="'+lp+'" fill="none" stroke="'+col+'" stroke-width="1.5"'
+      +' stroke-linecap="round" stroke-linejoin="round"'+(dash!=='none'?' stroke-dasharray="'+dash+'"':'')+'/>';
     pts.forEach(function(p,i){
-      var y=p.rate!==null?yp(p.rate):(mt+ph);
-      var fill=si===1?'var(--surface)':col,stroke=si===1?col:'var(--surface)';
-      s+='<circle cx="'+xp(i)+'" cy="'+y+'" r="3" fill="'+fill+'" stroke="'+(si===1?col:'var(--surface)')+'" stroke-width="'+(si===1?'1.5':'1.5')+'" opacity="'+(p.total>0?1:0.25)+'"/>';
+      if(!p.total)return;
+      s+='<circle cx="'+xp(i)+'" cy="'+yp(p.rate)+'" r="3"'
+        +' fill="'+(si===1?'var(--surface)':col)+'" stroke="'+col+'" stroke-width="1.5"/>';
     });
   });
+
+  /* Q labels only — no % or counts (moved to summary row) */
   labels.forEach(function(lbl,i){
-    var x=xp(i);
+    s+='<text x="'+xp(i)+'" y="'+(mt+ph+12)+'" text-anchor="middle" font-size="9" fill="var(--text2)">'+lbl+'</text>';
+  });
+
+  s+='</svg>';
+
+  /* ── HTML summary row: 1 column per quarter ── */
+  var pctColor=function(r){return r>=80?'var(--up)':r>=50?'var(--amber)':'var(--down)';};
+  var chip=function(r,col){
+    return '<span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;'
+      +'background:color-mix(in srgb,'+col+' 12%,transparent);color:'+col+';border:1px solid color-mix(in srgb,'+col+' 25%,transparent)">'+r+'%</span>';
+  };
+  var tbl='<div style="display:flex;border-top:1px solid var(--border);margin-top:2px">';
+  labels.forEach(function(lbl,i){
     var pA=series[0].points[i],pB=series[1]?series[1].points[i]:null;
     var rA=pA&&pA.total?pA.rate:null,rB=pB&&pB.total?pB.rate:null;
-    if(rA!==null||rB!==null){
-      var ry=rA!==null&&rB!==null?Math.min(yp(rA),yp(rB)):rA!==null?yp(rA):yp(rB);
-      s+='<text x="'+x+'" y="'+(ry-6)+'" text-anchor="middle" font-size="9">';
-      if(rA!==null)s+='<tspan font-weight="700" fill="var('+series[0].colorVar+')">'+rA+'%</tspan>';
-      if(rA!==null&&rB!==null)s+='<tspan fill="var(--text3)"> · </tspan>';
-      if(rB!==null)s+='<tspan font-weight="700" fill="var('+series[1].colorVar+')">'+rB+'%</tspan>';
-      s+='</text>';
-    }
-    s+='<text x="'+x+'" y="'+(mt+ph+12)+'" text-anchor="middle" font-size="10" fill="var(--text2)">'+lbl+'</text>';
-    var dA=pA&&pA.total?pA.done+'/'+pA.total:null,dB=pB&&pB.total?pB.done+'/'+pB.total:null;
-    var dtxt=dA&&dB?dA+' · '+dB:(dA||dB||'');
-    if(dtxt)s+='<text x="'+x+'" y="'+(mt+ph+22)+'" text-anchor="middle" font-size="8" fill="var(--text3)">'+dtxt+'</text>';
+    var n0=pA&&pA.total?pA.total:0;
+    tbl+='<div style="flex:1;padding:5px 4px 4px;text-align:center;'+(i>0?'border-left:1px solid var(--border)':'')+';">';
+    if(rA!==null)tbl+=chip(rA,pctColor(rA));
+    if(rB!==null)tbl+=' '+chip(rB,pctColor(rB));
+    if(n0)tbl+='<div style="font-size:8px;color:var(--text3);margin-top:2px">n='+n0+(pB&&pB.total&&pB.total!==n0?'/'+pB.total:'')+'</div>';
+    tbl+='</div>';
   });
-  return s+'</svg>';
+  tbl+='</div>';
+
+  return s+tbl;
 }
 function _renderInitQuarterChart(data,cy){
   var el=document.getElementById('sum-init-qchart');if(!el)return;

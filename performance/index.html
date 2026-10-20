@@ -1087,36 +1087,15 @@ function _buildQChartSVG(container,series,labels){
   s+='<line x1="'+ml+'" y1="'+yp(50)+'" x2="'+(ml+pw)+'" y2="'+yp(50)+'"'
     +' stroke="var(--border)" stroke-width="0.4" stroke-dasharray="3,3"/>';
 
-  /* lines + dots (with faint bridge across empty quarters) */
+  /* lines + dots: empty quarters draw through rate=0 for continuous line */
   series.forEach(function(ser,si){
     var pts=ser.points,col='var('+ser.colorVar+')',dash=si===1?'5,3':'none';
-    /* bridge segments: connect last known point to next known point across gaps */
-    var lastKnown=null;
-    pts.forEach(function(p,i){
-      if(!p.total){lastKnown=null;return;}/* reset if interrupted by real gap */
-      /* actually we want bridges not resets — track all known points */
-    });
-    var known=[];pts.forEach(function(p,i){if(p.total)known.push({i:i,x:xp(i),y:yp(p.rate)});});
-    var faint=function(x1,y1,x2,y2){
-      s+='<path d="M '+x1+','+y1+' L '+x2+','+y2+'" fill="none" stroke="'+col+'"'
-        +' stroke-width="1.2" stroke-dasharray="3,4" opacity="0.4"/>';
-    };
-    /* leading: Q1..first-known */
-    if(known.length&&known[0].i>0)faint(xp(0),known[0].y,known[0].x,known[0].y);
-    /* bridges across empty quarters between data points */
-    for(var k=0;k<known.length-1;k++){
-      var a=known[k],b=known[k+1];
-      if(b.i>a.i+1)faint(a.x,a.y,b.x,b.y);
-    }
-    /* trailing: last-known..Q4 */
-    if(known.length&&known[known.length-1].i<n-1){
-      var last=known[known.length-1];faint(last.x,last.y,xp(n-1),last.y);
-    }
-    /* solid line through data points */
+    /* continuous path — empty quarters use y=baseline (0%) */
     var lp='';
-    pts.forEach(function(p,i){if(p.total)lp+=(lp?'L ':'M ')+xp(i)+','+yp(p.rate)+' ';});
-    if(lp)s+='<path d="'+lp+'" fill="none" stroke="'+col+'" stroke-width="1.5"'
+    pts.forEach(function(p,i){lp+=(lp?'L ':'M ')+xp(i)+','+yp(p.total?p.rate:0)+' ';});
+    s+='<path d="'+lp+'" fill="none" stroke="'+col+'" stroke-width="1.5"'
       +' stroke-linecap="round" stroke-linejoin="round"'+(dash!=='none'?' stroke-dasharray="'+dash+'"':'')+'/>';
+    /* dots only on quarters that have data */
     pts.forEach(function(p,i){
       if(!p.total)return;
       s+='<circle cx="'+xp(i)+'" cy="'+yp(p.rate)+'" r="3"'

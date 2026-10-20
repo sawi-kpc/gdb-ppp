@@ -2465,9 +2465,10 @@ function _rmChip(d,nodate){
   var badges='';
   if(roadmapStatus)badges+=_rmBadge(roadmapStatus, RC[roadmapStatus]||'#8b949e');
   if(monStatus)    badges+=_rmBadge(monStatus,     _RM_MON_COLOR[monStatus]||'#8b949e');
+  var monEm=isDone?'':monEmoji(monStatus);
   return '<a class="rm-chip '+cls+'" href="'+href+'" target="_blank" title="'+_rmEsc(key+' · '+summary)+'">' +
     '<span class="rm-chip-key">'+_rmEsc(key)+' ↗'+glSpan+doneTag+'</span>' +
-    '<span class="rm-chip-name">'+_rmEsc(summary)+'</span>' +
+    '<span class="rm-chip-name">'+monEm+_rmEsc(summary)+'</span>' +
     (timeline==='No target date set'
       ?'<span class="rm-chip-owner" style="color:#f85149;font-style:italic">'+timeline+'</span>'
       :'<span class="rm-chip-owner">'+_rmEsc(timeline)+'</span>') +

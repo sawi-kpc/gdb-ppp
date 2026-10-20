@@ -1099,7 +1099,7 @@ function _buildQChartSVG(container,series,labels){
     var known=[];pts.forEach(function(p,i){if(p.total)known.push({i:i,x:xp(i),y:yp(p.rate)});});
     var faint=function(x1,y1,x2,y2){
       s+='<path d="M '+x1+','+y1+' L '+x2+','+y2+'" fill="none" stroke="'+col+'"'
-        +' stroke-width="1" stroke-dasharray="3,4" opacity="0.3"/>';
+        +' stroke-width="1.2" stroke-dasharray="3,4" opacity="0.4"/>';
     };
     /* leading: Q1..first-known */
     if(known.length&&known[0].i>0)faint(xp(0),known[0].y,known[0].x,known[0].y);
@@ -1131,26 +1131,29 @@ function _buildQChartSVG(container,series,labels){
 
   s+='</svg>';
 
-  /* ── HTML summary row: 1 column per quarter ── */
+  /* ── HTML summary row: absolutely positioned to match SVG xp() coords ── */
   var pctColor=function(r){return r>=80?'var(--up)':r>=50?'var(--amber)':'var(--down)';};
   var chip=function(r,col){
-    return '<span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;'
+    return '<span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:10px;font-weight:700;'
       +'background:color-mix(in srgb,'+col+' 12%,transparent);color:'+col+';border:1px solid color-mix(in srgb,'+col+' 25%,transparent)">'+r+'%</span>';
   };
-  var tbl='<div style="display:flex;border-top:1px solid var(--border);margin-top:2px">';
+  /* border-top line + tick marks at each quarter */
+  var row='<div style="position:relative;height:40px;border-top:1px solid var(--border);margin-top:2px">';
   labels.forEach(function(lbl,i){
     var pA=series[0].points[i],pB=series[1]?series[1].points[i]:null;
     var rA=pA&&pA.total?pA.rate:null,rB=pB&&pB.total?pB.rate:null;
-    var n0=pA&&pA.total?pA.total:0;
-    tbl+='<div style="flex:1;padding:5px 4px 4px;text-align:center;'+(i>0?'border-left:1px solid var(--border)':'')+';">';
-    if(rA!==null)tbl+=chip(rA,pctColor(rA));
-    if(rB!==null)tbl+=' '+chip(rB,pctColor(rB));
-    if(n0)tbl+='<div style="font-size:8px;color:var(--text3);margin-top:2px">n='+n0+(pB&&pB.total&&pB.total!==n0?'/'+pB.total:'')+'</div>';
-    tbl+='</div>';
+    var n0=pA&&pA.total?pA.total:0,n1=pB&&pB.total?pB.total:0;
+    /* position chip div centered at same x% as bar/dot in SVG */
+    var pct=(xp(i)/W*100).toFixed(2);
+    row+='<div style="position:absolute;left:'+pct+'%;transform:translateX(-50%);text-align:center;padding-top:5px;white-space:nowrap">';
+    if(rA!==null)row+=chip(rA,pctColor(rA));
+    if(rB!==null)row+=(rA!==null?' ':'')+chip(rB,pctColor(rB));
+    if(n0||n1)row+='<div style="font-size:8px;color:var(--text3);margin-top:2px">n='+(n0||'—')+(n1&&n1!==n0?'/'+n1:'')+'</div>';
+    row+='</div>';
   });
-  tbl+='</div>';
+  row+='</div>';
 
-  return s+tbl;
+  return s+row;
 }
 function _renderInitQuarterChart(data,cy){
   var el=document.getElementById('sum-init-qchart');if(!el)return;

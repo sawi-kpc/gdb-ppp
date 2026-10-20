@@ -487,7 +487,7 @@ table.dt td:first-child { white-space: nowrap; }
 .rm-done-tag {
   font-size: 9px; font-weight: 700; letter-spacing: .05em;
   text-transform: uppercase;
-  background: #6BAED4; color: #fff;
+  background: #1a56db; color: #fff;
   border-radius: 3px; padding: 1px 5px;
   margin-left: 6px;
 }

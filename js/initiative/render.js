@@ -2563,7 +2563,7 @@ function renderRoadmap(){
   GDB.buildCheckDropdown({wrapperId:'rm-pm-wrap',btnLabelId:'rm-pm-lbl',listId:'rm-pm-list',values:pmVals,activeArr:rmPMRoleFilter,colorMap:null,toggleFn:'onRmPMToggle'});
 
   GDB.buildCheckDropdown({wrapperId:'rm-status-wrap',btnLabelId:'rm-status-lbl',listId:'rm-status-list',values:STAGES,activeArr:rmStatusFilter,colorMap:SC,toggleFn:'onRmStatusToggle'});
-  GDB.buildCheckDropdown({wrapperId:'rm-rs-wrap',btnLabelId:'rm-rs-lbl',listId:'rm-rs-list',values:RS_ORDER,activeArr:rmRsFilter,colorMap:RS_COLORS,toggleFn:'onRmRsToggle'});
+  GDB.buildCheckDropdown({wrapperId:'rm-rs-wrap',btnLabelId:'rm-rs-lbl',listId:'rm-rs-list',values:RS_ORDER.filter(function(v){return v!=="Won't do";}),activeArr:rmRsFilter,colorMap:RS_COLORS,toggleFn:'onRmRsToggle'});
   GDB.buildCheckDropdown({wrapperId:'rm-mon-wrap',btnLabelId:'rm-mon-lbl',listId:'rm-mon-list',values:MON_ORDER,activeArr:rmMonFilter,colorMap:MON_COLORS,toggleFn:'onRmMonToggle'});
 
   /* sync hide-no-date toggle button */

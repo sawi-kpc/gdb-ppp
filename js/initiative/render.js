@@ -2461,13 +2461,12 @@ function _rmChip(d,nodate){
   var timeline=(tStart!=='—'||tEnd!=='—') ? tStart+' → '+tEnd : 'No target date set';
   var goLive=getStart(d['Go-live Date']||'');
   var glSpan=goLive?' <span class="rm-chip-golive">◆ Go-live: '+_rmEsc(fmtFullDate(goLive))+'</span>':'';
+  var doneTag=isDone?' <span class="rm-done-tag">DONE</span>':'';
   var badges='';
-  var statusColor=isDone?'#6BAED4':(SC[status]||'#8b949e');
-  if(status)       badges+=_rmBadge(status,       statusColor);
   if(roadmapStatus)badges+=_rmBadge(roadmapStatus, RC[roadmapStatus]||'#8b949e');
   if(monStatus)    badges+=_rmBadge(monStatus,     _RM_MON_COLOR[monStatus]||'#8b949e');
   return '<a class="rm-chip '+cls+'" href="'+href+'" target="_blank" title="'+_rmEsc(key+' · '+summary)+'">' +
-    '<span class="rm-chip-key">'+_rmEsc(key)+' ↗'+glSpan+'</span>' +
+    '<span class="rm-chip-key">'+_rmEsc(key)+' ↗'+glSpan+doneTag+'</span>' +
     '<span class="rm-chip-name">'+_rmEsc(summary)+'</span>' +
     (timeline==='No target date set'
       ?'<span class="rm-chip-owner" style="color:#f85149;font-style:italic">'+timeline+'</span>'

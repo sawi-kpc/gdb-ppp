@@ -484,6 +484,13 @@ table.dt td:first-child { white-space: nowrap; }
   color: var(--purple);
   margin-left: 6px;
 }
+.rm-done-tag {
+  font-size: 9px; font-weight: 700; letter-spacing: .05em;
+  text-transform: uppercase;
+  background: #6BAED4; color: #fff;
+  border-radius: 3px; padding: 1px 5px;
+  margin-left: 6px;
+}
 .rm-chip-badges {
   display: flex; flex-wrap: wrap; gap: 3px;
 }

@@ -1063,20 +1063,22 @@ function _buildQChartSVG(container,series,labels){
   var xp=function(i){return ml+(n<=1?pw/2:i/(n-1)*pw);};
   var yp=function(r){return mt+ph*(1-r/100);};
 
-  /* volume bars — fill 40% of chart height max, no label (shown in summary row) */
+  /* volume bars — 2 bars per quarter, one per series, colored by series */
   var maxT=1;
-  series[0].points.forEach(function(p){if(p.total>maxT)maxT=p.total;});
-  var barW=Math.max(Math.min(pw/(n*1.8),48),14);
-  var maxBarH=ph*0.38;
+  series.forEach(function(ser){ser.points.forEach(function(p){if(p.total>maxT)maxT=p.total;});});
+  var bGap=3,barW=Math.max(Math.min(pw/(n*3.5),24),7),maxBarH=ph*0.38;
 
   var s='<svg viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'"'
       +' xmlns="http://www.w3.org/2000/svg" overflow="visible" style="display:block;max-width:100%">';
 
-  series[0].points.forEach(function(p,i){
-    if(!p.total)return;
-    var bh=maxBarH*(p.total/maxT);
-    s+='<rect x="'+(xp(i)-barW/2)+'" y="'+(mt+ph-bh)+'" width="'+barW+'" height="'+bh+'"'
-      +' fill="var(--text3)" rx="2" opacity="0.1"/>';
+  series.forEach(function(ser,si){
+    var col='var('+ser.colorVar+')',off=si===0?-(barW+bGap/2):bGap/2;
+    ser.points.forEach(function(p,i){
+      if(!p.total)return;
+      var bh=maxBarH*(p.total/maxT);
+      s+='<rect x="'+(xp(i)+off)+'" y="'+(mt+ph-bh)+'" width="'+barW+'" height="'+bh+'"'
+        +' fill="'+col+'" rx="2" opacity="0.25"/>';
+    });
   });
 
   /* baseline */

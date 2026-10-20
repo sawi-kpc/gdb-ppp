@@ -173,6 +173,7 @@ function _perfRender() {
 
   _buildPerfKpi(myI1, myI2, cy);
   _buildPerfOverviewByQuarter(myAll, myI1, myI2, cy);
+  _buildPerfQuarterChart(myI1, myI2, cy);
   _buildPerfCompletionHeatmap(myAll, myI1, myI2, cy);
   _buildPerfInitList(myAll, myI1, myI2, cy);
   if (_perf.ready.issue) {
@@ -359,6 +360,96 @@ function _buildPerfOverviewByQuarter(myAll, myI1, myI2, year) {
     '</div>'+
     _perfSection('Lead Assignee',    'var(--accent)', myI1, year)+
     _perfSection('Support Assignee', 'var(--teal)',   myI2, year);
+}
+
+/* ── Quarterly Completion Rate Chart ── */
+function _buildQChartSVG(container,series,labels){
+  /* use actual container px so font-size values are true CSS pixels — no viewBox scaling */
+  var W=Math.max(container?container.offsetWidth-32:0,320);
+  var H=110,ml=14,mr=36,mt=20,mb=26,pw=W-ml-mr,ph=H-mt-mb,n=labels.length;
+  if(!n)return '';
+  var xp=function(i){return ml+(n<=1?pw/2:i/(n-1)*pw);};
+  var yp=function(r){return mt+ph*(1-r/100);};
+  var s='<svg viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" xmlns="http://www.w3.org/2000/svg" style="display:block;max-width:100%">';
+  s+='<line x1="'+ml+'" y1="'+(mt+ph)+'" x2="'+(ml+pw)+'" y2="'+(mt+ph)+'" stroke="var(--border)" stroke-width="1"/>';
+  s+='<line x1="'+ml+'" y1="'+yp(50)+'" x2="'+(ml+pw)+'" y2="'+yp(50)+'" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="4,3"/>';
+  s+='<text x="'+(ml+pw+4)+'" y="'+(yp(50)+3.5)+'" font-size="9" fill="var(--text3)">50%</text>';
+  series.forEach(function(ser,si){
+    var pts=ser.points,col='var('+ser.colorVar+')',dash=si===1?'6,3':'none';
+    var vi=[];pts.forEach(function(p,i){if(p.rate!==null)vi.push(i);});
+    if(vi.length>=2){
+      var ap='M '+xp(vi[0])+','+(mt+ph);
+      vi.forEach(function(i){ap+=' L '+xp(i)+','+yp(pts[i].rate);});
+      ap+=' L '+xp(vi[vi.length-1])+','+(mt+ph)+' Z';
+      s+='<path d="'+ap+'" fill="'+col+'" opacity="0.07"/>';
+    }
+    var lp='';pts.forEach(function(p,i){if(p.rate===null)return;lp+=(lp?'L ':'M ')+xp(i)+','+yp(p.rate)+' ';});
+    if(lp)s+='<path d="'+lp+'" fill="none" stroke="'+col+'" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"'+(dash!=='none'?' stroke-dasharray="'+dash+'"':'')+'/>';
+    pts.forEach(function(p,i){
+      var y=p.rate!==null?yp(p.rate):(mt+ph);
+      var fill=si===1?'var(--surface)':col,stroke=si===1?col:'var(--surface)';
+      s+='<circle cx="'+xp(i)+'" cy="'+y+'" r="3" fill="'+fill+'" stroke="'+(si===1?col:'var(--surface)')+'" stroke-width="'+(si===1?'1.5':'1.5')+'" opacity="'+(p.total>0?1:0.25)+'"/>';
+    });
+  });
+  labels.forEach(function(lbl,i){
+    var x=xp(i);
+    var pA=series[0].points[i],pB=series[1]?series[1].points[i]:null;
+    var rA=pA&&pA.total?pA.rate:null,rB=pB&&pB.total?pB.rate:null;
+    if(rA!==null||rB!==null){
+      var ry=rA!==null&&rB!==null?Math.min(yp(rA),yp(rB)):rA!==null?yp(rA):yp(rB);
+      s+='<text x="'+x+'" y="'+(ry-6)+'" text-anchor="middle" font-size="9">';
+      if(rA!==null)s+='<tspan font-weight="700" fill="var('+series[0].colorVar+')">'+rA+'%</tspan>';
+      if(rA!==null&&rB!==null)s+='<tspan fill="var(--text3)"> · </tspan>';
+      if(rB!==null)s+='<tspan font-weight="700" fill="var('+series[1].colorVar+')">'+rB+'%</tspan>';
+      s+='</text>';
+    }
+    s+='<text x="'+x+'" y="'+(mt+ph+12)+'" text-anchor="middle" font-size="10" fill="var(--text2)">'+lbl+'</text>';
+    var dA=pA&&pA.total?pA.done+'/'+pA.total:null,dB=pB&&pB.total?pB.done+'/'+pB.total:null;
+    var dtxt=dA&&dB?dA+' · '+dB:(dA||dB||'');
+    if(dtxt)s+='<text x="'+x+'" y="'+(mt+ph+22)+'" text-anchor="middle" font-size="8" fill="var(--text3)">'+dtxt+'</text>';
+  });
+  return s+'</svg>';
+}
+function _buildPerfQuarterChart(myI1,myI2,year){
+  var el=document.getElementById('perf-quarter-chart');if(!el)return;
+  var isAll=(year==='All'||!year);
+  function getEnd(d){var raw=d['Target Project End']||'';if(!raw)return null;try{var o=JSON.parse(raw);return o.end||null;}catch(e){return null;}}
+  var labels;
+  if(isAll){
+    var yrSet={};
+    myI1.concat(myI2).forEach(function(d){var e=getEnd(d);if(!e)return;var y=e.split('-')[0];if(y)yrSet[y]=1;});
+    labels=Object.keys(yrSet).sort();
+    if(!labels.length){el.innerHTML='';return;}
+  }else{labels=['Q1','Q2','Q3','Q4'];}
+  function buildPts(subset){
+    var map={};labels.forEach(function(l){map[l]={onTime:0,total:0};});
+    subset.forEach(function(d){
+      var rs=(d['Roadmap Status']||'').trim();
+      if(rs==="Won't do")return;
+      var tgtRaw=d['Target Project End']||'';if(!tgtRaw)return;
+      var tgtEnd='';try{var to=JSON.parse(tgtRaw);tgtEnd=to.end||'';}catch(e){}
+      if(!tgtEnd)return;
+      var tgtDt=new Date(tgtEnd);if(isNaN(tgtDt))return;
+      var yr=tgtDt.getFullYear();
+      var lbl=isAll?String(yr):(yr===parseInt(year,10)?'Q'+(Math.floor(tgtDt.getMonth()/3)+1):null);
+      if(!lbl||!map[lbl])return;
+      map[lbl].total++;
+      var actRaw=d['Actual Project End']||'';
+      if(actRaw){try{var ao=JSON.parse(actRaw);var actDt=new Date(ao.end||'');if(!isNaN(actDt)&&actDt<=tgtDt)map[lbl].onTime++;}catch(e){}}
+    });
+    return labels.map(function(l){var v=map[l];return{total:v.total,done:v.onTime,rate:v.total?Math.round(v.onTime/v.total*100):null};});
+  }
+  var ptI1=buildPts(myI1),ptI2=buildPts(myI2);
+  var hasData=ptI1.some(function(p){return p.total>0;})||ptI2.some(function(p){return p.total>0;});
+  if(!hasData){el.innerHTML='';return;}
+  var leg='<div style="padding:9px 14px;display:flex;align-items:center;gap:16px;border-bottom:1px solid var(--border);flex-wrap:wrap">';
+  leg+='<span style="font-size:12px;font-weight:700;color:var(--text)">Completion Rate by Quarter</span>';
+  leg+='<span style="margin-left:auto;display:flex;gap:12px;flex-wrap:wrap">';
+  [{l:'Lead',c:'--accent'},{l:'Support',c:'--teal'}].forEach(function(s){
+    leg+='<span style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2)"><span style="display:inline-block;width:16px;height:2px;background:var('+s.c+');border-radius:2px;flex-shrink:0"></span>'+s.l+'</span>';
+  });
+  leg+='</span></div>';
+  el.innerHTML=leg+'<div style="padding:10px 16px 12px">'+_buildQChartSVG(el,[{label:'Lead',colorVar:'--accent',points:ptI1},{label:'Support',colorVar:'--teal',points:ptI2}],labels)+'</div>';
 }
 
 /* Color helpers (mirrors summary page) */
